@@ -19,6 +19,7 @@ import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.utils.Validation
 
 @Composable
@@ -39,7 +40,7 @@ fun LoginComposable() {
 
         Spacer(Modifier.height(spacing12))
 
-        PasswordTextFieldComposable(value = password, onValueChange = { password = it })
+        PasswordTextFieldComposable(value = password, onValueChange = { password = it }, label = passwordHint)
 
         Spacer(Modifier.height(spacing24))
 

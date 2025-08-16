@@ -23,7 +23,7 @@ import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 fun PasswordTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String = "Password"
+    label: String
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
