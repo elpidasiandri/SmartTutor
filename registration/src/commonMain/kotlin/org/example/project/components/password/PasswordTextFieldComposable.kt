@@ -17,9 +17,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import org.example.project.theme.SmartTutorStyles
+import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 
 @Composable
-fun PasswordTextField(
+fun PasswordTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
     label: String = "Password"
@@ -41,6 +42,7 @@ fun PasswordTextField(
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = SmartTutorStyles.textFieldModifier
+        modifier = SmartTutorStyles.textFieldModifier,
+        colors = defaultTextFieldColors()
     )
 }

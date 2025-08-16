@@ -12,33 +12,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.example.project.components.button.AuthButton
-import org.example.project.components.email.EmailTextField
-import org.example.project.components.password.PasswordTextField
+import org.example.project.components.button.AuthButtonComposable
+import org.example.project.components.email.EmailTextFieldComposable
+import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.utils.Validation
 
 @Composable
 fun LoginComposable() {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    val isEmailValid = Validation.isValidEmail(email)
+    val isPasswordValid = Validation.isValidPassword(password)
+    val isFormValid = isEmailValid && isPasswordValid
+
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        EmailTextField(value = email, onValueChange = { email = it })
+        EmailTextFieldComposable(value = email, onValueChange = { email = it })
 
         Spacer(Modifier.height(spacing12))
 
-        PasswordTextField(value = password, onValueChange = { password = it })
+        PasswordTextFieldComposable(value = password, onValueChange = { password = it })
 
         Spacer(Modifier.height(spacing24))
 
-        AuthButton(
+        AuthButtonComposable(
             text = SmartTutorStrings.login,
+            enabled = isFormValid,
             onClick = {
                 //toDo
             }

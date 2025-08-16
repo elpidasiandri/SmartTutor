@@ -12,12 +12,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import org.example.project.components.button.AuthButton
-import org.example.project.components.email.EmailTextField
-import org.example.project.components.password.PasswordTextField
+import org.example.project.components.button.AuthButtonComposable
+import org.example.project.components.email.EmailTextFieldComposable
+import org.example.project.components.errorText.ErrorTextComposable
+import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
+import org.example.project.utils.Validation
 
 @Composable
 fun SignupComposable() {
@@ -26,34 +29,62 @@ fun SignupComposable() {
     var password1 by remember { mutableStateOf("") }
     var password2 by remember { mutableStateOf("") }
 
+
+    val isEmailValid = Validation.isValidEmail(email)
+    val isUsernameValid = username.isNotBlank()
+    val isPassword1Valid = Validation.isValidPassword(password1)
+    val isPassword2Valid = Validation.isValidPassword(password2)
+    val arePasswordsSame: Boolean =
+        password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
+    val isFormValid =
+        isEmailValid && isPassword1Valid && isPassword2Valid && arePasswordsSame && isUsernameValid
+
     Column(
         modifier = Modifier.padding(spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing8)
     ) {
-        EmailTextField(value = email, onValueChange = { email = it })
+        EmailTextFieldComposable(value = email, onValueChange = { email = it })
+
+        if (!isEmailValid && email.isNotEmpty()) {
+            ErrorTextComposable(SmartTutorStrings.invalid_email)
+        }
 
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
             label = { Text(SmartTutorStrings.username) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = defaultTextFieldColors()
         )
 
-        PasswordTextField(
+        if (!isUsernameValid && username.isNotEmpty()) {
+            ErrorTextComposable(SmartTutorStrings.username_not_empty)
+        }
+
+        PasswordTextFieldComposable(
             value = password1,
             onValueChange = { password1 = it },
             label = SmartTutorStrings.passwordHint
         )
 
-        PasswordTextField(
+        if ((!isPassword1Valid && password1.isNotEmpty()) || arePasswordsSame) {
+            ErrorTextComposable(SmartTutorStrings.invalid_password)
+        }
+
+        PasswordTextFieldComposable(
             value = password2,
             onValueChange = { password2 = it },
             label = SmartTutorStrings.confirm_password
         )
 
-        AuthButton(
+        if ((!isPassword2Valid && password2.isNotEmpty()) || arePasswordsSame) {
+            ErrorTextComposable(SmartTutorStrings.invalid_password)
+        }
+
+        AuthButtonComposable(
             text = SmartTutorStrings.signup,
+            enabled = isFormValid,
             onClick = {
                 // TODO
             }

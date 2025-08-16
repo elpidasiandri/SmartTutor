@@ -2,6 +2,7 @@ package org.example.project.dimens
 import androidx.compose.ui.unit.dp
 
 object Dimens {
+    val spacing4 = 4.dp
     val spacing8 = 8.dp
     val spacing12 = 12.dp
     val spacing16 = 16.dp

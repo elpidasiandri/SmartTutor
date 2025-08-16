@@ -7,9 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.input.KeyboardType
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.theme.SmartTutorStyles
+import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 
 @Composable
-fun EmailTextField(
+fun EmailTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
@@ -19,6 +20,7 @@ fun EmailTextField(
         label = { Text(SmartTutorStrings.emailHint) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-        modifier = SmartTutorStyles.textFieldModifier
+        modifier = SmartTutorStyles.textFieldModifier,
+        colors = defaultTextFieldColors()
     )
 }
