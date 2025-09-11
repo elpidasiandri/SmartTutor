@@ -52,7 +52,6 @@ class RegistrationViewModel(
                     signUpUsecase(
                         email = email, password = password
                     ) { success, userId ->
-                        stateForErrorMessage()
                         Log.d("Q12345 ", "userId $userId " +
                                 " success $success ")
                         if (success) {
@@ -64,10 +63,16 @@ class RegistrationViewModel(
                 )
             }.catch {
                 Log.d("Q12345 ", "catch $it")
-
+                _state.update {
+                    it.copy(
+                        uiEvent = RegistrationUiEvents.None,
+                    )
+                }
                 stateForErrorMessage()
             }.collect {
-                Log.d("Q12345 ", "collect $it")
+             //todo
+                // todo elpida@mail.com
+                //todo elpida1!
             }
         }
     }
@@ -90,7 +95,7 @@ class RegistrationViewModel(
                         }
                     })
             }.collect {
-                stateForErrorMessage()
+               //todo
             }
         }
     }

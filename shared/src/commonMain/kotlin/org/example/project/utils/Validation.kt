@@ -6,7 +6,7 @@ object Validation {
     }
 
     fun isValidPassword(password: String): Boolean {
-        if (password.length < 8) return false
+        if (password.length < 6) return false
         val hasLetter = password.any { it.isLetter() }
         val hasDigit = password.any { it.isDigit() }
         val hasSpecial = password.any { !it.isLetterOrDigit() }
