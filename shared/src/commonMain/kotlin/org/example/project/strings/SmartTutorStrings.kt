@@ -13,4 +13,5 @@ object SmartTutorStrings {
     const val invalid_email = "Email must contain '@' and '.'"
     const val username_not_empty = "Username cannot be empty"
     const val invalid_password = "Password must be 8+ chars, include number & symbol"
+    const val generic_error = "Something went wrong. Please try again."
 }

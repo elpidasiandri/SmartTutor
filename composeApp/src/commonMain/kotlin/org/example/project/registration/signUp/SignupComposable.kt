@@ -1,4 +1,4 @@
-package org.example.project.screens.signUp
+package org.example.project.registration.signUp
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import org.example.project.components.button.AuthButtonComposable
+import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
 import org.example.project.components.errorText.ErrorTextComposable
 import org.example.project.components.password.PasswordTextFieldComposable
@@ -23,21 +23,21 @@ import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.Validation
 
 @Composable
-fun SignupComposable() {
+fun SignupComposable(signUp: (String, String) -> Unit) {
     var email by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password1 by remember { mutableStateOf("") }
     var password2 by remember { mutableStateOf("") }
 
-
     val isEmailValid = Validation.isValidEmail(email)
     val isUsernameValid = username.isNotBlank()
     val isPassword1Valid = Validation.isValidPassword(password1)
     val isPassword2Valid = Validation.isValidPassword(password2)
-    val arePasswordsSame: Boolean =
-        password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
+    val arePasswordsSame: Boolean = password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
     val isFormValid =
-        isEmailValid && isPassword1Valid && isPassword2Valid && arePasswordsSame && isUsernameValid
+        isEmailValid && isPassword1Valid &&
+                isPassword2Valid && arePasswordsSame
+                && isUsernameValid && password1.isNotEmpty() && password2.isNotEmpty()
 
     Column(
         modifier = Modifier.padding(spacing16),
@@ -68,7 +68,7 @@ fun SignupComposable() {
             label = SmartTutorStrings.passwordHint
         )
 
-        if ((!isPassword1Valid && password1.isNotEmpty()) || arePasswordsSame) {
+        if (password1.length > 5 && !arePasswordsSame && !isPassword1Valid) {
             ErrorTextComposable(SmartTutorStrings.invalid_password)
         }
 
@@ -78,15 +78,15 @@ fun SignupComposable() {
             label = SmartTutorStrings.confirm_password
         )
 
-        if ((!isPassword2Valid && password2.isNotEmpty()) || arePasswordsSame) {
+        if (!isPassword2Valid && password2.length > 5 && !arePasswordsSame) {
             ErrorTextComposable(SmartTutorStrings.invalid_password)
         }
 
-        AuthButtonComposable(
+        ButtonComposable(
             text = SmartTutorStrings.signup,
             enabled = isFormValid,
             onClick = {
-                // TODO
+                signUp(email, password1)
             }
         )
     }

@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import org.example.project.theme.SmartTutorStyles
 
 @Composable
-fun AuthButtonComposable(
+fun ButtonComposable(
     text: String,
     onClick: () -> Unit,
     enabled: Boolean,

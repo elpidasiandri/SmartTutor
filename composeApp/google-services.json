@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "464957724671",
+    "project_id": "smarttutor-ccddf",
+    "storage_bucket": "smarttutor-ccddf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:464957724671:android:3c4d2e9adabfdf80f679ca",
+        "android_client_info": {
+          "package_name": "org.example.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCr9wncMGz_VtMXAMbRZ52VyIsAhXH1I04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

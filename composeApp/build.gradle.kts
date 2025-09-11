@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
+    alias(libs.plugins.google.services)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
@@ -55,13 +56,30 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.firestore)
+            implementation(libs.firebase.analytics)
+            implementation(libs.koin.android)
         }
         commonMain.dependencies {
+            implementation(libs.kotlin.stdlib)
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
             implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
+            implementation(compose.materialIconsExtended)
+            implementation(libs.coroutines.core)
+            implementation(libs.ktor.client.core)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
 
             //modules
-            implementation(project(":registration"))
             implementation(project(":shared"))
         }
         commonTest.dependencies {

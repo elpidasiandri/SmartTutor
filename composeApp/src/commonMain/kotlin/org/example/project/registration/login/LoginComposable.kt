@@ -1,4 +1,4 @@
-package org.example.project.screens.login
+package org.example.project.registration.login
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.example.project.components.button.AuthButtonComposable
+import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
 import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing12
@@ -21,9 +21,8 @@ import org.example.project.dimens.Dimens.spacing24
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.utils.Validation
-
 @Composable
-fun LoginComposable() {
+fun LoginComposable(login: (String, String) -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -40,15 +39,19 @@ fun LoginComposable() {
 
         Spacer(Modifier.height(spacing12))
 
-        PasswordTextFieldComposable(value = password, onValueChange = { password = it }, label = passwordHint)
+        PasswordTextFieldComposable(
+            value = password,
+            onValueChange = { password = it },
+            label = passwordHint
+        )
 
         Spacer(Modifier.height(spacing24))
 
-        AuthButtonComposable(
+        ButtonComposable(
             text = SmartTutorStrings.login,
             enabled = isFormValid,
             onClick = {
-                //toDo
+                login(email, password)
             }
         )
     }
