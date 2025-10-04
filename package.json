@@ -1,0 +1,12 @@
+{
+  "name": "smarttutor",
+  "version": "1.0.0",
+  "description": "This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM), Server.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

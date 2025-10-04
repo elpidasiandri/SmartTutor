@@ -1,4 +1,4 @@
-package org.example.project.registration.viewmodelAndState.state
+package org.example.project.registration.state
 
 import org.example.project.utils.EmptyValues
 

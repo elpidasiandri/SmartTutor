@@ -1,4 +1,4 @@
-package org.example.project.registration.ui
+package org.example.project.registration
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -10,18 +10,18 @@ import kotlinx.coroutines.delay
 import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.registration.login.LoginComposable
 import org.example.project.registration.signUp.SignupComposable
-import org.example.project.registration.viewmodelAndState.state.RegistrationState
-import org.example.project.registration.viewmodelAndState.state.RegistrationUiEvents
-
 @Composable
 fun RegistrationComposable(
-    state: RegistrationState,
-    onEvent: (RegistrationUiEvents) -> Unit,
+    showCustomMessage: Boolean,
+    message: String,
+    onLogin: (email: String, password: String) -> Unit,
+    onSignUp: (email: String, password: String) -> Unit,
+    onMessageDismiss: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
-    var showErrorMessage by remember(state.showCustomMessage) { mutableStateOf(state.showCustomMessage) }
-    var errorMessage by remember(state.message) { mutableStateOf(state.message) }
+    var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
+    var errorMessage by remember(message) { mutableStateOf(message) }
 
     Column(
         modifier = Modifier
@@ -44,11 +44,11 @@ fun RegistrationComposable(
 
         when (selectedTab) {
             0 -> LoginComposable { email, password ->
-                onEvent(RegistrationUiEvents.Login(email, password))
+                onLogin(email, password)
             }
 
             1 -> SignupComposable { email, password ->
-                onEvent(RegistrationUiEvents.SignUp(email, password))
+                onSignUp(email, password)
             }
         }
 
@@ -58,9 +58,9 @@ fun RegistrationComposable(
                 message = errorMessage,
                 initializeMessage = { showErrorMessage = true }
             )
-            LaunchedEffect(state.message) {
+            LaunchedEffect(errorMessage) {
                 delay(3000L)
-                onEvent(RegistrationUiEvents.InitializeStateAfterShowingMessage)
+                onMessageDismiss()
             }
         }
     }

@@ -6,10 +6,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.project.registration.di.registrationModule
-import org.example.project.registration.ui.RegistrationComposable
-import org.example.project.registration.viewmodelAndState.viewModel.RegistrationViewModel
+import org.example.project.registration.RegistrationComposable
+import org.example.project.registration.state.RegistrationUiEvents
+import org.example.project.registration.viewModel.RegistrationViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.context.loadKoinModules
 
@@ -21,9 +25,21 @@ class LoginSignUpActivity : ComponentActivity() {
         loadKoinModules(registrationModule)
         setContent {
             val state by registrationViewModel.state.collectAsStateWithLifecycle()
+            var showErrorMessage by remember(state.showCustomMessage) { mutableStateOf(state.showCustomMessage) }
+            var errorMessage by remember(state.message) { mutableStateOf(state.message) }
+
             RegistrationComposable(
-                state = state,
-                onEvent = registrationViewModel::onEvent
+                showCustomMessage = showErrorMessage,
+                message = errorMessage,
+                onLogin = { email, password ->
+                    registrationViewModel.onEvent(RegistrationUiEvents.Login(email, password))
+                },
+                onSignUp = { email, password ->
+                    registrationViewModel.onEvent(RegistrationUiEvents.SignUp(email, password))
+                },
+                onMessageDismiss = {
+                    registrationViewModel.onEvent(RegistrationUiEvents.InitializeStateAfterShowingMessage)
+                }
             )
         }
     }

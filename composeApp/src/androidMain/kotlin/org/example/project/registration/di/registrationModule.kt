@@ -8,7 +8,7 @@ import org.example.project.registration.repo.IAuthRepository
 import org.example.project.registration.useCases.LoginUseCase
 import org.example.project.registration.useCases.LogoutUseCase
 import org.example.project.registration.useCases.SignUpUseCase
-import org.example.project.registration.viewmodelAndState.viewModel.RegistrationViewModel
+import org.example.project.registration.viewModel.RegistrationViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 

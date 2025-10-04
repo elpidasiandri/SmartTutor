@@ -2,6 +2,7 @@ package org.example.project.registration.login
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,7 +33,10 @@ fun LoginComposable(login: (String, String) -> Unit) {
 
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(spacing16),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         EmailTextFieldComposable(value = email, onValueChange = { email = it })

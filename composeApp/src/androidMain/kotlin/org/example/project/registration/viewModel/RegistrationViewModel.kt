@@ -1,4 +1,4 @@
-package org.example.project.registration.viewmodelAndState.viewModel
+package org.example.project.registration.viewModel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -13,12 +13,11 @@ import kotlinx.coroutines.launch
 import org.example.project.registration.useCases.LoginUseCase
 import org.example.project.registration.useCases.LogoutUseCase
 import org.example.project.registration.useCases.SignUpUseCase
-import org.example.project.registration.viewmodelAndState.state.RegistrationState
-import org.example.project.registration.viewmodelAndState.state.RegistrationUiEvents
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.utils.EmptyValues
-
-
+import org.example.project.registration.state.RegistrationState
+import org.example.project.registration.state.RegistrationUiEvents
+//TODO ELPIDA
 class RegistrationViewModel(
     private val dispatchersIo: CoroutineDispatcher,
     private val loginUsecase: LoginUseCase,

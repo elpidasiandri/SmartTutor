@@ -19,14 +19,7 @@ class MainActivity : ComponentActivity() {
             androidContext(this@MainActivity)
             modules(registrationModule)
         }
-//        val authRepository: IAuthRepository = AuthRepositoryImpl()
-//        val signupUseCase = SignupUseCase(authRepository)
-//
-//         val loginUseCase = LoginUseCase(authRepository)
-
-
         LoginSignUpActivity.newInstance(this)
-
         finish()
     }
 }
