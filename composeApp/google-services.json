@@ -12,7 +12,12 @@
           "package_name": "org.example.project"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "464957724671-86ifqct5vsdtrs25o0v1bcg9q9fho8n8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCr9wncMGz_VtMXAMbRZ52VyIsAhXH1I04"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "464957724671-86ifqct5vsdtrs25o0v1bcg9q9fho8n8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

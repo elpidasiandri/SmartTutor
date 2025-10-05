@@ -4,8 +4,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import java.util.Properties
-import java.io.File
-
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -14,10 +12,10 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
-//val localProperties = Properties().apply {
-//    val file = rootProject.file("local.properties")
-//    if (file.exists()) load(file.inputStream())
-//}
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) load(file.inputStream())
+}
 
 kotlin {
     androidTarget {
@@ -57,6 +55,7 @@ kotlin {
                 }
             }
         }
+
         binaries.executable()
         compilations.getByName("main") {
             dependencies {
@@ -97,9 +96,6 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-//        wasmJsMain.dependencies {
-//            implementation(npm("firebase", "10.7.0"))
-//        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)

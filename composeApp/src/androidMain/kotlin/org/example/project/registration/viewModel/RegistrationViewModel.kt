@@ -17,7 +17,7 @@ import org.example.project.strings.SmartTutorStrings
 import org.example.project.utils.EmptyValues
 import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
-//TODO ELPIDA
+
 class RegistrationViewModel(
     private val dispatchersIo: CoroutineDispatcher,
     private val loginUsecase: LoginUseCase,
@@ -70,8 +70,7 @@ class RegistrationViewModel(
                 stateForErrorMessage()
             }.collect {
              //todo
-                // todo elpida@mail.com
-                //todo elpida1!
+
             }
         }
     }
@@ -83,12 +82,6 @@ class RegistrationViewModel(
                     loginUsecase(email = email, password = password) { success, userId ->
                         if (success) {
                             //todo
-//                            _state.update {
-//                                it.copy(
-//                                    email = email,
-//                                    password = password
-//                                )
-//                            }
                         } else {
                             stateForErrorMessage()
                         }

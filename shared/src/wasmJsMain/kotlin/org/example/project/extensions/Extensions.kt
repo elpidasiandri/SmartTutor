@@ -1,4 +1,4 @@
-package org.example.project
+package org.example.project.extensions
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException

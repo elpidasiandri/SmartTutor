@@ -2,64 +2,30 @@
 
 package org.example.project
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import org.example.project.registration.RegistrationComposable
-import org.example.project.registration.firebase.FirebaseAuth
-import org.example.project.registration.firebase.FirebaseOptions
-import org.example.project.registration.firebase.getAuth
-import org.example.project.registration.firebase.initializeApp
+import org.example.project.registration.firebase.initFirebase
+import org.example.project.registration.repo.WebAuthRepositoryImpl
+import org.example.project.registration.viewModel.WebRegistrationController
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-//    val auth = initFirebase()
+    val firebaseContext = initFirebase()
+    val authRepo = WebAuthRepositoryImpl(firebaseContext.app)
+    val controller = WebRegistrationController(authRepo)
+
     ComposeViewport("tutorApp") {
+        val state by controller.state.collectAsState()
+
         RegistrationComposable(
-            showCustomMessage = false,
-            message = "test",
-            onLogin = {email,password-> },
-            onSignUp = {email,password-> },
-            onMessageDismiss = {}
+            showCustomMessage = state.showCustomMessage,
+            message = state.message,
+            onLogin = { email, password -> controller.login(email, password) },
+            onSignUp = { email, password -> controller.signUp(email, password) },
+            onMessageDismiss = { controller.dismissMessage() }
         )
     }
 }
-private val firebaseConfig: FirebaseOptions = js("({})")
-//TODO ELPIDA
-//fun initFirebase(): FirebaseAuth {
-//    firebaseConfig.apiKey = "AIzaSyXXX..."
-//    firebaseConfig.authDomain = "your-project.firebaseapp.com"
-//    firebaseConfig.projectId = "your-project-id"
-//
-//    val app = initializeApp(firebaseConfig.unsafeCast<FirebaseOptions>())
-//    return getAuth(app)
-//}
-
-//@OptIn(ExperimentalComposeUiApi::class)
-//fun main() {
-    // Firebase config
-//    val firebaseConfig = js("""({
-//        apiKey: "${FirebaseKeys.apiKey}",
-//        authDomain: "${FirebaseKeys.authDomain}",
-//        projectId: "${FirebaseKeys.projectId}",
-//        storageBucket: "${FirebaseKeys.storageBucket}",
-//        messagingSenderId: "${FirebaseKeys.messagingSenderId}",
-//        appId: "${FirebaseKeys.appId}"
-//    })""")
-
-//
-//    val app = initializeApp(firebaseConfig)
-//    val authRepository = WebAuthRepositoryImpl(app)
-//    val controller = WebRegistrationController(authRepository)
-//
-//    ComposeViewport(content = {
-//            val state by controller.state.collectAsState()
-//
-//            RegistrationComposable(
-//                showCustomMessage = state.showCustomMessage,
-//                message = state.message,
-//                onLogin = controller::login,
-//                onSignUp = controller::signUp,
-//                onMessageDismiss = controller::dismissMessage
-//            )
-//        })
-//}
