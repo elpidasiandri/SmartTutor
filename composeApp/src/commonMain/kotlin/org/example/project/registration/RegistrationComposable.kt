@@ -10,18 +10,34 @@ import kotlinx.coroutines.delay
 import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.registration.login.LoginComposable
 import org.example.project.registration.signUp.SignupComposable
+
 @Composable
 fun RegistrationComposable(
     showCustomMessage: Boolean,
     message: String,
     onLogin: (email: String, password: String) -> Unit,
     onSignUp: (email: String, password: String) -> Unit,
-    onMessageDismiss: () -> Unit
+    onMessageDismiss: () -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
+
+    if (showErrorMessage && errorMessage.isNotEmpty()) {
+        Box(modifier = Modifier.padding(24.dp)) {
+            CustomToastComposable(
+                isError = true,
+                message = errorMessage,
+                initializeMessage = { showErrorMessage = true }
+            )
+        }
+
+        LaunchedEffect(errorMessage) {
+            delay(3000L)
+            onMessageDismiss()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -51,20 +67,7 @@ fun RegistrationComposable(
                 onSignUp(email, password)
             }
         }
-
-        if (showErrorMessage && errorMessage.isNotEmpty()) {
-            CustomToastComposable(
-                isError = true,
-                message = errorMessage,
-                initializeMessage = { showErrorMessage = true }
-            )
-            LaunchedEffect(errorMessage) {
-                delay(3000L)
-                onMessageDismiss()
-            }
-        }
     }
-
 }
 
 enum class RegistrationScreens {
