@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -18,11 +18,11 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    
+
     jvm()
 
     @OptIn(ExperimentalWasmDsl::class)
@@ -40,25 +40,72 @@ kotlin {
                 }
             }
         }
+
     }
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(compose.ui)
-            implementation(compose.material3)
-            implementation(compose.foundation)
-            implementation(compose.runtime)
+        val commonMain by getting {
+            dependencies {
+                implementation(compose.ui)
+                implementation(compose.material3)
+                implementation(compose.foundation)
+                implementation(compose.runtime)
 
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.contentNegotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.kotlinx.serialization.json)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.contentNegotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.kotlinx.serialization.json)
 
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose)
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+            }
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
+
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        val wasmJsMain by getting {
+            abstract class GenerateFirebaseConfigTask : DefaultTask() {
+
+                @OutputDirectory
+                val outputDir = project.layout.buildDirectory.dir("generated/firebase/wasm")
+
+                @TaskAction
+                fun generate() {
+                    val localProperties = Properties().apply {
+                        val file = project.rootProject.file("local.properties")
+                        if (file.exists()) load(file.inputStream())
+                    }
+
+                    val outputFile = outputDir.get().asFile.resolve("FirebaseConfig.kt")
+                    outputFile.parentFile.mkdirs()
+                    outputFile.writeText(
+                        """
+            package org.example.project.shared
+
+            object FirebaseConfig {
+             const val WEB_API_KEY = "${localProperties["WEB_API_KEY"] ?: ""}"
+             const val WEB_AUTH_DOMAIN = "${localProperties["WEB_AUTH_DOMAIN"] ?: ""}"
+             const val WEB_STORAGE_BUCKET = "${localProperties["WEB_STORAGE_BUCKET"] ?: ""}"
+             const val SENDER_ID = "${localProperties["SENDER_ID"] ?: ""}"
+             const val PROJECT_ID = "${localProperties["PROJECT_ID"] ?: ""}"
+             const val APP_ID = "${localProperties["APP_ID"] ?: ""}"
+           }
+           """.trimIndent()
+                    )
+                }
+            }
+
+            val generateFirebaseConfig =
+                tasks.register<GenerateFirebaseConfigTask>("generateFirebaseConfig")
+
+            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+                dependsOn(generateFirebaseConfig)
+            }
+            kotlin.srcDir(generateFirebaseConfig.flatMap { it.outputDir })
         }
     }
 }

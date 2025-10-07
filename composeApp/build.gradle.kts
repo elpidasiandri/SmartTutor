@@ -12,10 +12,12 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) load(file.inputStream())
-}
+//val localProperties = Properties().apply {
+//    val file = rootProject.file("local.properties")
+//    if (file.exists()) {
+//        load(file.inputStream())
+//    } else { }
+//}
 
 kotlin {
     androidTarget {
