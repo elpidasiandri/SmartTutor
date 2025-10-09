@@ -30,3 +30,4 @@ You can open the web application by running the `:composeApp:wasmJsBrowserDevelo
 users to Connect:
 elpida@mail.com/ elpida1!
 el@mail.com / Elpida1!
+elpidasiandri@gmail.com / Elpida1!
