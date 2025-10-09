@@ -38,3 +38,15 @@ external interface FirebaseUser : JsAny {
     val uid: String
     val email: String?
 }
+
+@JsName("sendPasswordResetEmail")
+external fun sendPasswordResetEmail(
+    auth: FirebaseAuth,
+    email: String
+): JsPromise<JsVoid>
+
+@JsName("updatePassword")
+external fun changePassword(
+    user: FirebaseUser,
+    newPassword: String
+): JsPromise<JsVoid>

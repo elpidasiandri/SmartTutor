@@ -16,5 +16,6 @@ sealed class RegistrationUiEvents {
     data object InitializeStateAfterShowingMessage : RegistrationUiEvents()
     data class SignUp(val email: String, val password: String) : RegistrationUiEvents()
     data class Login(val email: String, val password: String) : RegistrationUiEvents()
+    data class ResetPassword(val email: String) : RegistrationUiEvents()
 
 }

@@ -10,6 +10,7 @@ import org.example.project.extensions.logD
 import org.example.project.registration.repo.WebAuthRepositoryImpl
 import org.example.project.registration.state.RegistrationState
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.strings.SmartTutorStrings.error_message_reset_password
 
 class WebRegistrationController(
     private val authRepository: WebAuthRepositoryImpl,
@@ -42,12 +43,40 @@ class WebRegistrationController(
         }
     }
 
-    private fun stateForErrorMessage() {
+    fun sendEmailToResetPassword(email: String) {
+        scope.launch {
+            logD("Q12345 sendEmailToResetPassword")
+
+            authRepository.sendEmailToResetPassword(email) { success, uid ->
+                logD(
+                    "Q12345 success $success" +
+                            " uid $uid"
+                )
+
+                if (success) {
+                    //TODO
+
+                    _state.update {
+                        it.copy(
+                            showCustomMessage = true,
+                            message = "Reset Success $uid",
+                            isError = false
+                        )
+                    }
+                } else {
+                    println("Q12345 error $uid $success")
+                    stateForErrorMessage(message = error_message_reset_password)
+                }
+            }
+        }
+    }
+
+    private fun stateForErrorMessage(message: String? = null) {
         logD("Q12345 stateForErrorMessage")
         _state.update {
             it.copy(
                 showCustomMessage = true,
-                message = SmartTutorStrings.generic_error,
+                message = message ?: SmartTutorStrings.generic_error,
                 isError = true
             )
         }

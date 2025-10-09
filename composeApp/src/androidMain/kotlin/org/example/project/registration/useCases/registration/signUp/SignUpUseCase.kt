@@ -1,13 +1,13 @@
-package org.example.project.registration.useCases
+package org.example.project.registration.useCases.registration.signUp
 
 import org.example.project.registration.repo.IAuthRepository
 
-class LoginUseCase(val repo: IAuthRepository) {
+class SignUpUseCase(val repo: IAuthRepository) {
     suspend operator fun invoke(
         email: String,
         password: String,
         onResult: (Boolean, String?) -> Unit,
-    ) = repo.login(
+    ) = repo.signup(
         email = email,
         password = password,
         onResult = onResult

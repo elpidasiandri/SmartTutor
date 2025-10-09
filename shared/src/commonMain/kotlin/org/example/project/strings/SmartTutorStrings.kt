@@ -14,8 +14,8 @@ object SmartTutorStrings {
     const val reset_password = "Reset Password"
     const val submit = "Submit"
     const val back_to_login = "Back to Login"
-    const val confirm_pasword = "Confirm Password"
-    const val new_password = "New Password"
+    const val error_message_reset_password = "Something went wrong. Please try again. If this email is not registered, you may try again or sign up."
+    const val reset_info = "If the account with this email exists, you will receive an email with instructions to reset your password."
 
 
     //errors

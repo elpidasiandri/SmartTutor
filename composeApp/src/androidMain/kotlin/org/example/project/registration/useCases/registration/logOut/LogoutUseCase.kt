@@ -1,4 +1,4 @@
-package org.example.project.registration.useCases
+package org.example.project.registration.useCases.registration.logOut
 
 import org.example.project.registration.repo.IAuthRepository
 

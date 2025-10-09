@@ -1,15 +1,15 @@
-package org.example.project.registration.useCases
+package org.example.project.registration.useCases.registration.resetPassword
 
 import org.example.project.registration.repo.IAuthRepository
 
-class SignUpUseCase(val repo: IAuthRepository) {
+class SendEmailToResetPasswordUseCase(
+    val repo: IAuthRepository
+) {
     suspend operator fun invoke(
         email: String,
-        password: String,
         onResult: (Boolean, String?) -> Unit,
-    ) = repo.signup(
+    ) = repo.sendEmailToResetPassword(
         email = email,
-        password = password,
         onResult = onResult
     )
 }

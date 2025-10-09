@@ -21,6 +21,7 @@ fun RegistrationComposable(
     isError: Boolean,
     onLogin: (email: String, password: String) -> Unit,
     onSignUp: (email: String, password: String) -> Unit,
+    resetPassword: (email: String) -> Unit,
     onMessageDismiss: () -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -68,7 +69,7 @@ fun RegistrationComposable(
                 if (showReset) {
                     ResetPasswordComposable(
                         onBackToLogin = { showReset = false },
-                        resetPassword = {})
+                        resetPassword = { email -> resetPassword(email) })
                 } else {
                     LoginComposable(
                         login = { email, password ->

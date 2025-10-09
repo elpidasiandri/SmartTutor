@@ -10,19 +10,16 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.project.registration.useCases.LoginUseCase
-import org.example.project.registration.useCases.LogoutUseCase
-import org.example.project.registration.useCases.SignUpUseCase
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.utils.EmptyValues
 import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
+import org.example.project.registration.useCases.registration.RegistrationUseCase
+import org.example.project.strings.SmartTutorStrings.error_message_reset_password
 
 class RegistrationViewModel(
     private val dispatchersIo: CoroutineDispatcher,
-    private val loginUsecase: LoginUseCase,
-    private val signUpUsecase: SignUpUseCase,
-    private val logoutUsecase: LogoutUseCase,
+    private val registrationUseCase: RegistrationUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RegistrationState())
     val state: StateFlow<RegistrationState> = _state
@@ -47,7 +44,45 @@ class RegistrationViewModel(
                 sinUp(event.email, event.password)
             }
 
+            is RegistrationUiEvents.ResetPassword -> {
+                changePassword(event.email)
+            }
+
             else -> {}
+        }
+    }
+
+    private fun changePassword(
+        email: String,
+    ) {
+        viewModelScope.launch(dispatchersIo) {
+            flow {
+                emit(
+                    registrationUseCase.sendEmailForChangePassword(
+                        email = email
+                    ) { success, userId ->
+                        Log.d(
+                            "Q12345 ", " registrationUseCase userId $userId " +
+                                    " success $success "
+                        )
+                        if (success) {
+                            //todo
+                        } else {
+                            stateForErrorMessage(message = error_message_reset_password)
+                        }
+                    }
+                )
+            }.catch {
+                Log.d(
+                    "Q12345 ", "catch $it"
+                )
+                stateForErrorMessage()
+
+            }.collect {
+                Log.d(
+                    "Q12345 ", "collect"
+                )
+            }
         }
     }
 
@@ -55,7 +90,7 @@ class RegistrationViewModel(
         viewModelScope.launch(dispatchersIo) {
             flow {
                 emit(
-                    signUpUsecase(
+                    registrationUseCase.signUp(
                         email = email, password = password
                     ) { success, userId ->
                         Log.d(
@@ -88,13 +123,18 @@ class RegistrationViewModel(
         viewModelScope.launch(dispatchersIo) {
             flow {
                 emit(
-                    loginUsecase(email = email, password = password) { success, userId ->
+                    registrationUseCase.logIn(
+                        email = email,
+                        password = password
+                    ) { success, userId ->
                         if (success) {
                             //todo
                         } else {
                             stateForErrorMessage()
                         }
                     })
+            }.catch {
+                stateForErrorMessage()
             }.collect {
                 //todo
             }
@@ -102,11 +142,11 @@ class RegistrationViewModel(
     }
 
 
-    private fun stateForErrorMessage() {
+    private fun stateForErrorMessage(message: String? = null) {
         _state.update {
             it.copy(
                 showCustomMessage = true,
-                message = SmartTutorStrings.generic_error,
+                message = message ?: SmartTutorStrings.generic_error,
                 isError = true
             )
         }

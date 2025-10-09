@@ -26,7 +26,8 @@ fun main() {
             isError = state.isError,
             onLogin = { email, password -> controller.login(email, password) },
             onSignUp = { email, password -> controller.signUp(email, password) },
-            onMessageDismiss = { controller.dismissMessage() }
+            onMessageDismiss = { controller.dismissMessage() },
+            resetPassword = { email -> controller.sendEmailToResetPassword(email) }
         )
     }
 }

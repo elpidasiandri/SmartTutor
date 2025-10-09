@@ -41,6 +41,13 @@ class LoginSignUpActivity : ComponentActivity() {
                 },
                 onMessageDismiss = {
                     registrationViewModel.onEvent(RegistrationUiEvents.InitializeStateAfterShowingMessage)
+                },
+                resetPassword = { email ->
+                    registrationViewModel.onEvent(
+                        RegistrationUiEvents.ResetPassword(
+                            email
+                        )
+                    )
                 }
             )
         }
