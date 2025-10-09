@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,8 +25,12 @@ import org.example.project.dimens.Dimens.spacing24
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.utils.Validation
+
 @Composable
-fun LoginComposable(login: (String, String) -> Unit) {
+fun LoginComposable(
+    login: (String, String) -> Unit,
+    onForgotPasswordClick: () -> Unit,
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -58,5 +65,16 @@ fun LoginComposable(login: (String, String) -> Unit) {
                 login(email, password)
             }
         )
+        TextButton(
+            onClick = {
+                onForgotPasswordClick()
+            },
+            modifier = Modifier.padding(top = spacing12)
+        ) {
+            Text(
+                text = SmartTutorStrings.forgot_password,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }

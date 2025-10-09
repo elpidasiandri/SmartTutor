@@ -8,6 +8,15 @@ object SmartTutorStrings {
     const val signup = "Sign Up"
     const val emailHint = "Email"
     const val passwordHint = "Password"
+    const val forgot_password = "Forgot password?"
+
+    //reset
+    const val reset_password = "Reset Password"
+    const val submit = "Submit"
+    const val back_to_login = "Back to Login"
+    const val confirm_pasword = "Confirm Password"
+    const val new_password = "New Password"
+
 
     //errors
     const val invalid_email = "Email must contain '@' and '.'"

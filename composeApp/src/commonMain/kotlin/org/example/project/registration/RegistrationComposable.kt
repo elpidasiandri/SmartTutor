@@ -8,7 +8,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.example.project.components.customToast.CustomToastComposable
+import org.example.project.dimens.Dimens.spacing16
+import org.example.project.dimens.Dimens.spacing24
 import org.example.project.registration.login.LoginComposable
+import org.example.project.registration.reset.ResetPasswordComposable
 import org.example.project.registration.signUp.SignupComposable
 
 @Composable
@@ -25,7 +28,7 @@ fun RegistrationComposable(
     var errorMessage by remember(message) { mutableStateOf(message) }
 
     if (showErrorMessage && errorMessage.isNotEmpty()) {
-        Box(modifier = Modifier.padding(24.dp)) {
+        Box(modifier = Modifier.padding(spacing24)) {
             CustomToastComposable(
                 isError = true,
                 message = errorMessage,
@@ -42,7 +45,7 @@ fun RegistrationComposable(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -59,8 +62,21 @@ fun RegistrationComposable(
         Spacer(Modifier.height(24.dp))
 
         when (selectedTab) {
-            0 -> LoginComposable { email, password ->
-                onLogin(email, password)
+            0 -> {
+                var showReset by remember { mutableStateOf(false) }
+                if (showReset) {
+                    ResetPasswordComposable(
+                        onBackToLogin = { showReset = false },
+                        resetPassword = {})
+                } else {
+                    LoginComposable(
+                        login = { email, password ->
+                            onLogin(email, password)
+                        },
+                        onForgotPasswordClick = {
+                            showReset = true
+                        })
+                }
             }
 
             1 -> SignupComposable { email, password ->

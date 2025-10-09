@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,11 +34,17 @@ fun SignupComposable(signUp: (String, String) -> Unit) {
     val isUsernameValid = username.isNotBlank()
     val isPassword1Valid = Validation.isValidPassword(password1)
     val isPassword2Valid = Validation.isValidPassword(password2)
-    val arePasswordsSame: Boolean = password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
-    val isFormValid =
-        isEmailValid && isPassword1Valid &&
-                isPassword2Valid && arePasswordsSame
-                && isUsernameValid && password1.isNotEmpty() && password2.isNotEmpty()
+    val arePasswordsSame: Boolean =
+        password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
+
+    val isFormValid by derivedStateOf {
+        isEmailValid &&
+                isPassword1Valid &&
+                isPassword2Valid &&
+                arePasswordsSame &&
+                isUsernameValid
+
+    }
 
     Column(
         modifier = Modifier.padding(spacing16),
