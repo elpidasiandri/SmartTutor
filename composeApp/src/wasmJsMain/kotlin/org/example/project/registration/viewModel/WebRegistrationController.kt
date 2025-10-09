@@ -31,7 +31,8 @@ class WebRegistrationController(
                     _state.update {
                         it.copy(
                             showCustomMessage = true,
-                            message = "Welcome $uid"
+                            message = "Welcome $uid",
+                            isError = false
                         )
                     }
                 } else {
@@ -46,7 +47,8 @@ class WebRegistrationController(
         _state.update {
             it.copy(
                 showCustomMessage = true,
-                message = SmartTutorStrings.generic_error
+                message = SmartTutorStrings.generic_error,
+                isError = true
             )
         }
     }

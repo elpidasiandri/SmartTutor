@@ -23,6 +23,7 @@ fun main() {
         RegistrationComposable(
             showCustomMessage = state.showCustomMessage,
             message = state.message,
+            isError = state.isError,
             onLogin = { email, password -> controller.login(email, password) },
             onSignUp = { email, password -> controller.signUp(email, password) },
             onMessageDismiss = { controller.dismissMessage() }

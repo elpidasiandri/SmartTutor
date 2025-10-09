@@ -27,10 +27,12 @@ class LoginSignUpActivity : ComponentActivity() {
             val state by registrationViewModel.state.collectAsStateWithLifecycle()
             var showErrorMessage by remember(state.showCustomMessage) { mutableStateOf(state.showCustomMessage) }
             var errorMessage by remember(state.message) { mutableStateOf(state.message) }
+            var isError by remember(state.isError) { mutableStateOf(state.isError) }
 
             RegistrationComposable(
                 showCustomMessage = showErrorMessage,
                 message = errorMessage,
+                isError = isError,
                 onLogin = { email, password ->
                     registrationViewModel.onEvent(RegistrationUiEvents.Login(email, password))
                 },

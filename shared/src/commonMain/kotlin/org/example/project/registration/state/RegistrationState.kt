@@ -6,6 +6,7 @@ data class RegistrationState(
     val password: String = EmptyValues.EMPTY_STRING,
     val email: String = EmptyValues.EMPTY_STRING,
     val message: String = EmptyValues.EMPTY_STRING,
+    val isError: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val showCustomMessage: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val uiEvent: RegistrationUiEvents = RegistrationUiEvents.None,
 )

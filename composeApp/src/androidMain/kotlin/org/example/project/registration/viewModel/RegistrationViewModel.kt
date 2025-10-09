@@ -29,17 +29,24 @@ class RegistrationViewModel(
 
     fun onEvent(event: RegistrationUiEvents) {
         when (event) {
-            is RegistrationUiEvents.Login -> login(event.email, event.password)
+            is RegistrationUiEvents.Login -> {
+                login(event.email, event.password)
+            }
+
             RegistrationUiEvents.InitializeStateAfterShowingMessage -> {
                 _state.update {
                     it.copy(
                         showCustomMessage = false,
-                        message = EmptyValues.EMPTY_STRING
+                        message = EmptyValues.EMPTY_STRING,
+                        isError = false
                     )
                 }
             }
 
-            is RegistrationUiEvents.SignUp -> sinUp(event.email, event.password)
+            is RegistrationUiEvents.SignUp -> {
+                sinUp(event.email, event.password)
+            }
+
             else -> {}
         }
     }
@@ -51,11 +58,13 @@ class RegistrationViewModel(
                     signUpUsecase(
                         email = email, password = password
                     ) { success, userId ->
-                        Log.d("Q12345 ", "userId $userId " +
-                                " success $success ")
+                        Log.d(
+                            "Q12345 ", "userId $userId " +
+                                    " success $success "
+                        )
                         if (success) {
                             //todo
-                        }else{
+                        } else {
                             stateForErrorMessage()
                         }
                     }
@@ -69,7 +78,7 @@ class RegistrationViewModel(
                 }
                 stateForErrorMessage()
             }.collect {
-             //todo
+                //todo
 
             }
         }
@@ -87,7 +96,7 @@ class RegistrationViewModel(
                         }
                     })
             }.collect {
-               //todo
+                //todo
             }
         }
     }
@@ -97,7 +106,8 @@ class RegistrationViewModel(
         _state.update {
             it.copy(
                 showCustomMessage = true,
-                message = SmartTutorStrings.generic_error
+                message = SmartTutorStrings.generic_error,
+                isError = true
             )
         }
     }

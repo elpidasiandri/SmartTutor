@@ -18,6 +18,7 @@ import org.example.project.registration.signUp.SignupComposable
 fun RegistrationComposable(
     showCustomMessage: Boolean,
     message: String,
+    isError: Boolean,
     onLogin: (email: String, password: String) -> Unit,
     onSignUp: (email: String, password: String) -> Unit,
     onMessageDismiss: () -> Unit,
@@ -30,7 +31,7 @@ fun RegistrationComposable(
     if (showErrorMessage && errorMessage.isNotEmpty()) {
         Box(modifier = Modifier.padding(spacing24)) {
             CustomToastComposable(
-                isError = true,
+                isError = isError,
                 message = errorMessage,
                 initializeMessage = { showErrorMessage = true }
             )
