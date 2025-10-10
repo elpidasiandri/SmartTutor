@@ -11,6 +11,7 @@ import org.example.project.registration.repo.WebAuthRepositoryImpl
 import org.example.project.registration.state.RegistrationState
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
+import org.example.project.strings.SmartTutorStrings.success_message_reset_password
 
 class WebRegistrationController(
     private val authRepository: WebAuthRepositoryImpl,
@@ -59,7 +60,7 @@ class WebRegistrationController(
                     _state.update {
                         it.copy(
                             showCustomMessage = true,
-                            message = "Reset Success $uid",
+                            message = success_message_reset_password,
                             isError = false
                         )
                     }

@@ -16,6 +16,7 @@ import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.useCases.registration.RegistrationUseCase
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
+import org.example.project.strings.SmartTutorStrings.success_message_reset_password
 
 class RegistrationViewModel(
     private val dispatchersIo: CoroutineDispatcher,
@@ -67,6 +68,13 @@ class RegistrationViewModel(
                         )
                         if (success) {
                             //todo
+                            _state.update {
+                                it.copy(
+                                    showCustomMessage = true,
+                                    message = success_message_reset_password,
+                                    isError = false
+                                )
+                            }
                         } else {
                             stateForErrorMessage(message = error_message_reset_password)
                         }
