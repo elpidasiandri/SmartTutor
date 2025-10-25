@@ -23,7 +23,6 @@ import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
-import org.example.project.registration.connectWithGoogle.GoogleSignInButton
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.utils.Validation
@@ -31,7 +30,7 @@ import org.example.project.utils.Validation
 @Composable
 fun LoginComposable(
     login: (String, String) -> Unit,
-    onForgotPasswordClick: () -> Unit
+    onForgotPasswordClick: () -> Unit,
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

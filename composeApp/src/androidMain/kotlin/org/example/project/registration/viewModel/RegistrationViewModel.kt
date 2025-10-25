@@ -42,7 +42,7 @@ class RegistrationViewModel(
             }
 
             is RegistrationUiEvents.SignUp -> {
-                sinUp(event.email, event.password)
+                sinUp(event.email, event.password, event.username)
             }
 
             is RegistrationUiEvents.ResetPassword -> {
@@ -94,12 +94,12 @@ class RegistrationViewModel(
         }
     }
 
-    private fun sinUp(email: String, password: String) {
+    private fun sinUp(email: String, password: String, username: String) {
         viewModelScope.launch(dispatchersIo) {
             flow {
                 emit(
                     registrationUseCase.signUp(
-                        email = email, password = password
+                        email = email, password = password, username = username
                     ) { success, userId ->
                         Log.d(
                             "Q12345 ", "userId $userId " +

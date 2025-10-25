@@ -20,7 +20,7 @@ fun RegistrationComposable(
     message: String,
     isError: Boolean,
     onLogin: (email: String, password: String) -> Unit,
-    onSignUp: (email: String, password: String) -> Unit,
+    onSignUp: (email: String, password: String, username: String) -> Unit,
     resetPassword: (email: String) -> Unit,
     onMessageDismiss: () -> Unit,
 ) {
@@ -81,8 +81,8 @@ fun RegistrationComposable(
                 }
             }
 
-            1 -> SignupComposable { email, password ->
-                onSignUp(email, password)
+            1 -> SignupComposable { email, password, username ->
+                onSignUp(email, password, username)
             }
         }
     }

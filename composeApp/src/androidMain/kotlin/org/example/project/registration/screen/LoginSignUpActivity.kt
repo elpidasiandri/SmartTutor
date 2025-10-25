@@ -36,8 +36,14 @@ class LoginSignUpActivity : ComponentActivity() {
                 onLogin = { email, password ->
                     registrationViewModel.onEvent(RegistrationUiEvents.Login(email, password))
                 },
-                onSignUp = { email, password ->
-                    registrationViewModel.onEvent(RegistrationUiEvents.SignUp(email, password))
+                onSignUp = { email, password, username ->
+                    registrationViewModel.onEvent(
+                        RegistrationUiEvents.SignUp(
+                            email,
+                            password,
+                            username
+                        )
+                    )
                 },
                 onMessageDismiss = {
                     registrationViewModel.onEvent(RegistrationUiEvents.InitializeStateAfterShowingMessage)

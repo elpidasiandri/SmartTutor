@@ -24,7 +24,7 @@ import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.Validation
 
 @Composable
-fun SignupComposable(signUp: (String, String) -> Unit) {
+fun SignupComposable(signUp: (String, String, String) -> Unit) {
     var email by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password1 by remember { mutableStateOf("") }
@@ -93,7 +93,7 @@ fun SignupComposable(signUp: (String, String) -> Unit) {
             text = SmartTutorStrings.signup,
             enabled = isFormValid,
             onClick = {
-                signUp(email, password1)
+                signUp(email, password1, username)
             }
         )
     }

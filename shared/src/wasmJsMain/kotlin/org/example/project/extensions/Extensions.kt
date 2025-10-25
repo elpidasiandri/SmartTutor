@@ -2,11 +2,13 @@ package org.example.project.extensions
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+@OptIn(ExperimentalWasmJsInterop::class)
 external interface JsPromise<T : JsAny> : JsAny {
     fun <S : JsAny> then(onFulfilled: (T) -> S): JsPromise<S>
     fun <S : JsAny> catch(onRejected: (JsAny) -> S): JsPromise<S>
 
 }
+@OptIn(ExperimentalWasmJsInterop::class)
 suspend fun <T : JsAny> JsPromise<T>.await(): T =
     suspendCancellableCoroutine { cont ->
         this.then(
@@ -22,11 +24,11 @@ suspend fun <T : JsAny> JsPromise<T>.await(): T =
 
 suspend fun JsPromise<JsVoid>.awaitSafe(): Boolean {
     return try {
-        this.await() // περιμένουμε απλά το promise, αγνοούμε το αποτέλεσμα
-        true        // επιτυχία
+        this.await()
+        true
     } catch (e: Throwable) {
         logD("Q12345 Firebase reset email error (ignored NPE): ${e.message}")
-        true // επιστρέφουμε true γιατί το email έχει ήδη σταλεί
+        true
     }
 }
 external interface JsVoid : JsAny

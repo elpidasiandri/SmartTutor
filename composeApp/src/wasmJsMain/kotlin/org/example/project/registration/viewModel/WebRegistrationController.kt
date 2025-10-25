@@ -83,9 +83,13 @@ class WebRegistrationController(
         }
     }
 
-    fun signUp(email: String, password: String) {
+    fun signUp(email: String, password: String, username: String) {
         scope.launch {
-            authRepository.signup(email, password) { success, uid ->
+            authRepository.signup(
+                email = email,
+                password = password,
+                username = username
+            ) { success, uid ->
 
                 if (success) {
                     _state.update {

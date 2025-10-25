@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalWasmJsInterop::class)
 package org.example.project.registration.repo
 
 import kotlinx.coroutines.CoroutineScope
@@ -15,24 +16,59 @@ import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.sendPasswordResetEmail
 import org.example.project.registration.firebase.signInWithEmailAndPassword
 import org.example.project.registration.firebase.signOut
+import org.example.project.registration.firestore.doc
+import org.example.project.registration.firestore.getFirestore
+import org.example.project.registration.firestore.setDoc
+import kotlinx.datetime.Clock
+import org.example.project.extensions.JsVoid
+import org.example.project.registration.firebase.createUserData
 
 class WebAuthRepositoryImpl(
     private val app: FirebaseApp,
 ) : IAuthRepository {
 
     private val auth: FirebaseAuth = getAuth(app)
-
     @OptIn(ExperimentalWasmJsInterop::class)
-    override fun signup(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+    override fun signup(
+        email: String,
+        password: String,
+        username: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
             try {
+                logD("Q12345 Before createUserWithEmailAndPassword")
                 val credential = createUserWithEmailAndPassword(auth, email, password).await()
-                logD("Q12345 Firebase signup initialized!")
+                val uid = credential.user.uid
+                logD("Q12345 uid = $uid")
+                logD("Q12345 Clock = ${Clock.System.now().toString()}")
 
-                onResult(true, credential.user.uid)
+                val db = getFirestore(app)
+                val userDocRef = doc(db, "users/$uid")
+
+                val userData = createUserData(
+                    uid,
+                    email,
+                    username,
+                    Clock.System.now().toString()
+                )
+                logD("Q12345 Before setDoc")
+                if (userDocRef == null) {
+                    logD("userDocRef is null!")
+                }
+                try {
+                    logD("Q12345 try")
+                    setDoc(userDocRef, userData).await<JsVoid>()
+                    logD("Q12345 setDoc success")
+                    onResult(true, uid)
+                } catch (e: Throwable) {
+                    logD("setDoc failed: ${e.message}")
+                    onResult(false, e.message)
+                }
+
             } catch (e: Throwable) {
-               logD("Q12345 Firebase signup e ${e.message}!")
-                onResult(false, null)
+                logD("Q12345 createUser failed: ${e.message}")
+                onResult(false, e.message)
             }
         }
     }

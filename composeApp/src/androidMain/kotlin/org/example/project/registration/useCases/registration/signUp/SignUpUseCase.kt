@@ -6,10 +6,12 @@ class SignUpUseCase(val repo: IAuthRepository) {
     suspend operator fun invoke(
         email: String,
         password: String,
+        username: String,
         onResult: (Boolean, String?) -> Unit,
     ) = repo.signup(
         email = email,
         password = password,
+        username = password,
         onResult = onResult
     )
 }

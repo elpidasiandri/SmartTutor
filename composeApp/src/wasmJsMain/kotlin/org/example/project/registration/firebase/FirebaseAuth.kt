@@ -1,6 +1,6 @@
 @file:JsModule("firebase/auth")
-
 package org.example.project.registration.firebase
+
 import org.example.project.extensions.JsPromise
 import org.example.project.extensions.JsVoid
 import kotlin.js.*
@@ -13,20 +13,20 @@ external interface FirebaseAuth : JsAny
 external fun signInWithEmailAndPassword(
     auth: FirebaseAuth,
     email: String,
-    password: String
+    password: String,
 ): JsPromise<UserCredential>
 
 external fun createUserWithEmailAndPassword(
     auth: FirebaseAuth,
     email: String,
-    password: String
+    password: String,
 ): JsPromise<UserCredential>
 
 @OptIn(ExperimentalWasmJsInterop::class)
 external fun signOut(auth: FirebaseAuth): Promise<JsVoid>
 
 @OptIn(ExperimentalWasmJsInterop::class)
-external fun currentUser():FirebaseUser?
+external fun currentUser(): FirebaseUser?
 
 @OptIn(ExperimentalWasmJsInterop::class)
 external interface UserCredential : JsAny {
@@ -42,11 +42,11 @@ external interface FirebaseUser : JsAny {
 @JsName("sendPasswordResetEmail")
 external fun sendPasswordResetEmail(
     auth: FirebaseAuth,
-    email: String
+    email: String,
 ): JsPromise<JsVoid>
 
 @JsName("updatePassword")
 external fun changePassword(
     user: FirebaseUser,
-    newPassword: String
+    newPassword: String,
 ): JsPromise<JsVoid>

@@ -50,11 +50,13 @@ class RegistrationUseCase(
     suspend fun signUp(
         email: String,
         password: String,
+        username: String,
         onResult: (Boolean, String?) -> Unit,
     ) {
         signUpUseCase(
             email = email,
             password = password,
+            username = username,
             onResult = onResult
         )
     }

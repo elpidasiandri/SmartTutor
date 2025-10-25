@@ -12,14 +12,12 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
-//val localProperties = Properties().apply {
-//    val file = rootProject.file("local.properties")
-//    if (file.exists()) {
-//        load(file.inputStream())
-//    } else { }
-//}
 
 kotlin {
+    js(IR) {
+        browser()
+        binaries.executable()
+    }
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
@@ -91,6 +89,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 
             //modules
             implementation(project(":shared"))
