@@ -9,12 +9,13 @@ import kotlinx.coroutines.launch
 import org.example.project.extensions.logD
 import org.example.project.registration.repo.WebAuthRepositoryImpl
 import org.example.project.registration.state.RegistrationState
+import org.example.project.registration.useCases.registration.RegistrationUseCase
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
 import org.example.project.strings.SmartTutorStrings.success_message_reset_password
 
 class WebRegistrationController(
-    private val authRepository: WebAuthRepositoryImpl,
+    private val registrationUseCases: RegistrationUseCase,
 ) {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val _state = MutableStateFlow(RegistrationState())
@@ -24,7 +25,7 @@ class WebRegistrationController(
         scope.launch {
             logD("Q12345 login")
 
-            authRepository.login(email, password) { success, uid ->
+            registrationUseCases.logIn(email, password) { success, uid ->
                 logD("Q12345 success $success")
 
                 if (success) {
@@ -48,7 +49,7 @@ class WebRegistrationController(
         scope.launch {
             logD("Q12345 sendEmailToResetPassword")
 
-            authRepository.sendEmailToResetPassword(email) { success, uid ->
+            registrationUseCases.sendEmailForChangePassword(email = email) { success, uid ->
                 logD(
                     "Q12345 success $success" +
                             " uid $uid"
@@ -85,7 +86,7 @@ class WebRegistrationController(
 
     fun signUp(email: String, password: String, username: String) {
         scope.launch {
-            authRepository.signup(
+            registrationUseCases.signUp(
                 email = email,
                 password = password,
                 username = username

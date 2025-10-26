@@ -5,10 +5,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import org.example.project.registration.repo.AuthRepositoryImpl
 import org.example.project.registration.repo.IAuthRepository
+import org.example.project.registration.useCases.registration.RegistrationUseCase
 import org.example.project.registration.useCases.registration.login.LoginUseCase
 import org.example.project.registration.useCases.registration.logOut.LogoutUseCase
 import org.example.project.registration.useCases.registration.signUp.SignUpUseCase
-import org.example.project.registration.useCases.registration.RegistrationUseCase
 import org.example.project.registration.useCases.registration.resetPassword.UpdatePasswordUseCase
 import org.example.project.registration.useCases.registration.resetPassword.SendEmailToResetPasswordUseCase
 import org.example.project.registration.viewModel.RegistrationViewModel

@@ -62,8 +62,6 @@ kotlin {
                 implementation(libs.firebase.analytics)
                 implementation(libs.koin.android)
 
-                implementation(libs.koin.core)
-                implementation(libs.koin.compose)
 
                 implementation(libs.androidx.lifecycle.viewmodelCompose)
                 implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -83,14 +81,19 @@ kotlin {
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.coroutines.core)
 
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 
             }
         }
+
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
         }
+
         commonTest.dependencies {
             dependencies {
                 implementation(libs.kotlin.test)

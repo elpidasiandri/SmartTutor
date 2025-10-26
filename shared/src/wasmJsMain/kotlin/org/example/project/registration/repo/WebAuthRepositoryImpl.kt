@@ -96,7 +96,6 @@ class WebAuthRepositoryImpl(
             try {
                 signOut(auth).await()
             } catch (_: Throwable) {
-                // handle error αν θες
             }
         }
     }
