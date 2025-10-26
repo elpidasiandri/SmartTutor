@@ -1,4 +1,6 @@
 @file:JsModule("firebase/auth")
+@file:OptIn(ExperimentalWasmJsInterop::class)
+
 package org.example.project.registration.firebase
 
 import org.example.project.extensions.JsPromise

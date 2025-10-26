@@ -1,4 +1,4 @@
-package org.example.project.registration.screen
+package org.example.project.registrationScreen
 
 import android.content.Context
 import android.content.Intent

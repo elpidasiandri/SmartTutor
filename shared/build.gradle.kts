@@ -12,6 +12,10 @@ plugins {
 }
 
 kotlin {
+    js(IR) {
+        browser()
+        binaries.executable()
+    }
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
@@ -40,28 +44,54 @@ kotlin {
                 }
             }
         }
-
+        binaries.executable()
+        compilations.getByName("main") {
+            dependencies {
+                implementation(npm("firebase", "10.7.0"))
+            }
+        }
     }
 
     sourceSets {
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.androidx.activity.compose)
+                implementation(libs.androidx.core.ktx)
+                implementation(libs.firebase.auth)
+                implementation(libs.firebase.firestore)
+                implementation(libs.firebase.analytics)
+                implementation(libs.koin.android)
+
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+
+                implementation(libs.androidx.lifecycle.viewmodelCompose)
+                implementation(libs.androidx.lifecycle.runtimeCompose)
+            }
+        }
+
         val commonMain by getting {
             dependencies {
                 implementation(compose.ui)
                 implementation(compose.material3)
                 implementation(compose.foundation)
                 implementation(compose.runtime)
+                implementation(compose.components.resources)
+                implementation(compose.components.uiToolingPreview)
+                implementation(compose.materialIconsExtended)
 
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.contentNegotiation)
-                implementation(libs.ktor.serialization.kotlinx.json)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.coroutines.core)
 
-                implementation(libs.koin.core)
-                implementation(libs.koin.compose)
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+
             }
         }
-
-        val commonTest by getting {
+        jvmMain.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutinesSwing)
+        }
+        commonTest.dependencies {
             dependencies {
                 implementation(libs.kotlin.test)
             }
@@ -98,7 +128,6 @@ kotlin {
                     )
                 }
             }
-
             val generateFirebaseConfig =
                 tasks.register<GenerateFirebaseConfigTask>("generateFirebaseConfig")
 

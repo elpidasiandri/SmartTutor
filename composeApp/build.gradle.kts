@@ -13,10 +13,6 @@ plugins {
 }
 
 kotlin {
-    js(IR) {
-        browser()
-        binaries.executable()
-    }
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
@@ -56,11 +52,6 @@ kotlin {
         }
 
         binaries.executable()
-        compilations.getByName("main") {
-            dependencies {
-                implementation(npm("firebase", "10.7.0"))
-            }
-        }
     }
 
     sourceSets {
@@ -82,13 +73,11 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(projects.shared)
             implementation(compose.materialIconsExtended)
             implementation(libs.coroutines.core)
             implementation(libs.ktor.client.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 
             //modules
             implementation(project(":shared"))
