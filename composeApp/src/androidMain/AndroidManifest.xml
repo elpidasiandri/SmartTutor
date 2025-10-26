@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -10,8 +10,8 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
-            android:exported="true"
-            android:name=".MainActivity">
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -19,9 +19,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:exported="true"
             android:name="org.example.project.registrationScreen.LoginSignUpActivity"
-           />
+            android:exported="true" />
+        <activity
+            android:name="org.example.project.tutorScreen.TutorActivity"
+            android:exported="true" />
     </application>
 
 </manifest>

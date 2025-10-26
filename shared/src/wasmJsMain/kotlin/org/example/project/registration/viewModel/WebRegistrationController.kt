@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.extensions.logD
-import org.example.project.registration.repo.WebAuthRepositoryImpl
 import org.example.project.registration.state.RegistrationState
+import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.useCases.registration.RegistrationUseCase
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
@@ -23,21 +23,10 @@ class WebRegistrationController(
 
     fun login(email: String, password: String) {
         scope.launch {
-            logD("Q12345 login")
-
             registrationUseCases.logIn(email, password) { success, uid ->
-                logD("Q12345 success $success")
-
                 if (success) {
-                    //TODO
+                    navigateToTutorScreen()
 
-                    _state.update {
-                        it.copy(
-                            showCustomMessage = true,
-                            message = "Welcome $uid",
-                            isError = false
-                        )
-                    }
                 } else {
                     stateForErrorMessage()
                 }
@@ -45,19 +34,22 @@ class WebRegistrationController(
         }
     }
 
+    private fun navigateToTutorScreen() {
+        _state.update {
+            it.copy(
+                uiEvent = RegistrationUiEvents.NavigateToTutorFlow
+            )
+        }
+    }
+    fun clearUiEvent() {
+        _state.update { it.copy(uiEvent = RegistrationUiEvents.None) }
+    }
     fun sendEmailToResetPassword(email: String) {
         scope.launch {
             logD("Q12345 sendEmailToResetPassword")
 
             registrationUseCases.sendEmailForChangePassword(email = email) { success, uid ->
-                logD(
-                    "Q12345 success $success" +
-                            " uid $uid"
-                )
-
                 if (success) {
-                    //TODO
-
                     _state.update {
                         it.copy(
                             showCustomMessage = true,
@@ -66,7 +58,6 @@ class WebRegistrationController(
                         )
                     }
                 } else {
-                    println("Q12345 error $uid $success")
                     stateForErrorMessage(message = error_message_reset_password)
                 }
             }
@@ -74,7 +65,6 @@ class WebRegistrationController(
     }
 
     private fun stateForErrorMessage(message: String? = null) {
-        logD("Q12345 stateForErrorMessage")
         _state.update {
             it.copy(
                 showCustomMessage = true,
@@ -93,12 +83,7 @@ class WebRegistrationController(
             ) { success, uid ->
 
                 if (success) {
-                    _state.update {
-                        it.copy(
-                            showCustomMessage = true,
-                            message = "Signed up $uid"
-                        )
-                    }
+                    navigateToTutorScreen()
                 } else {
                     stateForErrorMessage()
                 }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.utils.EmptyValues
 import org.example.project.registration.state.RegistrationState
+import org.example.project.registration.state.RegistrationEvents
 import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.useCases.registration.RegistrationUseCase
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
@@ -25,13 +26,13 @@ class RegistrationViewModel(
     private val _state = MutableStateFlow(RegistrationState())
     val state: StateFlow<RegistrationState> = _state
 
-    fun onEvent(event: RegistrationUiEvents) {
+    fun onEvent(event: RegistrationEvents) {
         when (event) {
-            is RegistrationUiEvents.Login -> {
+            is RegistrationEvents.Login -> {
                 login(event.email, event.password)
             }
 
-            RegistrationUiEvents.InitializeStateAfterShowingMessage -> {
+            RegistrationEvents.InitializeStateAfterShowingMessage -> {
                 _state.update {
                     it.copy(
                         showCustomMessage = false,
@@ -41,11 +42,11 @@ class RegistrationViewModel(
                 }
             }
 
-            is RegistrationUiEvents.SignUp -> {
+            is RegistrationEvents.SignUp -> {
                 sinUp(event.email, event.password, event.username)
             }
 
-            is RegistrationUiEvents.ResetPassword -> {
+            is RegistrationEvents.ResetPassword -> {
                 changePassword(event.email)
             }
 
@@ -106,7 +107,11 @@ class RegistrationViewModel(
                                     " success $success "
                         )
                         if (success) {
-                            //todo
+                            _state.update {
+                                it.copy(
+                                    uiEvent = RegistrationUiEvents.NavigateToTutorFlow
+                                )
+                            }
                         } else {
                             stateForErrorMessage()
                         }
@@ -116,7 +121,7 @@ class RegistrationViewModel(
                 Log.d("Q12345 ", "catch $it")
                 _state.update {
                     it.copy(
-                        uiEvent = RegistrationUiEvents.None,
+                        event = RegistrationEvents.None,
                     )
                 }
                 stateForErrorMessage()
@@ -136,7 +141,11 @@ class RegistrationViewModel(
                         password = password
                     ) { success, userId ->
                         if (success) {
-                            //todo
+                            _state.update {
+                                it.copy(
+                                    uiEvent = RegistrationUiEvents.NavigateToTutorFlow
+                                )
+                            }
                         } else {
                             stateForErrorMessage()
                         }

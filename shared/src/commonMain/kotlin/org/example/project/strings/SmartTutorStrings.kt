@@ -24,4 +24,11 @@ object SmartTutorStrings {
     const val username_not_empty = "Username cannot be empty"
     const val invalid_password = "Password must be 8+ chars, include number & symbol"
     const val generic_error = "Something went wrong. Please try again."
+
+    //tutor intro screen
+    const val type_your_message = "Type your message..."
+    const val go_on_button = "Go On"
+    const val tutor_title = "Tutor"
+    const val exercises_title = "Exercises"
+    const val learning_units = "Learning Units"
 }
