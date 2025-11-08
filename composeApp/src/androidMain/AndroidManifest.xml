@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.example.project.registrationScreen.LoginSignUpActivity"
+            android:name="org.example.project.registrationScreen.RegistrationActivity"
             android:exported="true" />
         <activity
             android:name="org.example.project.tutorScreen.TutorActivity"

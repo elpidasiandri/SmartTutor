@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
+import org.example.project.authToken.StorageHelper
 import org.example.project.registration.di.registrationModule
 import org.example.project.registration.RegistrationComposable
 import org.example.project.registration.state.RegistrationEvents
@@ -24,7 +25,7 @@ import org.example.project.tutorScreen.TutorActivity
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.context.loadKoinModules
 
-class LoginSignUpActivity : ComponentActivity() {
+class RegistrationActivity : ComponentActivity() {
     private val registrationViewModel: RegistrationViewModel by viewModel()
     private val tutorLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -76,6 +77,7 @@ class LoginSignUpActivity : ComponentActivity() {
                 registrationViewModel.state.collect { state ->
                     when (state.uiEvent) {
                         RegistrationUiEvents.NavigateToTutorFlow -> {
+                            StorageHelper.saveTokenExpiry(this@RegistrationActivity)
                             navigateToTutorFlow()
                         }
                         else -> {}
@@ -98,7 +100,7 @@ class LoginSignUpActivity : ComponentActivity() {
 
     companion object {
         fun newInstance(context: Context) {
-            val intent = Intent(context, LoginSignUpActivity::class.java)
+            val intent = Intent(context, RegistrationActivity::class.java)
             context.startActivity(intent)
         }
     }

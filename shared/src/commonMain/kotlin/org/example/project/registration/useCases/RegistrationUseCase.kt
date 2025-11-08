@@ -62,6 +62,8 @@ class RegistrationUseCase(
     }
 
     suspend fun logout(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+        //FirebaseAuth.getInstance().signOut()
+        //StorageHelper.clearToken(context)
         logoutUseCase(email, password, onResult = onResult)
     }
 }
