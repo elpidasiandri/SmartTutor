@@ -37,6 +37,7 @@ class RegistrationUseCase(
             onResult = onResult
         )
     }
+
     suspend fun sendEmailForChangePassword(
         email: String,
         onResult: (Boolean, String?) -> Unit,
@@ -62,8 +63,13 @@ class RegistrationUseCase(
     }
 
     suspend fun logout(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+        //gia android
         //FirebaseAuth.getInstance().signOut()
         //StorageHelper.clearToken(context)
+
+        //gia web
+        //  WebStorageHelper.clearToken()
+        //    FirebaseAuth.getInstance().signOut()
         logoutUseCase(email, password, onResult = onResult)
     }
 }

@@ -13,6 +13,7 @@ import org.example.project.registration.di.registrationModule
 import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.viewModel.WebRegistrationController
+import org.example.project.storage.WebStorageHelper
 import org.example.project.tutor.TutorComposable
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -27,6 +28,10 @@ object WebApp : KoinComponent {
 
         val controller: WebRegistrationController by inject()
         val appController = AppController()
+
+        if (WebStorageHelper.isTokenValid()) {
+            appController.goToTutor()
+        }
         ComposeViewport("tutorApp") {
             val state by controller.state.collectAsState()
             setUpViewModelEvents(state, appController, controller)

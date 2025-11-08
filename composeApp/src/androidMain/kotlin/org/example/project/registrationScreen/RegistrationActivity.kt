@@ -15,7 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
-import org.example.project.authToken.StorageHelper
+import org.example.project.storage.StorageHelper
 import org.example.project.registration.di.registrationModule
 import org.example.project.registration.RegistrationComposable
 import org.example.project.registration.state.RegistrationEvents

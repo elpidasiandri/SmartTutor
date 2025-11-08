@@ -10,6 +10,7 @@ import org.example.project.extensions.logD
 import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.useCases.registration.RegistrationUseCase
+import org.example.project.storage.WebStorageHelper
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
 import org.example.project.strings.SmartTutorStrings.success_message_reset_password
@@ -25,6 +26,7 @@ class WebRegistrationController(
         scope.launch {
             registrationUseCases.logIn(email, password) { success, uid ->
                 if (success) {
+                    WebStorageHelper.saveTokenExpiry()
                     navigateToTutorScreen()
 
                 } else {
@@ -83,6 +85,7 @@ class WebRegistrationController(
             ) { success, uid ->
 
                 if (success) {
+                    WebStorageHelper.saveTokenExpiry()
                     navigateToTutorScreen()
                 } else {
                     stateForErrorMessage()

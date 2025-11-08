@@ -1,4 +1,4 @@
-package org.example.project.authToken
+package org.example.project.storage
 
 import android.content.Context
 import androidx.core.content.edit

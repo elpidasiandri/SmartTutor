@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.firebase.auth.FirebaseAuth
-import org.example.project.authToken.StorageHelper
+import org.example.project.storage.StorageHelper
 import org.example.project.registration.di.registrationModule
 import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.tutorScreen.TutorActivity
