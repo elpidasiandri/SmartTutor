@@ -87,22 +87,4 @@ class AuthRepositoryImpl(
                 }
             }
     }
-
-    override fun updatePassword(newPassword: String, onResult: (Boolean, String?) -> Unit) {
-        val user = auth.currentUser
-
-        if (user == null) {
-            onResult(false, "No logged-in user")
-            return
-        }
-
-        user.updatePassword(newPassword)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    onResult(true, null)
-                } else {
-                    onResult(false, task.exception?.message)
-                }
-            }
-    }
 }

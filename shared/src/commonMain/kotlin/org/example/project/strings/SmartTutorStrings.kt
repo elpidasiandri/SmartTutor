@@ -1,6 +1,9 @@
 package org.example.project.strings
 
 object SmartTutorStrings {
+    const val yes = "Yes"
+    const val no = "No"
+
     //registration strings
     const val username = "Username"
     const val login = "Login"
@@ -23,6 +26,8 @@ object SmartTutorStrings {
     const val invalid_email = "Email must contain '@' and '.'"
     const val username_not_empty = "Username cannot be empty"
     const val invalid_password = "Password must be 8+ chars, include number & symbol"
+    const val password_dismatch = "The two passwords do not match"
+    const val password_conf_password_not_valid = "The confirmation password is not valid"
     const val generic_error = "Something went wrong. Please try again."
 
     //tutor intro screen
@@ -31,4 +36,17 @@ object SmartTutorStrings {
     const val tutor_title = "Tutor"
     const val exercises_title = "Exercises"
     const val learning_units = "Learning Units"
+
+    //settings
+    const val settings_title = "Settings"
+    const val change_password_title = "Change Password"
+    const val old_password = "Old Password"
+    const val new_password = "New Password"
+    const val confirm_password_title = "Confirm Password"
+    const val update_password = "Update Password"
+    const val delete_account = "Delete Account"
+    const val delete_account_info = "If you delete your account, all your previous chat history and progress will be permanently lost."
+    const val confirm_deletion = "Confirm Deletion"
+    const val info_deletion = "Are you sure you want to delete your account?"
+
 }

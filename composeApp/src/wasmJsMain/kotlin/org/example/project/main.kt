@@ -6,6 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import org.example.project.registration.RegistrationComposable
@@ -14,7 +17,8 @@ import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.viewModel.WebRegistrationController
 import org.example.project.storage.WebStorageHelper
-import org.example.project.tutor.TutorComposable
+import org.example.project.tutor.TutorChatUI
+import org.example.project.tutor.viewModel.TutorController
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
@@ -28,6 +32,7 @@ object WebApp : KoinComponent {
 
         val controller: WebRegistrationController by inject()
         val appController = AppController()
+        val tutorController = TutorController()
 
         if (WebStorageHelper.isTokenValid()) {
             appController.goToTutor()
@@ -35,19 +40,21 @@ object WebApp : KoinComponent {
         ComposeViewport("tutorApp") {
             val state by controller.state.collectAsState()
             setUpViewModelEvents(state, appController, controller)
-            navigateToScreen(appController, state, controller)
+            navigateToScreen(appController, state, controller, tutorController)
         }
     }
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 @Composable
 private fun navigateToScreen(
     appController: AppController,
     state: RegistrationState,
     controller: WebRegistrationController,
+    tutorController: TutorController,
 ) {
     val screen by appController.screen
-
+    var userMessage by remember { mutableStateOf("") }
     when (screen) {
         Screen.Registration -> {
 
@@ -64,7 +71,16 @@ private fun navigateToScreen(
             )
         }
 
-        Screen.Tutor -> TutorComposable()
+        Screen.Tutor -> {
+            TutorChatUI(
+                userMessage = userMessage,
+                onMessageChange = { userMessage = it },
+                playAIMessage = { text -> tutorController.playAIMessage(text) },
+                startVoiceInput = { onResult -> tutorController.startVoiceInput(onResult) },
+                stopVoiceInput = { tutorController.stopVoiceInput() }
+            )
+        }
+        //TutorComposable()
     }
 }
 
