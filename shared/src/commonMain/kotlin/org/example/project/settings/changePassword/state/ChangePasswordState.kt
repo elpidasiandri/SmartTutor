@@ -12,10 +12,13 @@ data class ChangePasswordState(
 )
 sealed class ChangePasswordEvents {
     data object None : ChangePasswordEvents()
+    data object NavigateBack : ChangePasswordEvents()
     data object Result : ChangePasswordEvents()
 }
 sealed class ChangePasswordUiEvents {
     data object None : ChangePasswordUiEvents()
+    data object NavigateBack : ChangePasswordUiEvents()
     data object InitializeStateAfterShowingMessage : ChangePasswordUiEvents()
+    data object Initialize : ChangePasswordUiEvents()
     data class ChangePassword(val oldPassword: String, val newPassword:String) : ChangePasswordUiEvents()
 }

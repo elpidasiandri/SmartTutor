@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +35,6 @@ import org.example.project.utils.UtilsComposable.noRippleClickable
 @Composable
 fun MenuAndChatHistory(
     chatMessages: List<Pair<String, String>>,
-    onClose: () -> Unit,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
 ) {
@@ -48,7 +49,7 @@ fun MenuAndChatHistory(
             "Chat History",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 24.dp, start = 8.dp, end = 8.dp, top =12.dp)
+            modifier = Modifier.padding(bottom = 24.dp, start = 8.dp, end = 8.dp, top = 12.dp)
         )
 
         Column(
@@ -74,49 +75,48 @@ fun MenuAndChatHistory(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .noRippleClickable { onSettingsClick() }
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Settings", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Settings", modifier = Modifier.padding(end = 8.dp), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Icon(Icons.Default.Settings, contentDescription = "Settings")
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .noRippleClickable { }
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .noRippleClickable { },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Η πρόοδός μου", fontWeight = FontWeight.Medium, fontSize = 16.sp)
+                Text(
+                    "My Progress",
+                    modifier = Modifier.padding(start = 8.dp,end = 2.dp),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp
+                )
                 Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Progress")
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { onLogoutClick() }
+                VerticalDivider(modifier = Modifier.padding(start = 8.dp).size(24.dp))
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Logout",
-                        tint = Color.Red
-                    )
+                    IconButton(
+                        onClick = { onLogoutClick() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Color.Red
+                        )
+                    }
                 }
             }
         }

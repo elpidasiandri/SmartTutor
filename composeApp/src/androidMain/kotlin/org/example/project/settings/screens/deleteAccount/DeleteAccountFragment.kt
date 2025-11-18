@@ -22,6 +22,7 @@ import org.example.project.settings.deleteAccount.di.deleteAccountModule
 import org.example.project.settings.deleteAccount.state.DeleteAccountEvents
 import org.example.project.settings.deleteAccount.state.DeleteAccountUiEvents
 import org.example.project.settings.deleteAccount.viewModel.DeleteAccountViewModel
+import org.example.project.storage.StorageHelper.clearToken
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
@@ -72,6 +73,7 @@ class DeleteAccountFragment : Fragment() {
                 viewModel.state.collect { event ->
                     when (event.event) {
                         DeleteAccountEvents.AccountDeleted -> {
+                            clearToken(requireContext())
                             startActivity(
                                 Intent(
                                     requireContext(),

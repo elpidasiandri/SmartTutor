@@ -15,10 +15,12 @@ data class RegistrationState(
 sealed class RegistrationUiEvents {
     data object None : RegistrationUiEvents()
     data object NavigateToTutorFlow : RegistrationUiEvents()
+    data object NavigateToSettingsFlow : RegistrationUiEvents()
 }
 
 sealed class RegistrationEvents {
     data object None : RegistrationEvents()
+    data object ClearUiEvent : RegistrationEvents()
     data object InitializeStateAfterShowingMessage : RegistrationEvents()
     data class SignUp(val email: String, val password: String, val username: String) :
         RegistrationEvents()

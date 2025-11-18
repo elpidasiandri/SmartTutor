@@ -43,14 +43,11 @@ class TutorIntroViewModel(
     }
 
     private fun logOutUser() {
-        println("Q12345 logOutUser")
         viewModelScope.launch(dispatchersIo) {
             flow {
                 emit(
                     logout { success, _ ->
-                        println("Q12345 success $success")
                         if (success) {
-                            println("success true")
                             _state.update {
                                 it.copy(
                                     event = TutorEvents.NavigateToLogOut

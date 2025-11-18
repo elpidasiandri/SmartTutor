@@ -14,9 +14,11 @@ data class DeleteAccountState(
 sealed class DeleteAccountEvents {
     data object None : DeleteAccountEvents()
     data object AccountDeleted : DeleteAccountEvents()
+    data object NavigateBack : DeleteAccountEvents()
 }
 sealed class DeleteAccountUiEvents {
     data object None : DeleteAccountUiEvents()
     data object DeleteAccount : DeleteAccountUiEvents()
+    data object NavigateBack : DeleteAccountUiEvents()
     data object InitializeStateAfterShowingMessage : DeleteAccountUiEvents()
 }

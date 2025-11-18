@@ -17,7 +17,8 @@ suspend fun <T : JsAny> JsPromise<T>.await(): T =
                 value
             }
         ).catch { error ->
-            cont.resumeWithException(Throwable(error.toString()))
+            val msg = try { error.toString() } catch (_: Throwable) { null }
+            cont.resumeWithException(Throwable(msg ?: "FirebaseError(null)"))
             error
         }
     }
@@ -27,7 +28,6 @@ suspend fun JsPromise<JsVoid>.awaitSafe(): Boolean {
         this.await()
         true
     } catch (e: Throwable) {
-        logD("Q12345 Firebase reset email error (ignored NPE): ${e.message}")
         true
     }
 }

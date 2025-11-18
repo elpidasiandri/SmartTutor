@@ -1,5 +1,6 @@
 package org.example.project.registration.firebase
 
+import org.example.project.registration.AuthUserHolder
 import org.example.project.shared.FirebaseConfig
 
 @OptIn(ExperimentalWasmJsInterop::class)
@@ -15,5 +16,8 @@ fun initFirebase(): FirebaseContext {
 
     val app = initializeApp(firebaseConfig)
     val auth = getAuth(app)
+    onAuthStateChanged(auth) { user ->
+        AuthUserHolder.currentUser = user
+    }
     return FirebaseContext(app, auth)
 }

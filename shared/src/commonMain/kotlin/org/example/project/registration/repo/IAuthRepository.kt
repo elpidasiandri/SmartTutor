@@ -8,7 +8,5 @@ interface IAuthRepository {
         onResult: (Boolean, String?) -> Unit,
     )
     fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit)
-    fun logout()
-    fun currentUserId(): String?
     fun sendEmailToResetPassword(email: String, onResult: (Boolean, String?) -> Unit)
 }

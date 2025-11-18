@@ -15,6 +15,7 @@ sealed class TutorUiEvents {
     data object None : TutorUiEvents()
     data object Logout : TutorUiEvents()
     data object InitializeStateAfterShowingMessage : TutorUiEvents()
+    data object ClearUiEvent : TutorUiEvents()
 }
 
 sealed class TutorEvents {

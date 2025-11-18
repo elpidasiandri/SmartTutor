@@ -10,7 +10,9 @@ import kotlin.js.*
 external fun getAuth(app: FirebaseApp): FirebaseAuth
 
 @OptIn(ExperimentalWasmJsInterop::class)
-external interface FirebaseAuth : JsAny
+external interface FirebaseAuth : JsAny{
+    val currentUser: FirebaseUser?
+}
 
 external fun signInWithEmailAndPassword(
     auth: FirebaseAuth,
@@ -26,10 +28,6 @@ external fun createUserWithEmailAndPassword(
 
 @OptIn(ExperimentalWasmJsInterop::class)
 external fun signOut(auth: FirebaseAuth): Promise<JsVoid>
-
-@OptIn(ExperimentalWasmJsInterop::class)
-external fun currentUser(): FirebaseUser?
-
 @OptIn(ExperimentalWasmJsInterop::class)
 external interface UserCredential : JsAny {
     val user: FirebaseUser
@@ -39,6 +37,8 @@ external interface UserCredential : JsAny {
 external interface FirebaseUser : JsAny {
     val uid: String
     val email: String?
+    @JsName("delete")
+    fun delete(): JsPromise<JsVoid>
 }
 
 @JsName("sendPasswordResetEmail")
@@ -52,3 +52,9 @@ external fun changePassword(
     user: FirebaseUser,
     newPassword: String,
 ): JsPromise<JsVoid>
+
+external fun reauthenticateWithCredential(
+    user: FirebaseUser,
+    credential: AuthCredential
+): JsPromise<JsVoid>
+

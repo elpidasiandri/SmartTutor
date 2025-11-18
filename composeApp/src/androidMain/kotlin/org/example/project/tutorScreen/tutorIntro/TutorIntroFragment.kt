@@ -27,6 +27,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.settings.SettingsActivity
+import org.example.project.storage.StorageHelper.clearToken
 import org.example.project.tutor.TutorChatUI
 import org.example.project.tutor.TutorEvents
 import org.example.project.tutor.TutorUiEvents
@@ -140,6 +141,7 @@ class TutorIntroFragment : Fragment() {
                     when (event.event) {
                         TutorEvents.NavigateToLogOut -> {
                             if (isAdded) {
+                                clearToken(requireContext())
                                 startActivity(
                                     Intent(
                                         requireContext(),

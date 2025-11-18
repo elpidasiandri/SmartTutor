@@ -1,6 +1,5 @@
 package org.example.project.registration.repo
 
-import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,10 +34,6 @@ class AuthRepositoryImpl(
 
                 user.updateProfile(profileUpdates)
                     .addOnCompleteListener { profileTask ->
-                        if (!profileTask.isSuccessful) {
-                            Log.w("Signup", "Failed to set displayName: ${profileTask.exception}")
-                        }
-
                         val data = hashMapOf(
                             "uid" to uid,
                             "email" to email,
@@ -53,7 +48,6 @@ class AuthRepositoryImpl(
                                 onResult(true, uid)
                             }
                             .addOnFailureListener { e ->
-                                Log.e("Signup", "Failed to save user doc", e)
                                 onResult(false, e.message)
                             }
                     }
@@ -71,11 +65,6 @@ class AuthRepositoryImpl(
             }
     }
 
-    override fun logout() {
-        auth.signOut()
-    }
-
-    override fun currentUserId(): String? = auth.currentUser?.uid
 
     override fun sendEmailToResetPassword(email: String, onResult: (Boolean, String?) -> Unit) {
         auth.sendPasswordResetEmail(email)

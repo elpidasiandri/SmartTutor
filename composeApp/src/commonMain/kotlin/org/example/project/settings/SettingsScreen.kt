@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
+import org.example.project.dimens.Dimens.spacing48
+import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.change_password_title
 import org.example.project.strings.SmartTutorStrings.delete_account
 import org.example.project.strings.SmartTutorStrings.settings_title
@@ -33,6 +35,7 @@ import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
 fun SettingsScreen(
+    deleteAccountVisible:Boolean = true,
     onChangePasswordClick: () -> Unit,
     onDeleteAccountClick: () -> Unit,
     onBack: () -> Unit,
@@ -70,18 +73,20 @@ fun SettingsScreen(
         }
 
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-        Spacer(modifier = Modifier.weight(1f))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .noRippleClickable { onDeleteAccountClick() }
-                .size(spacing16)
-                .padding(horizontal = spacing16),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Delete, contentDescription = null)
-            Spacer(Modifier.width(spacing12))
-            Text(delete_account, fontSize = 8.sp)
+        if (deleteAccountVisible){
+            Spacer(modifier = Modifier.weight(1f))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .noRippleClickable { onDeleteAccountClick() }
+                    .size(spacing48)
+                    .padding(horizontal = spacing16, vertical = spacing8),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null)
+                Spacer(Modifier.width(spacing8))
+                Text(delete_account, fontSize = 16.sp)
+            }
         }
     }
 }

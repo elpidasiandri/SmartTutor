@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.project.extensions.logD
+import org.example.project.registration.state.RegistrationEvents
 import org.example.project.registration.state.RegistrationState
 import org.example.project.registration.state.RegistrationUiEvents
 import org.example.project.registration.useCases.registration.RegistrationUseCase
@@ -14,6 +14,7 @@ import org.example.project.storage.WebStorageHelper
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
 import org.example.project.strings.SmartTutorStrings.success_message_reset_password
+import org.example.project.utils.EmptyValues
 
 class WebRegistrationController(
     private val registrationUseCases: RegistrationUseCase,
@@ -22,7 +23,32 @@ class WebRegistrationController(
     private val _state = MutableStateFlow(RegistrationState())
     val state: StateFlow<RegistrationState> = _state
 
-    fun login(email: String, password: String) {
+    fun onEvent(event: RegistrationEvents) {
+        when (event) {
+            RegistrationEvents.InitializeStateAfterShowingMessage -> {
+                _state.update {
+                    it.copy(
+                        showCustomMessage = false,
+                        message = EmptyValues.EMPTY_STRING,
+                        isError = false
+                    )
+                }
+            }
+
+            is RegistrationEvents.Login -> login(event.email, event.password)
+            is RegistrationEvents.ClearUiEvent -> clearUiEvent()
+            is RegistrationEvents.ResetPassword -> {
+                sendEmailToResetPassword(event.email)
+            }
+
+            is RegistrationEvents.SignUp -> signUp(event.email, event.password, event.username)
+            else -> {}
+        }
+
+
+    }
+
+    private fun login(email: String, password: String) {
         scope.launch {
             registrationUseCases.logIn(email, password) { success, uid ->
                 if (success) {
@@ -43,13 +69,13 @@ class WebRegistrationController(
             )
         }
     }
-    fun clearUiEvent() {
+
+    private fun clearUiEvent() {
         _state.update { it.copy(uiEvent = RegistrationUiEvents.None) }
     }
-    fun sendEmailToResetPassword(email: String) {
-        scope.launch {
-            logD("Q12345 sendEmailToResetPassword")
 
+    private fun sendEmailToResetPassword(email: String) {
+        scope.launch {
             registrationUseCases.sendEmailForChangePassword(email = email) { success, uid ->
                 if (success) {
                     _state.update {
@@ -76,7 +102,7 @@ class WebRegistrationController(
         }
     }
 
-    fun signUp(email: String, password: String, username: String) {
+    private fun signUp(email: String, password: String, username: String) {
         scope.launch {
             registrationUseCases.signUp(
                 email = email,
@@ -92,12 +118,5 @@ class WebRegistrationController(
                 }
             }
         }
-    }
-
-    fun dismissMessage() {
-        _state.value = _state.value.copy(
-            showCustomMessage = false,
-            message = ""
-        )
     }
 }
