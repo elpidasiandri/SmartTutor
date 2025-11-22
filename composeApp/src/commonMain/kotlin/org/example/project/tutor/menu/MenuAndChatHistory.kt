@@ -41,7 +41,7 @@ import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.chat_history_title
-import org.example.project.tutor.domainModels.ChatHistoryItemModel
+import org.example.project.tutor.domainModels.chatHistory.ChatHistoryItemModel
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable

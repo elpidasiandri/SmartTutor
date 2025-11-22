@@ -4,4 +4,5 @@ object EmptyValues {
     val EMPTY_STRING = ""
     val EMPTY_BOOLEAN = false
     val EMPTY_INT = -1
+    val EMPTY_LONG = -1L
 }

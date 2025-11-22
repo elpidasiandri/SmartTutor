@@ -29,8 +29,8 @@ import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
 import org.example.project.tutor.TutorChatUI
-import org.example.project.tutor.TutorEvents
-import org.example.project.tutor.TutorUiEvents
+import org.example.project.tutor.state.TutorEvents
+import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.module.tutorModule
 import org.example.project.tutor.viewModel.TutorIntroViewModel
 import org.koin.androidx.viewmodel.ext.android.activityViewModel

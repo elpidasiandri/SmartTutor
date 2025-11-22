@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
-import org.example.project.tutor.TutorEvents
-import org.example.project.tutor.TutorState
-import org.example.project.tutor.TutorUiEvents
+import org.example.project.tutor.state.TutorEvents
+import org.example.project.tutor.state.TutorState
+import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.speakText
 import org.example.project.tutor.startVoiceRecognition
 import org.example.project.tutor.stopVoiceRecognition

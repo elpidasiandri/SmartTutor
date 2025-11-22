@@ -10,8 +10,8 @@ import androidx.compose.runtime.setValue
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.tutor.TutorChatUI
-import org.example.project.tutor.TutorEvents
-import org.example.project.tutor.TutorUiEvents
+import org.example.project.tutor.state.TutorEvents
+import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.di.tutorModule
 import org.example.project.tutor.viewModel.TutorController
 import org.koin.compose.koinInject

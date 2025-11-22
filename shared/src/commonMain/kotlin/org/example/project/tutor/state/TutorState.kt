@@ -1,4 +1,4 @@
-package org.example.project.tutor
+package org.example.project.tutor.state
 
 import org.example.project.utils.EmptyValues
 
