@@ -19,7 +19,6 @@ import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
 import org.example.project.components.errorText.ErrorTextComposable
 import org.example.project.components.password.PasswordTextFieldComposable
-import org.example.project.dimens.Dimens
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.webSpacing
@@ -84,7 +83,7 @@ fun SignupComposable(
             isWebUi = isWebUi
         )
 
-        if (password1.length > 5 && !arePasswordsSame && !isPassword1Valid) {
+        if (password1.length > 5 && !isPassword1Valid) {
             ErrorTextComposable(SmartTutorStrings.invalid_password)
         }
 
@@ -95,10 +94,17 @@ fun SignupComposable(
             isWebUi = isWebUi
         )
 
-        if (!isPassword2Valid && password2.length > 5 && !arePasswordsSame) {
+        if (password2.length > 5 && !isPassword2Valid) {
             ErrorTextComposable(SmartTutorStrings.invalid_password)
         }
-
+        if (password1.isNotEmpty() &&
+            password2.isNotEmpty() &&
+            isPassword1Valid &&
+            isPassword2Valid &&
+            !arePasswordsSame
+        ) {
+            ErrorTextComposable(SmartTutorStrings.password_dismatch)
+        }
         ButtonComposable(
             text = SmartTutorStrings.signup,
             enabled = isFormValid,
