@@ -49,4 +49,10 @@ object SmartTutorStrings {
     const val confirm_deletion = "Confirm Deletion"
     const val info_deletion = "Are you sure you want to delete your account?"
 
+    //chat history
+
+    const val chat_history_title =  "Chat History"
+    const val new_chat =  "New chat"
+
+
 }

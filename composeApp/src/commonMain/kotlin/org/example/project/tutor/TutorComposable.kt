@@ -61,6 +61,7 @@ import org.example.project.strings.SmartTutorStrings.go_on_button
 import org.example.project.strings.SmartTutorStrings.learning_units
 import org.example.project.strings.SmartTutorStrings.tutor_title
 import org.example.project.strings.SmartTutorStrings.type_your_message
+import org.example.project.tutor.domainModels.ChatHistoryItemModel
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
@@ -125,6 +126,20 @@ fun TutorChatUI(
 
         val drawerWidth = maxWidth / widthDividerMenu
 
+        val chatHistorySample = listOf(
+            ChatHistoryItemModel(
+                title = "Physics – Newton's Laws",
+                subItems = listOf("Law 1 explanation", "Examples", "Quiz review")
+            ),
+            ChatHistoryItemModel(
+                title = "Math – Fractions",
+                subItems = listOf("Basics", "Exercises", "Student errors")
+            ),
+            ChatHistoryItemModel(
+                title = "General Questions" // no sub items → no arrow!
+            )
+        )
+
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
@@ -135,7 +150,7 @@ fun TutorChatUI(
                         .background(Color.White)
                 ) {
                     MenuAndChatHistory(
-                        chatMessages = chatMessages,
+                        chatHistory = chatHistorySample,
                         onSettingsClick = { onSettingsClick() },
                         onLogoutClick = { onLogoutClick() }
                     )
