@@ -23,6 +23,7 @@ fun RegistrationComposable(
     onSignUp: (email: String, password: String, username: String) -> Unit,
     resetPassword: (email: String) -> Unit,
     onMessageDismiss: () -> Unit,
+    isWebUi: Boolean,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
@@ -46,7 +47,6 @@ fun RegistrationComposable(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -69,21 +69,27 @@ fun RegistrationComposable(
                 if (showReset) {
                     ResetPasswordComposable(
                         onBackToLogin = { showReset = false },
-                        resetPassword = { email -> resetPassword(email) })
+                        resetPassword = { email -> resetPassword(email) },
+                        isWebUi = isWebUi
+                    )
                 } else {
                     LoginComposable(
                         login = { email, password ->
                             onLogin(email, password)
                         },
+                        isWebUi = isWebUi,
                         onForgotPasswordClick = {
                             showReset = true
                         })
                 }
             }
 
-            1 -> SignupComposable { email, password, username ->
-                onSignUp(email, password, username)
-            }
+            1 -> SignupComposable(
+                isWebUi = isWebUi,
+                signUp = { email, password, username ->
+                    onSignUp(email, password, username)
+                }
+            )
         }
     }
 }

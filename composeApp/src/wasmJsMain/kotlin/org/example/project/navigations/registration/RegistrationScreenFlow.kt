@@ -49,6 +49,7 @@ fun RegistrationScreenFlow(navController: NavController) {
         },
         resetPassword = { email ->
             controller.onEvent(RegistrationEvents.ResetPassword(email))
-        }
+        },
+        isWebUi = true
     )
 }

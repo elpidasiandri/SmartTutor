@@ -1,5 +1,7 @@
 package org.example.project.components.password
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -13,9 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import org.example.project.dimens.Dimens
+import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 
@@ -23,7 +28,8 @@ import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 fun PasswordTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String
+    label: String,
+    isWebUi: Boolean,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -42,7 +48,8 @@ fun PasswordTextFieldComposable(
             }
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = SmartTutorStyles.textFieldModifier,
+        modifier = if (isWebUi) Modifier.padding(vertical = Dimens.spacing4)
+            .width(webSpacing) else SmartTutorStyles.textFieldModifier,
         colors = defaultTextFieldColors()
     )
 }

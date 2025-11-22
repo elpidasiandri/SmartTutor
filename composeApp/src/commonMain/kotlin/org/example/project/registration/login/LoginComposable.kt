@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,14 +24,18 @@ import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
+import org.example.project.dimens.Dimens.spacing8
+import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
+import org.example.project.theme.SmartTutorStyles
 import org.example.project.utils.Validation
 
 @Composable
 fun LoginComposable(
     login: (String, String) -> Unit,
     onForgotPasswordClick: () -> Unit,
+    isWebUi: Boolean = false,
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -38,16 +43,18 @@ fun LoginComposable(
     val isEmailValid = Validation.isValidEmail(email)
     val isPasswordValid = Validation.isValidPassword(password)
     val isFormValid = isEmailValid && isPasswordValid
-
+    val containerModifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth()
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
+        modifier = containerModifier
             .padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        EmailTextFieldComposable(value = email, onValueChange = { email = it })
+        EmailTextFieldComposable(
+            value = email,
+            onValueChange = { email = it },
+            isWebUi = isWebUi
+        )
         if (!isEmailValid && email.isNotEmpty()) {
             ErrorTextComposable(SmartTutorStrings.invalid_email)
         }
@@ -57,7 +64,8 @@ fun LoginComposable(
         PasswordTextFieldComposable(
             value = password,
             onValueChange = { password = it },
-            label = passwordHint
+            label = passwordHint,
+            isWebUi = isWebUi
         )
 
         Spacer(Modifier.height(spacing24))
@@ -65,15 +73,20 @@ fun LoginComposable(
         ButtonComposable(
             text = SmartTutorStrings.login,
             enabled = isFormValid,
+            modifier = if (isWebUi) Modifier.width(webSpacing)
+                .padding(vertical = spacing8)
+                .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier,
             onClick = {
                 login(email, password)
             }
         )
+        val modifierWidthButton = if (isWebUi) Modifier.width(webSpacing)
+            .align(Alignment.CenterHorizontally) else Modifier.fillMaxWidth()
         TextButton(
             onClick = {
                 onForgotPasswordClick()
             },
-            modifier = Modifier.padding(top = spacing12)
+            modifier = modifierWidthButton.padding(top = spacing12)
         ) {
             Text(
                 text = SmartTutorStrings.forgot_password,

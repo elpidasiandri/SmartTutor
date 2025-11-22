@@ -9,4 +9,5 @@ object Dimens {
     val spacing16 = 16.dp
     val spacing24 = 24.dp
     val spacing48 = 48.dp
+    val webSpacing = 400.dp
 }

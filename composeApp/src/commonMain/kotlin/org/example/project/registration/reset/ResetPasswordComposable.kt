@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -25,13 +26,17 @@ import org.example.project.components.email.EmailTextFieldComposable
 import org.example.project.components.errorText.ErrorTextComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
+import org.example.project.dimens.Dimens.spacing8
+import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.theme.SmartTutorStyles
 import org.example.project.utils.Validation
 
 @Composable
 fun ResetPasswordComposable(
     onBackToLogin: () -> Unit,
     resetPassword: (String) -> Unit,
+    isWebUi: Boolean,
 ) {
     var email by remember { mutableStateOf("") }
     val isEmailValid = Validation.isValidEmail(email)
@@ -54,7 +59,7 @@ fun ResetPasswordComposable(
             )
         )
 
-        EmailTextFieldComposable(value = email, onValueChange = { email = it })
+        EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
 
         if (!isEmailValid && email.isNotEmpty()) {
             ErrorTextComposable(SmartTutorStrings.invalid_email)
@@ -77,6 +82,9 @@ fun ResetPasswordComposable(
         ButtonComposable(
             text = SmartTutorStrings.submit,
             enabled = isFormValid,
+            modifier = if (isWebUi) Modifier.width(webSpacing)
+                .padding(vertical = spacing8)
+                .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier,
             onClick = {
                 resetPassword(email)
             }
@@ -86,7 +94,10 @@ fun ResetPasswordComposable(
             enabled = true,
             onClick = {
                 onBackToLogin()
-            }
+            },
+            modifier = if (isWebUi) Modifier.width(webSpacing)
+                .padding(vertical = spacing8)
+                .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier
         )
     }
 }

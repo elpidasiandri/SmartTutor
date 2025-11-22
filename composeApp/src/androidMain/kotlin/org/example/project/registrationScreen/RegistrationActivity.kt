@@ -45,6 +45,7 @@ class RegistrationActivity : ComponentActivity() {
                 showCustomMessage = showErrorMessage,
                 message = errorMessage,
                 isError = isError,
+                isWebUi = false,
                 onLogin = { email, password ->
                     registrationViewModel.onEvent(RegistrationEvents.Login(email, password))
                 },

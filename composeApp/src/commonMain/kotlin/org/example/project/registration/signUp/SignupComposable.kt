@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,19 +13,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
 import org.example.project.components.errorText.ErrorTextComposable
 import org.example.project.components.password.PasswordTextFieldComposable
+import org.example.project.dimens.Dimens
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
+import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.Validation
 
 @Composable
-fun SignupComposable(signUp: (String, String, String) -> Unit) {
+fun SignupComposable(
+    signUp: (String, String, String) -> Unit,
+    isWebUi: Boolean = false,
+) {
     var email by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password1 by remember { mutableStateOf("") }
@@ -50,7 +58,7 @@ fun SignupComposable(signUp: (String, String, String) -> Unit) {
         modifier = Modifier.padding(spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing8)
     ) {
-        EmailTextFieldComposable(value = email, onValueChange = { email = it })
+        EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
 
         if (!isEmailValid && email.isNotEmpty()) {
             ErrorTextComposable(SmartTutorStrings.invalid_email)
@@ -61,7 +69,7 @@ fun SignupComposable(signUp: (String, String, String) -> Unit) {
             onValueChange = { username = it },
             label = { Text(SmartTutorStrings.username) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth(),
             colors = defaultTextFieldColors()
         )
 
@@ -72,7 +80,8 @@ fun SignupComposable(signUp: (String, String, String) -> Unit) {
         PasswordTextFieldComposable(
             value = password1,
             onValueChange = { password1 = it },
-            label = SmartTutorStrings.passwordHint
+            label = SmartTutorStrings.passwordHint,
+            isWebUi = isWebUi
         )
 
         if (password1.length > 5 && !arePasswordsSame && !isPassword1Valid) {
@@ -82,7 +91,8 @@ fun SignupComposable(signUp: (String, String, String) -> Unit) {
         PasswordTextFieldComposable(
             value = password2,
             onValueChange = { password2 = it },
-            label = SmartTutorStrings.confirm_password
+            label = SmartTutorStrings.confirm_password,
+            isWebUi = isWebUi
         )
 
         if (!isPassword2Valid && password2.length > 5 && !arePasswordsSame) {
@@ -94,7 +104,10 @@ fun SignupComposable(signUp: (String, String, String) -> Unit) {
             enabled = isFormValid,
             onClick = {
                 signUp(email, password1, username)
-            }
+            },
+            modifier = if (isWebUi) Modifier.width(webSpacing)
+                .padding(vertical = spacing8)
+                .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier
         )
     }
 }
