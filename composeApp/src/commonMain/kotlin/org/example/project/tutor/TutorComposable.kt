@@ -98,7 +98,7 @@ fun TutorChatUI(
     var errorMessage by remember(message) { mutableStateOf(message) }
 
     var isMicOn by remember { mutableStateOf(false) }
-    var userMessageState by remember { mutableStateOf(userMessage) }
+    var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
     val chatMessages = remember {
         mutableStateListOf(*chatData.chat.messages.map {
             Pair(it.sender, it.content)
@@ -204,7 +204,8 @@ fun TutorChatUI(
                                 onMicClick = {
                                     if (!isMicOn) {
                                         startVoiceInput { result ->
-                                            onMessageChange(result)
+                                            println("Q12345 result compose $result")
+                                            onMessageChange(result)  // ενημερώνει το Fragment
                                             isMicOn = false
                                         }
                                         isMicOn = true
@@ -212,7 +213,8 @@ fun TutorChatUI(
                                         stopVoiceInput()
                                         isMicOn = false
                                     }
-                                },
+                                }
+                                ,
                                 isMicOn = isMicOn,
                                 onUploadPdfClick = {
                                     // open PDF picker
@@ -239,7 +241,7 @@ fun ChatInputField(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(spacing8),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
