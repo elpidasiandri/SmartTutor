@@ -53,6 +53,10 @@ object SmartTutorStrings {
 
     const val chat_history_title =  "Chat History"
     const val new_chat =  "New chat"
+    const val material_title =  "Material"
+    const val learning_unit_title =  "Learning Unit"
+    const val uploaded_file_success_title =  "Uploaded ✅"
+    const val uploaded_file_failure_title =  "Not uploaded ❌"
 
 
 }

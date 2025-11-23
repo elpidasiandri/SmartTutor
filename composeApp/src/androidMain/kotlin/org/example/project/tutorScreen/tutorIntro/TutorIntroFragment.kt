@@ -29,6 +29,8 @@ import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
 import org.example.project.tutor.TutorChatUI
+import org.example.project.tutor.mappers.chatHistory.fakeChatHistory
+import org.example.project.tutor.mappers.fakeChatSession
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.module.tutorModule
@@ -67,8 +69,12 @@ class TutorIntroFragment : Fragment() {
 
 
                 var userMessage by remember { mutableStateOf("") }
+                val fakeDomain = fakeChatSession()
+                val fakeChatHistory = fakeChatHistory()
 
                 TutorChatUI(
+                    chatData = fakeDomain,
+                    chatHistory = fakeChatHistory,
                     showCustomMessage = showErrorMessage,
                     message = errorMessage,
                     isError = isError,

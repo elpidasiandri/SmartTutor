@@ -1,7 +1,6 @@
 package org.example.project.tutor
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,9 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -27,7 +24,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -50,28 +46,39 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.example.project.colors.AppColors.GrayVeryLight
+import org.example.project.colors.AppColors.GrayLightBoard
 import org.example.project.components.customToast.CustomToastComposable
+import org.example.project.dimens.Dimens.spacing12
+import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
-import org.example.project.strings.SmartTutorStrings.exercises_title
+import org.example.project.dimens.Dimens.spacing4
+import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.go_on_button
+import org.example.project.strings.SmartTutorStrings.learning_unit_title
 import org.example.project.strings.SmartTutorStrings.learning_units
-import org.example.project.strings.SmartTutorStrings.tutor_title
-import org.example.project.strings.SmartTutorStrings.type_your_message
-import org.example.project.tutor.domainModels.chatHistory.ChatHistoryItemModel
+import org.example.project.strings.SmartTutorStrings.material_title
+import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
+import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
+import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
+import org.example.project.tutor.domainModels.tutorChat.LUStatusDomain
+import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
+import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
+import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
 fun TutorChatUI(
+    chatData: ChatSessionStartDomain,
+    chatHistory: ChatHistoryDomain,
     showCustomMessage: Boolean,
     message: String,
     isError: Boolean,
@@ -92,22 +99,9 @@ fun TutorChatUI(
     var isMicOn by remember { mutableStateOf(false) }
     var userMessageState by remember { mutableStateOf(userMessage) }
     val chatMessages = remember {
-        mutableStateListOf(
-            Pair("AI", "Hello! How can I help you today?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("User", "Hi! Can you give me an example?"),
-            Pair("AI", "Hello! How can I help you today?"),
-
-            )
+        mutableStateListOf(*chatData.chat.messages.map {
+            Pair(it.sender, it.content)
+        }.toTypedArray())
     }
 
     if (showErrorMessage && errorMessage.isNotEmpty()) {
@@ -133,20 +127,6 @@ fun TutorChatUI(
 
         val drawerWidth = maxWidth / widthDividerMenu
 
-        val chatHistorySample = listOf(
-            ChatHistoryItemModel(
-                title = "Physics – Newton's Laws",
-                subItems = listOf("Law 1 explanation", "Examples", "Quiz review")
-            ),
-            ChatHistoryItemModel(
-                title = "Math – Fractions",
-                subItems = listOf("Basics", "Exercises", "Student errors")
-            ),
-            ChatHistoryItemModel(
-                title = "General Questions" // no sub items → no arrow!
-            )
-        )
-
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
@@ -157,9 +137,14 @@ fun TutorChatUI(
                         .background(Color.White)
                 ) {
                     MenuAndChatHistory(
-                        chatHistory = chatHistorySample,
+                        chatHistory = chatHistory,
+                        drawerState = drawerState,
+                        scope = scope,
                         onSettingsClick = { onSettingsClick() },
-                        onLogoutClick = { onLogoutClick() }
+                        onLogoutClick = { onLogoutClick() },
+                        onChatClick = { subjectId, luId ->
+
+                        }
                     )
                 }
             }
@@ -183,48 +168,56 @@ fun TutorChatUI(
                             .fillMaxSize()
                             .padding(padding)
                     ) {
+                        ChatUiHeader(chatData.material, chatData.learningUnit)
+
+
+                        Spacer(modifier = Modifier.height(spacing8))
+
+                        // -------------------- CHAT MESSAGES --------------------
                         ChatMessagesList(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .padding(8.dp),
+                                .padding(horizontal = spacing8),
                             chatMessages = chatMessages,
-                            onPlayClick = { message ->
-                                playAIMessage(message)
-                            }
+                            onPlayClick = { message -> playAIMessage(message) }
                         )
 
-                        ChatInputField(
-                            userMessage = userMessageState,
-                            onMessageChange = { userMessageState = it },
-                            onSendClick = {
-                                if (userMessageState.isNotBlank()) {
-                                    chatMessages.add(Pair("User", userMessageState))
-                                    chatMessages.add(Pair("AI", "This is a fake AI reply"))
-                                    userMessageState = ""
-                                }
-                                if (isMicOn) {
-                                    stopVoiceInput()
-                                    isMicOn = false
-                                }
-                            },
-                            onMicClick = {
-                                if (!isMicOn) {
-                                    startVoiceInput { result ->
-                                        onMessageChange(result)
+                        // -------------------- INPUT FIELD --------------------
+                        if (chatData.instance.status != LUStatusDomain.INACTIVE) {
+                            ChatInputField(
+                                fileUploaded = chatData.material.fileUploaded,
+                                userMessage = userMessageState,
+                                onMessageChange = { userMessageState = it },
+                                onSendClick = {
+                                    if (userMessageState.isNotBlank()) {
+                                        chatMessages.add(Pair("USER", userMessageState))
+                                        chatMessages.add(Pair("AI", "This is a fake AI reply"))
+                                        userMessageState = ""
+                                    }
+                                    if (isMicOn) {
+                                        stopVoiceInput()
                                         isMicOn = false
                                     }
-                                    isMicOn = true
-                                } else {
-                                    stopVoiceInput()
-                                    isMicOn = false
-                                }
-                            },
-                            isMicOn = isMicOn,
-                            onUploadPdfClick = {
-                                // open PDF picker
-                            }
-                        )
+                                },
+                                onMicClick = {
+                                    if (!isMicOn) {
+                                        startVoiceInput { result ->
+                                            onMessageChange(result)
+                                            isMicOn = false
+                                        }
+                                        isMicOn = true
+                                    } else {
+                                        stopVoiceInput()
+                                        isMicOn = false
+                                    }
+                                },
+                                isMicOn = isMicOn,
+                                onUploadPdfClick = {
+                                    // open PDF picker
+                                },
+                            )
+                        }
                     }
                 }
             )
@@ -234,6 +227,7 @@ fun TutorChatUI(
 
 @Composable
 fun ChatInputField(
+    fileUploaded: Boolean,
     userMessage: String,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
@@ -256,7 +250,10 @@ fun ChatInputField(
         )
 
         // Upload PDF button
-        IconButton(onClick = onUploadPdfClick) {
+        IconButton(
+            onClick = onUploadPdfClick,
+            enabled = !fileUploaded
+        ) {
             Icon(Icons.Default.UploadFile, contentDescription = "Upload PDF")
         }
 
@@ -277,6 +274,32 @@ fun ChatInputField(
 
 
 @Composable
+fun ChatUiHeader(material: MaterialDomain, learningUnit: LearningUnitDomain) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(GrayLightBoard)
+            .padding(vertical = spacing12),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val statusFileText =
+            if (material.fileUploaded) uploaded_file_success_title else uploaded_file_failure_title
+        Text(
+            text = "$material_title : ${material.fileName} - $statusFileText",
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(bottom = spacing4)
+        )
+
+        Text(
+            text = "$learning_unit_title : ${learningUnit.title}",
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+    }
+}
+
+@Composable
 fun ChatMessagesList(
     modifier: Modifier,
     chatMessages: List<Pair<String, String>>,
@@ -295,7 +318,7 @@ fun ChatMessagesList(
         state = listState
     ) {
         items(chatMessages) { (sender, message) ->
-            if (sender == "User") {
+            if (sender == SenderType.USER.name) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -325,7 +348,7 @@ fun ChatMessagesList(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(spacing8))
         }
     }
 }
@@ -340,9 +363,9 @@ fun TopBarTabs(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFEFEFEF))
-            .padding(top = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .background(GrayLightBoard)
+            .padding(top = spacing16, start = spacing8),
+        horizontalArrangement = Arrangement.Center
     ) {
         IconButton(
             modifier = Modifier.align(Alignment.CenterVertically),
@@ -351,15 +374,16 @@ fun TopBarTabs(
             Icon(Icons.Default.Menu, contentDescription = "Toggle History")
         }
         TabCard(
-            modifier = Modifier.weight(1f).noRippleClickable { onTabSelected("Go On") },
-            "Go On",
-            selectedTab == "Go On" +
-                    ""
+            modifier = Modifier.align(Alignment.CenterVertically).weight(1f).padding(end = spacing8)
+                .noRippleClickable { onTabSelected(go_on_button) },
+            go_on_button,
+            selectedTab == go_on_button
         )
         TabCard(
-            modifier = Modifier.weight(1f).noRippleClickable { onTabSelected("Learning Units") },
-            "Learning Units",
-            selectedTab == "Learning Units"
+            modifier = Modifier.align(Alignment.CenterVertically).weight(1f).padding(end = spacing8)
+                .noRippleClickable { onTabSelected(learning_units) },
+            learning_units,
+            selectedTab == learning_units
         )
 
     }
@@ -380,47 +404,15 @@ fun TabCard(
         shape = shape,
         color = backgroundColor,
         contentColor = contentColor,
-        shadowElevation = if (selected) 4.dp else 0.dp
+        shadowElevation = if (selected) spacing4 else 0.dp
     ) {
         Column(content = {
             Text(
                 text = label,
                 color = if (selected) Color.White else Color.Black,
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(spacing12).align(Alignment.CenterHorizontally),
                 textAlign = TextAlign.Center
             )
         })
     }
-}
-
-@Composable
-private fun ExerciseOptions(exerciseType: String?) {
-    if (exerciseType != null) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { /* T/F */ }) { Text("True/False") }
-            Button(onClick = { /* MC */ }) { Text("Multiple Choice") }
-            Button(onClick = { /* Development */ }) { Text("Development") }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-private fun HeadersButton() {
-    var mode by remember { mutableStateOf("initial") } // "initial"  "learning"
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        if (mode == "initial") {
-            Button(onClick = { mode = "learning" }) { Text(go_on_button) }
-            Button(onClick = { /* Learning Units */ }) { Text(learning_units) }
-        } else if (mode == "learning") {
-            Button(onClick = { mode = "initial" }) { Text(tutor_title) }
-            Button(onClick = { /* Exercises */ }) { Text(exercises_title) }
-        }
-    }
-
-    Spacer(modifier = Modifier.height(16.dp))
 }

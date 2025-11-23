@@ -14,7 +14,10 @@ import org.example.project.tutor.networkModel.ChatState
 import org.example.project.tutor.networkModel.LearningUnitInstanceState
 import org.example.project.tutor.networkModel.LearningUnitState
 import org.example.project.tutor.networkModel.MaterialState
+import org.example.project.utils.convertToLong
 import org.example.project.utils.nonNull
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 fun ChatSessionStartResponse.toDomain() = ChatSessionStartDomain(
     material = this.material?.toDomain() ?: MaterialDomain(),
@@ -67,3 +70,62 @@ fun ChatMessageState.toDomain() = ChatMessageDomain(
     timestamp = timestamp.nonNull,
     type = type.nonNull
 )
+
+@OptIn(ExperimentalTime::class)
+fun fakeChatSession(): ChatSessionStartDomain {
+    return ChatSessionStartDomain(
+        material = MaterialDomain(
+            materialId = "material_001",
+            fileUploaded = true,
+            fileName = "physics.pdf",
+            canUpload = false,
+            totalUnits = 5
+        ),
+        learningUnit = LearningUnitDomain(
+            luId = "lu_01",
+            title = "Newton's Laws",
+            orderIndex = 1,
+            quizAvailable = true,
+            analysisCompleted = false,
+            quizCompleted = false,
+            nextAction = NextActionDomain.CONTINUE_CHAT
+        ),
+        instance = LearningUnitInstanceDomain(
+            instanceId = "instance_123",
+            status = LUStatusDomain.ACTIVE,
+            progressPercent = 20,
+            startedAt = Clock.System.now().convertToLong(500000),
+            lastUpdatedAt = Clock.System.now().convertToLong(0L),
+            canContinue = true,
+            canRestart = false,
+            isLocked = false
+        ),
+        chat = ChatDomain(
+            chatSessionId = "chat_999",
+            createNewSession = false,
+            messages = listOf(
+                ChatMessageDomain(
+                    id = "1",
+                    sender = "AI",
+                    content = "Hello! How can I help you today?",
+                    timestamp = Clock.System.now().convertToLong(60000),
+                    type = "TEXT"
+                ),
+                ChatMessageDomain(
+                    id = "2",
+                    sender = "USER",
+                    content = "Can you give me an example?",
+                    timestamp = Clock.System.now().convertToLong(30000),
+                    type = "TEXT"
+                ),
+                ChatMessageDomain(
+                    id = "3",
+                    sender = "AI",
+                    content = "Sure! Here is an example...",
+                    timestamp = Clock.System.now().convertToLong(10000),
+                    type = "TEXT"
+                )
+            )
+        )
+    )
+}

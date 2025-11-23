@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -34,22 +35,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.example.project.colors.AppColors.GrayUltraDark
 import org.example.project.colors.AppColors.GrayUltraLight
 import org.example.project.dimens.Dimens.spacing12
+import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
-import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.chat_history_title
-import org.example.project.tutor.domainModels.chatHistory.ChatHistoryItemModel
+import org.example.project.strings.SmartTutorStrings.new_chat
+import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
 fun MenuAndChatHistory(
-    chatHistory: List<ChatHistoryItemModel>,
+    chatHistory: ChatHistoryDomain,
+    drawerState: DrawerState,
+    scope: CoroutineScope,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onChatClick: () -> Unit = {},
+    onChatClick: (subjectId: String, luId: String?) -> Unit = { _, _ -> },
 ) {
     Column(
         modifier = Modifier
@@ -59,31 +67,21 @@ fun MenuAndChatHistory(
             .padding(spacing8)
     ) {
         TextButton(
-            onClick = {
-
-            },
-            modifier = Modifier.padding(
-                start = spacing8,
-                end = spacing8,
-                top = spacing12
-            )
+            onClick = {},
+            modifier = Modifier.padding(vertical = spacing12, horizontal = spacing8)
         ) {
             Text(
-                text = SmartTutorStrings.new_chat,
+                text = new_chat,
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
+                fontSize = 24.sp
             )
         }
+
         Text(
             chat_history_title,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            modifier = Modifier.padding(
-                bottom = spacing24,
-                start = spacing8,
-                end = spacing8,
-                top = spacing24
-            )
+            modifier = Modifier.padding(vertical = spacing16, horizontal = spacing8)
         )
 
         Column(
@@ -91,15 +89,19 @@ fun MenuAndChatHistory(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            chatHistory.forEach { item ->
-                ExpandableChatHistoryItem(item, onChatClick = { title -> onChatClick() })
+            chatHistory.subjects.forEach { subject ->
+                SubjectHistoryItem(
+                    subject,
+                    onClick = { subjectId, luId ->
+                        onChatClick(subjectId, luId)
+                        scope.launch { drawerState.close() }
+                    })
                 Spacer(modifier = Modifier.height(spacing12))
             }
         }
 
         Spacer(modifier = Modifier.height(spacing12))
 
-        // Settings
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -116,7 +118,6 @@ fun MenuAndChatHistory(
             Icon(Icons.Default.Settings, contentDescription = "Settings")
         }
 
-        // Progress + logout
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -140,10 +141,11 @@ fun MenuAndChatHistory(
     }
 }
 
+
 @Composable
-fun ExpandableChatHistoryItem(
-    item: ChatHistoryItemModel,
-    onChatClick: (String) -> Unit,
+fun SubjectHistoryItem(
+    subject: SubjectHistoryDomain,
+    onClick: (subjectId: String, luId: String?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -151,20 +153,25 @@ fun ExpandableChatHistoryItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFE8E8E8), RoundedCornerShape(spacing12))
-                .noRippleClickable { onChatClick(item.title) }
+                .background(GrayUltraDark, RoundedCornerShape(spacing12))
+                .noRippleClickable {
+                    onClick(
+                        subject.subjectId,
+                        null
+                    )
+                }
                 .padding(spacing12),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                item.title,
+                subject.title,
                 fontSize = 14.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
 
-            if (item.subItems.isNotEmpty()) {
+            if (subject.learningUnits.isNotEmpty()) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = "expand",
@@ -174,19 +181,21 @@ fun ExpandableChatHistoryItem(
         }
 
         if (expanded) {
-            item.subItems.forEach { sub ->
+            subject.learningUnits.forEach { lu ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = spacing24, top = spacing8)
                         .background(GrayUltraLight, RoundedCornerShape(spacing12))
-                        .noRippleClickable { onChatClick(sub) }
+                        .noRippleClickable { onClick(subject.subjectId, lu.luId) }
                         .padding(spacing12),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        sub, fontSize = 12.sp, maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        lu.luTitle,
+                        fontSize = 12.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

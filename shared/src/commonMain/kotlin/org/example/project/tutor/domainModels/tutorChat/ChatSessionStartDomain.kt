@@ -65,3 +65,7 @@ data class ChatMessageDomain(
     val timestamp: Long = EMPTY_LONG,
     val type: String = EMPTY_STRING,
 )
+enum class SenderType {
+    USER,
+    AI
+}
