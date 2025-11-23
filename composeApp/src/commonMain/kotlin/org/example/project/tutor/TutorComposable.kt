@@ -64,6 +64,7 @@ import org.example.project.strings.SmartTutorStrings.go_on_button
 import org.example.project.strings.SmartTutorStrings.learning_unit_title
 import org.example.project.strings.SmartTutorStrings.learning_units
 import org.example.project.strings.SmartTutorStrings.material_title
+import org.example.project.strings.SmartTutorStrings.type_your_message
 import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
 import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
@@ -245,7 +246,7 @@ fun ChatInputField(
         TextField(
             value = userMessage,
             onValueChange = onMessageChange,
-            placeholder = { Text("Type your message...") },
+            placeholder = { Text(type_your_message) },
             modifier = Modifier.weight(1f)
         )
 

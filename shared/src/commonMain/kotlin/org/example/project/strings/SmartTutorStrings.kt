@@ -33,8 +33,6 @@ object SmartTutorStrings {
     //tutor intro screen
     const val type_your_message = "Type your message..."
     const val go_on_button = "Go On"
-    const val tutor_title = "Tutor"
-    const val exercises_title = "Exercises"
     const val learning_units = "Learning Units"
 
     //settings
