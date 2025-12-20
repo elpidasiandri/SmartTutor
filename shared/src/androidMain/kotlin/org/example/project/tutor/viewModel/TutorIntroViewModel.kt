@@ -23,13 +23,15 @@ class TutorIntroViewModel(
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
 
-
     fun onEvent(event: TutorUiEvents) {
         when (event) {
             TutorUiEvents.Logout -> {
                 logOutUser()
             }
-            TutorUiEvents.InitializeStateAfterShowingMessage ->{
+            is TutorUiEvents.ShowErrorMessage ->{
+                stateForErrorMessage(event.message)
+            }
+            TutorUiEvents.InitializeStateAfterShowingMessage -> {
                 _state.update {
                     it.copy(
                         showCustomMessage = false,
@@ -38,6 +40,7 @@ class TutorIntroViewModel(
                     )
                 }
             }
+
             else -> {}
         }
     }

@@ -25,7 +25,7 @@ import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
-import org.example.project.utils.Validation
+import org.example.project.utils.validation.Validation
 
 @Composable
 fun SignupComposable(

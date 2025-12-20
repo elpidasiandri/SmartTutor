@@ -45,7 +45,7 @@ import org.example.project.strings.SmartTutorStrings.password_conf_password_not_
 import org.example.project.strings.SmartTutorStrings.password_dismatch
 import org.example.project.strings.SmartTutorStrings.settings_title
 import org.example.project.strings.SmartTutorStrings.update_password
-import org.example.project.utils.Validation.isValidPassword
+import org.example.project.utils.validation.Validation.isValidPassword
 
 @Composable
 fun ChangePasswordSettingsScreen(

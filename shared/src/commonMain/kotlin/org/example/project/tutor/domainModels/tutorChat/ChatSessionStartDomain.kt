@@ -6,10 +6,10 @@ import org.example.project.utils.EmptyValues.EMPTY_LONG
 import org.example.project.utils.EmptyValues.EMPTY_STRING
 
 data class ChatSessionStartDomain(
-    val material: MaterialDomain,
-    val learningUnit: LearningUnitDomain,
-    val instance: LearningUnitInstanceDomain,
-    val chat: ChatDomain,
+    val material: MaterialDomain = MaterialDomain(),
+    val learningUnit: LearningUnitDomain = LearningUnitDomain(),
+    val instance: LearningUnitInstanceDomain = LearningUnitInstanceDomain(),
+    val chat: ChatDomain = ChatDomain(),
 )
 
 data class MaterialDomain(

@@ -33,6 +33,10 @@ class TutorController(
                 initializeStateAfterShowingMessage()
             }
 
+            is TutorUiEvents.ShowErrorMessage -> {
+                stateForErrorMessage(event.message)
+            }
+
             TutorUiEvents.ClearUiEvent -> {
                 clearUiEvent()
             }

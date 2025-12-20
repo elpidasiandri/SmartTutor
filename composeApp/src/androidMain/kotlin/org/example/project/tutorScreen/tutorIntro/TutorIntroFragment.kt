@@ -8,6 +8,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
+import org.example.project.tutor.AndroidPdfPicker
 import org.example.project.tutor.TutorChatUI
 import org.example.project.tutor.mappers.chatHistory.fakeChatHistory
 import org.example.project.tutor.mappers.fakeChatSession
@@ -35,6 +37,8 @@ import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.module.tutorModule
 import org.example.project.tutor.viewModel.TutorIntroViewModel
+import org.example.project.utils.validation.PdfValidationResult
+import org.example.project.utils.validation.validatePdf
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
@@ -44,6 +48,7 @@ class TutorIntroFragment : Fragment() {
     private val viewModel by activityViewModel<TutorIntroViewModel>()
     private lateinit var textToSpeech: TextToSpeech
     private var speechRecognizer: SpeechRecognizer? = null
+    private lateinit var pdfPicker: AndroidPdfPicker
 
     private val settingsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -54,6 +59,7 @@ class TutorIntroFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View {
         loadKoinModules(tutorModule)
+        pdfPicker = AndroidPdfPicker(this)
         textToSpeech = TextToSpeech(requireContext()) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 textToSpeech.language = Locale.US
@@ -84,7 +90,6 @@ class TutorIntroFragment : Fragment() {
                     startVoiceInput = { onResult ->
                         checkAudioPermissions {
                             startVoiceInput { result ->
-                                println("Q12345 result fragment $result")
                                 userMessage = result
                             }
                         }
@@ -97,6 +102,9 @@ class TutorIntroFragment : Fragment() {
                     onLogoutClick = { viewModel.onEvent(TutorUiEvents.Logout) },
                     onMessageDismiss = {
                         viewModel.onEvent(TutorUiEvents.InitializeStateAfterShowingMessage)
+                    },
+                    onUploadPdfClick = {
+                        uploadPdfFile()
                     }
                 )
             }
@@ -111,6 +119,23 @@ class TutorIntroFragment : Fragment() {
         speechRecognizer = null
     }
 
+    private fun uploadPdfFile() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val file = pdfPicker.pickPdf() ?: return@launch
+
+            when (val result = validatePdf(file)) {
+                is PdfValidationResult.Error -> {
+                    viewModel.onEvent(TutorUiEvents.ShowErrorMessage(result.message))
+                }
+
+                is PdfValidationResult.Success -> {
+                    Log.d("Q12345 Success", "$result")
+                    Log.d("PDF", "Selected: ${result.file.name}")
+                }
+            }
+        }
+    }
+
     private fun playAIMessage(message: String) {
         textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, null)
     }
@@ -120,7 +145,8 @@ class TutorIntroFragment : Fragment() {
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
 
             override fun onPartialResults(partialResults: Bundle?) {
-                val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val matches =
+                    partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 if (!matches.isNullOrEmpty()) {
                     onResult(matches[0])
                 }
@@ -144,7 +170,10 @@ class TutorIntroFragment : Fragment() {
         })
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         }

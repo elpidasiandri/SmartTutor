@@ -2,7 +2,6 @@ package org.example.project.registration.login
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,7 +28,7 @@ import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.theme.SmartTutorStyles
-import org.example.project.utils.Validation
+import org.example.project.utils.validation.Validation
 
 @Composable
 fun LoginComposable(

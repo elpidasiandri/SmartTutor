@@ -76,7 +76,7 @@ fun fakeChatSession(): ChatSessionStartDomain {
     return ChatSessionStartDomain(
         material = MaterialDomain(
             materialId = "material_001",
-            fileUploaded = true,
+            fileUploaded = false,
             fileName = "physics.pdf",
             canUpload = false,
             totalUnits = 5

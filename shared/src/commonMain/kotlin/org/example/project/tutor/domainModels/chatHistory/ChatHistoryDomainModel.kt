@@ -3,7 +3,7 @@ package org.example.project.tutor.domainModels.chatHistory
 import org.example.project.utils.EmptyValues
 
 data class ChatHistoryDomain(
-    val subjects: List<SubjectHistoryDomain>,
+    val subjects: List<SubjectHistoryDomain> = emptyList(),
 )
 
 data class SubjectHistoryDomain(

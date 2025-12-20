@@ -93,6 +93,7 @@ fun TutorChatUI(
     onProgressClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
+    onUploadPdfClick: () -> Unit
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -217,7 +218,7 @@ fun TutorChatUI(
                                 ,
                                 isMicOn = isMicOn,
                                 onUploadPdfClick = {
-                                    // open PDF picker
+                                    onUploadPdfClick()
                                 },
                             )
                         }

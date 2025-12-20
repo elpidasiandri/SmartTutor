@@ -1,5 +1,5 @@
 @file:JsModule("firebase/app")
-@file:OptIn(ExperimentalWasmJsInterop::class)
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 
 package org.example.project.registration.firebase
 import kotlin.js.*
