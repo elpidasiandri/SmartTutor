@@ -7,7 +7,7 @@ import org.example.project.navigations.registration.RegistrationScreenFlow
 import org.example.project.navigations.settings.changePassword.ChangePasswordFlow
 import org.example.project.navigations.settings.SettingsScreenFlow
 import org.example.project.navigations.settings.deleteAccount.DeleteAccountFlow
-import org.example.project.navigations.tutor.TutorScreenFlow
+import org.example.project.navigations.tutor.WebTutorScreenFlow
 @Composable
 fun NavigateToScreen(
     screen: WebScreen,
@@ -19,7 +19,7 @@ fun NavigateToScreen(
         }
 
         WebScreen.Tutor -> {
-            TutorScreenFlow(navController)
+            WebTutorScreenFlow(navController)
         }
 
         WebScreen.Settings -> {

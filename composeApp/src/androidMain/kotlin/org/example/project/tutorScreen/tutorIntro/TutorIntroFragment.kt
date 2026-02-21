@@ -31,8 +31,6 @@ import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
 import org.example.project.tutor.AndroidPdfPicker
 import org.example.project.tutor.TutorChatUI
-import org.example.project.tutor.mappers.chatHistory.fakeChatHistory
-import org.example.project.tutor.mappers.fakeChatSession
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.module.tutorModule
@@ -54,11 +52,16 @@ class TutorIntroFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        loadKoinModules(tutorModule)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        loadKoinModules(tutorModule)
+
         pdfPicker = AndroidPdfPicker(this)
         textToSpeech = TextToSpeech(requireContext()) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -69,21 +72,15 @@ class TutorIntroFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 val state by viewModel.state.collectAsStateWithLifecycle()
-                var showErrorMessage by remember(state.showCustomMessage) { mutableStateOf(state.showCustomMessage) }
-                var errorMessage by remember(state.message) { mutableStateOf(state.message) }
-                var isError by remember(state.isError) { mutableStateOf(state.isError) }
-
 
                 var userMessage by remember { mutableStateOf("") }
-                val fakeDomain = fakeChatSession()
-                val fakeChatHistory = fakeChatHistory()
 
                 TutorChatUI(
-                    chatData = fakeDomain,
-                    chatHistory = fakeChatHistory,
-                    showCustomMessage = showErrorMessage,
-                    message = errorMessage,
-                    isError = isError,
+                    chatData = state.session,
+                    chatHistory = state.chatHistory,
+                    showCustomMessage = state.showCustomMessage,
+                    message = state.message,
+                    isError = state.isError,
                     userMessage = userMessage,
                     onMessageChange = { userMessage = it },
                     playAIMessage = { text -> playAIMessage(text) },
@@ -98,13 +95,26 @@ class TutorIntroFragment : Fragment() {
                     onSettingsClick = {
                         settingsLauncher.launch(SettingsActivity.newIntent(requireContext()))
                     },
-                    onProgressClick = {},
                     onLogoutClick = { viewModel.onEvent(TutorUiEvents.Logout) },
                     onMessageDismiss = {
                         viewModel.onEvent(TutorUiEvents.InitializeStateAfterShowingMessage)
                     },
                     onUploadPdfClick = {
                         uploadPdfFile()
+                    },
+                    selectLearningUnits = { luId ->
+                        val units = state.allUnits
+                        val index = units.indexOfFirst { it.id == luId }
+                        if (index >= 0) viewModel.onEvent(TutorUiEvents.OpenUnit(index))
+                    },
+                    onNextUnitClick = { viewModel.onEvent(TutorUiEvents.NextUnit) },
+                    onExercisesClick = { },
+                    startNewChat = {
+                        viewModel.onEvent(TutorUiEvents.NewChat)
+                    },
+                    deleteSubject = { subjectId ->
+                        viewModel.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
+
                     }
                 )
             }
@@ -129,6 +139,7 @@ class TutorIntroFragment : Fragment() {
                 }
 
                 is PdfValidationResult.Success -> {
+                    viewModel.onEvent(TutorUiEvents.UploadPdf(result.file))
                     Log.d("Q12345 Success", "$result")
                     Log.d("PDF", "Selected: ${result.file.name}")
                 }
@@ -183,7 +194,7 @@ class TutorIntroFragment : Fragment() {
 
     private fun setUpObserver() {
         viewLifecycleOwner.lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { event ->
                     when (event.event) {
                         TutorEvents.NavigateToLogOut -> {

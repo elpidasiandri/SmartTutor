@@ -16,8 +16,6 @@ import org.example.project.tutor.TutorChatUI
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.di.tutorModule
-import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
 import org.example.project.tutor.pdfPicker.WebPdfPicker
 import org.example.project.tutor.viewModel.TutorController
 import org.example.project.utils.validation.PdfValidationResult
@@ -27,7 +25,7 @@ import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
 
 @Composable
-fun TutorScreenFlow(navController: NavController) {
+fun WebTutorScreenFlow(navController: NavController) {
     loadKoinModules(tutorModule)
 
     val controller = koinInject<TutorController>()
@@ -50,7 +48,7 @@ fun TutorScreenFlow(navController: NavController) {
     TutorChatUI(
         userMessage = userMessage,
         onMessageChange = { userMessage = it },
-        playAIMessage = { controller.playAIMessage(it) },
+        playAIMessage = { text -> controller.playAIMessage(text) },
         startVoiceInput = { controller.startVoiceInput(it) },
         stopVoiceInput = { controller.stopVoiceInput() },
         showCustomMessage = state.showCustomMessage,
@@ -58,13 +56,12 @@ fun TutorScreenFlow(navController: NavController) {
         message = state.message,
         isError = state.isError,
         onSettingsClick = { navController.navigate(WebScreen.Settings) },
-        onProgressClick = {},
         onLogoutClick = { controller.onEvent(TutorUiEvents.Logout) },
         onMessageDismiss = {
             controller.onEvent(TutorUiEvents.InitializeStateAfterShowingMessage)
         },
-        chatData = ChatSessionStartDomain(),
-        chatHistory = ChatHistoryDomain(),
+        chatData = state.session,
+        chatHistory = state.chatHistory,
         onUploadPdfClick = {
             CoroutineScope(Dispatchers.Default).launch {
                 val file = pdfPicker.pickPdf()
@@ -75,11 +72,26 @@ fun TutorScreenFlow(navController: NavController) {
                         }
 
                         is PdfValidationResult.Success -> {
+                            controller.onEvent(TutorUiEvents.UploadPdf(result.file))
                             println("PDF Success: ${result.file.name}, ${result.file.sizeBytes}")
                         }
                     }
                 }
             }
-        }
+        },
+        selectLearningUnits = { luId ->
+            val units = state.allUnits
+            val index = units.indexOfFirst { it.id == luId }
+            if (index >= 0) controller.onEvent(TutorUiEvents.OpenUnit(index))
+        },
+        onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
+        onExercisesClick = { },
+        startNewChat = {
+            controller.onEvent(TutorUiEvents.NewChat)
+        },
+        deleteSubject = { subjectId ->
+            controller.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
+        },
+        isWebFlow = true
     )
 }

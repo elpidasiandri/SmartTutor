@@ -1,10 +1,53 @@
 package org.example.project.tutor.di
 
+import io.ktor.client.HttpClient
+import org.example.project.network.createWebHttpClient
+import org.example.project.registration.firebase.initFirebase
+import org.example.project.registration.repo.WebAuthRepositoryImpl
 import org.example.project.settings.logOut.logoutModule
+import org.example.project.settings.logout.useCase.LearningUnitsUseCase
+import org.example.project.tutor.commonViewModel.TutorPlatform
+import org.example.project.tutor.repo.ITutorRepo
+import org.example.project.tutor.repo.WebTutorRepoImpl
+import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
+import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
+import org.example.project.tutor.useCases.PdfUploadServiceUseCase
+import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.tutor.viewModel.TutorController
 import org.koin.dsl.module
 
 val tutorModule = module {
-    single { TutorController(get()) }
+    single<HttpClient> { createWebHttpClient() }
+
+    single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
+    single<ITutorRepo> { WebTutorRepoImpl(
+        firebase =  initFirebase().app  ,
+        httpClient = get(),
+        baseUrl = "http://localhost:8080"
+    )
+    }
+    single { LearningUnitsUseCase(get()) }
+    single { GetIdTokenSuspendUseCase(get()) }
+    single { PdfUploadServiceUseCase(get()) }
+    single<TutorPlatform> {
+        object : TutorPlatform {
+            override fun speak(text: String) {
+
+            }
+
+            override fun startVoice(onResult: (String) -> Unit) {
+
+            }
+
+            override fun stopVoice() {
+
+            }
+
+            override fun log(tag: String, message: String, t: Throwable?) {
+
+            }
+        }
+    }
+    single { TutorController(get(), get(), get(), get(), get()) }
     includes(logoutModule)
 }

@@ -63,12 +63,7 @@ class RegistrationViewModel(
                     registrationUseCase.sendEmailForChangePassword(
                         email = email
                     ) { success, userId ->
-                        Log.d(
-                            "Q12345 ", " registrationUseCase userId $userId " +
-                                    " success $success "
-                        )
                         if (success) {
-                            //todo
                             _state.update {
                                 it.copy(
                                     showCustomMessage = true,
@@ -82,15 +77,8 @@ class RegistrationViewModel(
                     }
                 )
             }.catch {
-                Log.d(
-                    "Q12345 ", "catch $it"
-                )
                 stateForErrorMessage()
-
             }.collect {
-                Log.d(
-                    "Q12345 ", "collect"
-                )
             }
         }
     }
@@ -118,7 +106,6 @@ class RegistrationViewModel(
                     }
                 )
             }.catch {
-                Log.d("Q12345 ", "catch $it")
                 _state.update {
                     it.copy(
                         event = RegistrationEvents.None,

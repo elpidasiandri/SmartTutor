@@ -2,79 +2,36 @@ package org.example.project.tutor.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
-import org.example.project.strings.SmartTutorStrings
-import org.example.project.tutor.state.TutorEvents
+import org.example.project.tutor.commonViewModel.TutorCommonViewModel
+import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
-import org.example.project.utils.EmptyValues
+import org.example.project.tutor.useCases.PdfUploadServiceUseCase
+import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 class TutorIntroViewModel(
-    private val dispatchersIo: CoroutineDispatcher,
-    private val logout: LogoutUseCase,
+    logout: LogoutUseCase,
+    private val getLearningUnitUseCase: LearningUnitsUseCase,
+    private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
+    private val platform: TutorPlatform,
+    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(TutorState())
-    val state: StateFlow<TutorState> = _state
+    private val common = TutorCommonViewModel(
+        logoutUseCase = logout,
+        getLearningUnitUseCase = getLearningUnitUseCase,
+        scope = viewModelScope,
+        platform = platform,
+        pdfUploadServiceUseCase = pdfUploadServiceUseCase,
+        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase
+    )
+    val state: StateFlow<TutorState> = common.state
 
-    fun onEvent(event: TutorUiEvents) {
-        when (event) {
-            TutorUiEvents.Logout -> {
-                logOutUser()
-            }
-            is TutorUiEvents.ShowErrorMessage ->{
-                stateForErrorMessage(event.message)
-            }
-            TutorUiEvents.InitializeStateAfterShowingMessage -> {
-                _state.update {
-                    it.copy(
-                        showCustomMessage = false,
-                        message = EmptyValues.EMPTY_STRING,
-                        isError = false
-                    )
-                }
-            }
+    fun onEvent(event: TutorUiEvents) = common.onEvent(event)
 
-            else -> {}
-        }
-    }
-
-    private fun logOutUser() {
-        viewModelScope.launch(dispatchersIo) {
-            flow {
-                emit(
-                    logout { success, _ ->
-                        if (success) {
-                            _state.update {
-                                it.copy(
-                                    event = TutorEvents.NavigateToLogOut
-                                )
-                            }
-                        } else {
-                            stateForErrorMessage()
-                        }
-                    }
-                )
-            }.catch {
-                stateForErrorMessage()
-            }.collect {
-            }
-        }
-    }
-
-    private fun stateForErrorMessage(message: String? = null) {
-        _state.update {
-            it.copy(
-                showCustomMessage = true,
-                message = message ?: SmartTutorStrings.generic_error,
-                isError = true
-            )
-        }
-    }
+    fun playAIMessage(text: String) = common.playAIMessage(text)
+    fun startVoiceInput(onResult: (String) -> Unit) = common.startVoiceInput(onResult)
+    fun stopVoiceInput() = common.stopVoiceInput()
 }

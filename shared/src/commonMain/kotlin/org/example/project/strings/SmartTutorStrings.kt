@@ -31,9 +31,8 @@ object SmartTutorStrings {
     const val generic_error = "Something went wrong. Please try again."
 
     //tutor intro screen
-    const val type_your_message = "Type your message..."
-    const val go_on_button = "Go On"
-    const val learning_units = "Learning Units"
+    const val type_your_message = "Ask something about this Unit"
+
 
     //settings
     const val settings_title = "Settings"

@@ -37,6 +37,10 @@ external interface UserCredential : JsAny {
 external interface FirebaseUser : JsAny {
     val uid: String
     val email: String?
+
+    @JsName("getIdToken")
+    fun getIdToken(forceRefresh: Boolean = definedExternally): JsPromise<JsString>
+
     @JsName("delete")
     fun delete(): JsPromise<JsVoid>
 }

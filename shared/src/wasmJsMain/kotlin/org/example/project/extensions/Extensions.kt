@@ -8,6 +8,10 @@ external interface JsPromise<T : JsAny> : JsAny {
     fun <S : JsAny> catch(onRejected: (JsAny) -> S): JsPromise<S>
 
 }
+
+@OptIn(ExperimentalWasmJsInterop::class)
+external interface JsString : JsAny
+
 @OptIn(ExperimentalWasmJsInterop::class)
 suspend fun <T : JsAny> JsPromise<T>.await(): T =
     suspendCancellableCoroutine { cont ->

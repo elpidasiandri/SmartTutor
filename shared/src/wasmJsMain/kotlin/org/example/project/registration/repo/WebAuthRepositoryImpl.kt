@@ -1,4 +1,5 @@
 @file:OptIn(ExperimentalWasmJsInterop::class)
+
 package org.example.project.registration.repo
 
 import kotlinx.coroutines.CoroutineScope
@@ -18,18 +19,20 @@ import org.example.project.registration.firestore.setDoc
 import kotlinx.datetime.Clock
 import org.example.project.extensions.JsVoid
 import org.example.project.registration.firebase.createUserData
+import org.example.project.registration.firebase.signOut
 
 class WebAuthRepositoryImpl(
     private val app: FirebaseApp,
 ) : IAuthRepository {
 
     private val auth: FirebaseAuth = getAuth(app)
+
     @OptIn(ExperimentalWasmJsInterop::class)
     override fun signup(
         email: String,
         password: String,
         username: String,
-        onResult: (Boolean, String?) -> Unit
+        onResult: (Boolean, String?) -> Unit,
     ) {
         CoroutineScope(Dispatchers.Default).launch {
             try {
@@ -60,7 +63,10 @@ class WebAuthRepositoryImpl(
     override fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         CoroutineScope(Dispatchers.Default).launch() {
             try {
-                val credential = signInWithEmailAndPassword(auth,email, password).await()
+                val credential = signInWithEmailAndPassword(auth, email, password).await()
+                getIdToken { _, token ->
+                    println("FIREBASE_TOKEN_WEB: $token")
+                }
                 onResult(true, credential.user.uid)
             } catch (e: Throwable) {
                 onResult(false, null)
@@ -68,9 +74,29 @@ class WebAuthRepositoryImpl(
         }
     }
 
+    private fun getIdToken(onResult: (Boolean, String?) -> Unit) {
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val user = auth.currentUser
+                if (user == null) {
+                    onResult(false, "No current user")
+                    return@launch
+                }
+                val tokenJs = user.getIdToken(true).await()
+                val token = tokenJs.toString()
+                onResult(true, token)
+
+            } catch (e: Throwable) {
+                signOut(auth)
+                onResult(false, e.message)
+            }
+        }
+    }
+
+
     override fun sendEmailToResetPassword(
         email: String,
-        onResult: (Boolean, String?) -> Unit
+        onResult: (Boolean, String?) -> Unit,
     ) {
         if (email.isBlank()) {
             onResult(false, "Email is empty")

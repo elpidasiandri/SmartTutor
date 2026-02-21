@@ -3,11 +3,19 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import java.util.Properties
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ktor)
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "kotlinproject.shared.generated.resources"
 }
 
 kotlin {
@@ -61,6 +69,8 @@ kotlin {
                 implementation(libs.firebase.analytics)
                 implementation(libs.koin.android)
 
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.ktor.client.okhttp)
 
                 implementation(libs.androidx.lifecycle.viewmodelCompose)
                 implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -68,6 +78,7 @@ kotlin {
         }
 
         val commonMain by getting {
+            resources.srcDir("src/commonMain/resources")
             dependencies {
                 implementation(compose.ui)
                 implementation(compose.material3)
@@ -82,9 +93,11 @@ kotlin {
 
                 implementation(libs.koin.core)
                 implementation(libs.koin.compose)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.contentNegotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
 
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-
             }
         }
 

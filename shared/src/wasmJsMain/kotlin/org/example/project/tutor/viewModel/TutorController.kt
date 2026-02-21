@@ -2,112 +2,37 @@ package org.example.project.tutor.viewModel
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
-import org.example.project.strings.SmartTutorStrings
-import org.example.project.tutor.state.TutorEvents
+import org.example.project.tutor.commonViewModel.TutorCommonViewModel
+import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
-import org.example.project.tutor.speakText
-import org.example.project.tutor.startVoiceRecognition
-import org.example.project.tutor.stopVoiceRecognition
-import org.example.project.utils.EmptyValues
+import org.example.project.tutor.useCases.PdfUploadServiceUseCase
+import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 class TutorController(
     private val logoutUseCase: LogoutUseCase,
+    private val getLearningUnitUseCase: LearningUnitsUseCase,
+    private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
+    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    platform: TutorPlatform,
 ) {
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val common = TutorCommonViewModel(
+        logoutUseCase = logoutUseCase,
+        getLearningUnitUseCase = getLearningUnitUseCase,
+        scope = scope,
+        platform = platform,
+        pdfUploadServiceUseCase = pdfUploadServiceUseCase,
+        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase
+    )
 
-    private val _state = MutableStateFlow(TutorState())
-    val state: StateFlow<TutorState> = _state
-    fun onEvent(event: TutorUiEvents) {
-        when (event) {
-            TutorUiEvents.Logout -> {
-                logOutUser()
-            }
-
-            TutorUiEvents.InitializeStateAfterShowingMessage -> {
-                initializeStateAfterShowingMessage()
-            }
-
-            is TutorUiEvents.ShowErrorMessage -> {
-                stateForErrorMessage(event.message)
-            }
-
-            TutorUiEvents.ClearUiEvent -> {
-                clearUiEvent()
-            }
-
-            else -> {}
-        }
-    }
-
-    private fun logOutUser() {
-        scope.launch {
-            logoutUseCase { success, _ ->
-                if (success) {
-                    _state.update {
-                        it.copy(
-                            event = TutorEvents.NavigateToLogOut
-                        )
-                    }
-                } else {
-                    stateForErrorMessage()
-                }
-            }
-        }
-    }
-
-    private fun initializeStateAfterShowingMessage() {
-        _state.update {
-            it.copy(
-                showCustomMessage = false,
-                message = EmptyValues.EMPTY_STRING,
-                isError = false
-            )
-        }
-    }
-
-    private fun clearUiEvent() {
-        _state.update {
-            it.copy(
-                uiEvent = TutorUiEvents.None,
-                event = TutorEvents.None
-            )
-        }
-    }
-
-    private fun stateForErrorMessage(message: String? = null) {
-        _state.update {
-            it.copy(
-                showCustomMessage = true,
-                message = message ?: SmartTutorStrings.generic_error,
-                isError = true
-            )
-        }
-    }
-
-    fun playAIMessage(text: String) {
-        val normalized = normalizeTranscript(text)
-        speakText(normalized)
-    }
-
-    fun startVoiceInput(onResult: (String) -> Unit) {
-        println("Voice recognition started")
-        startVoiceRecognition(onResult)
-    }
-
-    private fun normalizeTranscript(text: String): String {
-        return text.replace("-", "")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-    }
-
-
-    fun stopVoiceInput() {
-        stopVoiceRecognition()
-    }
+    val state: StateFlow<TutorState> = common.state
+    fun onEvent(event: TutorUiEvents) = common.onEvent(event)
+    fun playAIMessage(text: String) = common.playAIMessage(text)
+    fun startVoiceInput(onResult: (String) -> Unit) = common.startVoiceInput(onResult)
+    fun stopVoiceInput() = common.stopVoiceInput()
 }

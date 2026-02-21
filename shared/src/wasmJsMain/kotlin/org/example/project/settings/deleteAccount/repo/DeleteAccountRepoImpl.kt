@@ -13,19 +13,15 @@ class DeleteAccountRepoImpl(private val app: FirebaseApp) : IDeleteAccountRepo {
     override fun deleteAccount(onResult: (Boolean, String?) -> Unit) {
         CoroutineScope(Dispatchers.Default).launch {
             val user = auth.currentUser
-            println("Q12345 ")
             if (user == null) {
                 onResult(false, "User not logged in")
-                println("Q12345 user null")
                 return@launch
             }
 
             try {
                 user.delete().await()
-                println("Q12345 try")
                 onResult(true, null)
             } catch (e: Throwable) {
-                println("Q12345 catch ${e.message}")
                 if (e.message?.contains("requires-recent-login") == true) {
                     onResult(false, "Please login again to delete your account")
                 } else {

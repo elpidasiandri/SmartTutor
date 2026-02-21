@@ -1,16 +1,19 @@
 package org.example.project.tutor
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,14 +27,15 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -44,37 +48,37 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.example.project.colors.AppColors
 import org.example.project.colors.AppColors.GrayLightBoard
 import org.example.project.components.customToast.CustomToastComposable
-import org.example.project.dimens.Dimens.spacing12
+import org.example.project.components.loadImages.rememberBmpFromResPath
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
-import org.example.project.strings.SmartTutorStrings.go_on_button
 import org.example.project.strings.SmartTutorStrings.learning_unit_title
-import org.example.project.strings.SmartTutorStrings.learning_units
 import org.example.project.strings.SmartTutorStrings.material_title
 import org.example.project.strings.SmartTutorStrings.type_your_message
 import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
 import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatUiMessage
 import org.example.project.tutor.domainModels.tutorChat.LUStatusDomain
 import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.menu.MenuAndChatHistory
-import org.example.project.utils.UtilsComposable.noRippleClickable
+import org.example.project.utils.validation.Validation
 
 @Composable
 fun TutorChatUI(
@@ -90,28 +94,137 @@ fun TutorChatUI(
     startVoiceInput: (onResult: (String) -> Unit) -> Unit,
     stopVoiceInput: () -> Unit,
     onSettingsClick: () -> Unit,
-    onProgressClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
-    onUploadPdfClick: () -> Unit
+    onUploadPdfClick: () -> Unit,
+    selectLearningUnits: (String) -> Unit,
+    onNextUnitClick: () -> Unit,
+    onExercisesClick: () -> Unit,
+    startNewChat: () -> Unit,
+    deleteSubject: (String) -> Unit,
+    isWebFlow: Boolean = false,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
+    val chatMessages = remember { mutableStateListOf<ChatUiMessage>() }
+
     var isMicOn by remember { mutableStateOf(false) }
     var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
-    val chatMessages = remember {
-        mutableStateListOf(*chatData.chat.messages.map {
-            Pair(it.sender, it.content)
-        }.toTypedArray())
+
+    LaunchedEffect(chatData.chat.chatSessionId) {
+        chatMessages.clear()
+
+        chatMessages.addAll(
+            chatData.chat.messages.map { msg ->
+                ChatUiMessage(
+                    sender = msg.sender,
+                    text = msg.content,
+                    imagePath = msg.imagePath
+                )
+            }
+        )
     }
 
+    TutorToastHost(
+        showErrorMessage = showErrorMessage,
+        errorMessage = errorMessage,
+        isError = isError,
+        onMessageDismiss = onMessageDismiss
+    )
+
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    BoxWithConstraints {
+        val drawerWidth = maxWidth / widthDividerMenu
+
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                TutorDrawerContent(
+                    drawerWidth = drawerWidth,
+                    chatHistory = chatHistory,
+                    drawerState = drawerState,
+                    scope = scope,
+                    onSettingsClick = onSettingsClick,
+                    onLogoutClick = onLogoutClick,
+                    onChatClick = { _, luId -> luId?.let(selectLearningUnits) },
+                    onNewChatClick = {
+                        scope.launch {
+                            startNewChat()
+                            drawerState.close()
+                        }
+                    },
+                    onDeleteSubject = { subjectId ->
+                        deleteSubject(subjectId)
+                    }
+                )
+            }
+        ) {
+            TutorScaffold(
+                chatData = chatData,
+                onToggleDrawer = {
+                    scope.launch {
+                        if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                    }
+                },
+                content = { padding ->
+                    TutorChatContent(
+                        padding = padding,
+                        chatData = chatData,
+                        chatMessages = chatMessages,
+                        isMicOn = isMicOn,
+                        userMessageState = userMessageState,
+                        onUserMessageChangeLocal = { userMessageState = it },
+                        onPlayClick = playAIMessage,
+                        onExercisesClick = onExercisesClick,
+                        onNextUnitClick = onNextUnitClick,
+                        onUploadPdfClick = onUploadPdfClick,
+                        onStopVoiceInput = {
+                            stopVoiceInput()
+                            isMicOn = false
+                        },
+                        onStartVoiceInput = { onResult ->
+                            startVoiceInput { result ->
+                                onMessageChange(result)
+                                isMicOn = false
+                                onResult(result)
+                            }
+                            isMicOn = true
+                        },
+                        onSendClick = {
+                            TutorHandleSend(
+                                userMessageState = userMessageState,
+                                onClearUserMessage = { userMessageState = "" },
+                                chatMessages = chatMessages,
+                                isMicOn = isMicOn,
+                                stopVoiceInput = stopVoiceInput,
+                                setMicOn = { isMicOn = it }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    }
+}
+
+/* --------------------------- PRIVATE HELPERS --------------------------- */
+
+@Composable
+private fun TutorToastHost(
+    showErrorMessage: Boolean,
+    errorMessage: String,
+    isError: Boolean,
+    onMessageDismiss: () -> Unit,
+) {
     if (showErrorMessage && errorMessage.isNotEmpty()) {
         Box(modifier = Modifier.padding(spacing24)) {
             CustomToastComposable(
                 isError = isError,
                 message = errorMessage,
-                initializeMessage = { showErrorMessage = true }
+                initializeMessage = { }
             )
         }
 
@@ -120,112 +233,314 @@ fun TutorChatUI(
             onMessageDismiss()
         }
     }
-    var selectedTab by remember { mutableStateOf("Go On") }
+}
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    BoxWithConstraints {
-
-        val drawerWidth = maxWidth / widthDividerMenu
-
-        ModalNavigationDrawer(
+@Composable
+private fun TutorDrawerContent(
+    drawerWidth: Dp,
+    chatHistory: ChatHistoryDomain,
+    drawerState: DrawerState,
+    scope: CoroutineScope,
+    onSettingsClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onChatClick: (subjectId: String, luId: String?) -> Unit,
+    onNewChatClick: () -> Unit,
+    onDeleteSubject: (subjectId: String) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(drawerWidth)
+            .background(Color.White)
+    ) {
+        MenuAndChatHistory(
+            chatHistory = chatHistory,
             drawerState = drawerState,
-            drawerContent = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(drawerWidth)
-                        .background(Color.White)
-                ) {
-                    MenuAndChatHistory(
-                        chatHistory = chatHistory,
-                        drawerState = drawerState,
-                        scope = scope,
-                        onSettingsClick = { onSettingsClick() },
-                        onLogoutClick = { onLogoutClick() },
-                        onChatClick = { subjectId, luId ->
+            scope = scope,
+            onSettingsClick = onSettingsClick,
+            onLogoutClick = onLogoutClick,
+            onChatClick = onChatClick,
+            onChatTitleClick = onNewChatClick,
+            onDeleteSubject = onDeleteSubject
+        )
+    }
+}
 
+@Composable
+private fun TutorScaffold(
+    chatData: ChatSessionStartDomain,
+    onToggleDrawer: () -> Unit,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        topBar = {
+            TopBarTabs(
+                chatData.material,
+                chatData.learningUnit,
+                changeHistoryVisibleStatus = onToggleDrawer
+            )
+        },
+        content = content
+    )
+}
+
+@Composable
+private fun TutorChatContent(
+    padding: PaddingValues,
+    chatData: ChatSessionStartDomain,
+    chatMessages: List<ChatUiMessage>,
+    isMicOn: Boolean,
+    userMessageState: String,
+    onUserMessageChangeLocal: (String) -> Unit,
+    onPlayClick: (String) -> Unit,
+    onExercisesClick: () -> Unit,
+    onNextUnitClick: () -> Unit,
+    onUploadPdfClick: () -> Unit,
+    onStopVoiceInput: () -> Unit,
+    onStartVoiceInput: (onResult: (String) -> Unit) -> Unit,
+    onSendClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+    ) {
+        TutorTopActionsRow(
+            fileUploaded = chatData.material.fileUploaded,
+            onExercisesClick = onExercisesClick,
+            onNextUnitClick = onNextUnitClick
+        )
+
+        Spacer(modifier = Modifier.height(spacing8))
+
+        ChatMessagesList(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = spacing8),
+            chatMessages = chatMessages,
+            onPlayClick = onPlayClick
+        )
+
+        if (chatData.instance.status != LUStatusDomain.INACTIVE) {
+            TutorInputSection(
+                fileUploaded = chatData.material.fileUploaded,
+                userMessageState = userMessageState,
+                onUserMessageChangeLocal = onUserMessageChangeLocal,
+                isMicOn = isMicOn,
+                onSendClick = onSendClick,
+                onMicClick = {
+                    if (!isMicOn) {
+                        onStartVoiceInput { result ->
+                            onUserMessageChangeLocal(result)
                         }
-                    )
-                }
-            }
-        ) {
-            Scaffold(
-                topBar = {
-                    TopBarTabs(
-                        selectedTab = selectedTab,
-                        onTabSelected = { selectedTab = it },
-                        changeHistoryVisibleStatus = {
-                            scope.launch {
-                                if (drawerState.isClosed) drawerState.open()
-                                else drawerState.close()
-                            }
-                        }
-                    )
-                },
-                content = { padding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                    ) {
-                        ChatUiHeader(chatData.material, chatData.learningUnit)
-
-
-                        Spacer(modifier = Modifier.height(spacing8))
-
-                        // -------------------- CHAT MESSAGES --------------------
-                        ChatMessagesList(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .padding(horizontal = spacing8),
-                            chatMessages = chatMessages,
-                            onPlayClick = { message -> playAIMessage(message) }
-                        )
-
-                        // -------------------- INPUT FIELD --------------------
-                        if (chatData.instance.status != LUStatusDomain.INACTIVE) {
-                            ChatInputField(
-                                fileUploaded = chatData.material.fileUploaded,
-                                userMessage = userMessageState,
-                                onMessageChange = { userMessageState = it },
-                                onSendClick = {
-                                    if (userMessageState.isNotBlank()) {
-                                        chatMessages.add(Pair("USER", userMessageState))
-                                        chatMessages.add(Pair("AI", "This is a fake AI reply"))
-                                        userMessageState = ""
-                                    }
-                                    if (isMicOn) {
-                                        stopVoiceInput()
-                                        isMicOn = false
-                                    }
-                                },
-                                onMicClick = {
-                                    if (!isMicOn) {
-                                        startVoiceInput { result ->
-                                            println("Q12345 result compose $result")
-                                            onMessageChange(result)  // ενημερώνει το Fragment
-                                            isMicOn = false
-                                        }
-                                        isMicOn = true
-                                    } else {
-                                        stopVoiceInput()
-                                        isMicOn = false
-                                    }
-                                }
-                                ,
-                                isMicOn = isMicOn,
-                                onUploadPdfClick = {
-                                    onUploadPdfClick()
-                                },
-                            )
-                        }
+                    } else {
+                        onStopVoiceInput()
                     }
-                }
+                },
+                onUploadPdfClick = onUploadPdfClick
             )
         }
+    }
+}
+
+@Composable
+private fun TutorTopActionsRow(
+    fileUploaded: Boolean,
+    onExercisesClick: () -> Unit,
+    onNextUnitClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing8),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        TutorActionButton(
+            text = "Learning",
+            enabled = fileUploaded,
+            onClick = { /* TODO */ }
+        )
+        TutorActionButton(
+            text = "Exercises",
+            enabled = fileUploaded,
+            onClick = onExercisesClick
+        )
+        TutorActionButton(
+            text = "Next ➜",
+            enabled = fileUploaded,
+            onClick = onNextUnitClick
+        )
+    }
+}
+
+@Composable
+private fun TutorActionButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = AppColors.Purple,
+            disabledContentColor = AppColors.GrayDark
+        )
+    ) {
+        Text(text)
+    }
+}
+
+@Composable
+private fun TutorInputSection(
+    fileUploaded: Boolean,
+    userMessageState: String,
+    onUserMessageChangeLocal: (String) -> Unit,
+    isMicOn: Boolean,
+    onSendClick: () -> Unit,
+    onMicClick: () -> Unit,
+    onUploadPdfClick: () -> Unit,
+) {
+    ChatInputField(
+        fileUploaded = fileUploaded,
+        userMessage = userMessageState,
+        onMessageChange = onUserMessageChangeLocal,
+        onSendClick = onSendClick,
+        onMicClick = onMicClick,
+        onUploadPdfClick = onUploadPdfClick,
+        isMicOn = isMicOn
+    )
+}
+
+private fun TutorHandleSend(
+    userMessageState: String,
+    onClearUserMessage: () -> Unit,
+    chatMessages: MutableList<ChatUiMessage>,
+    isMicOn: Boolean,
+    stopVoiceInput: () -> Unit,
+    setMicOn: (Boolean) -> Unit,
+) {
+    if (userMessageState.isNotBlank()) {
+        chatMessages.add(
+            ChatUiMessage(
+                sender = SenderType.USER.name,
+                text = userMessageState
+            )
+        )
+        chatMessages.add(
+            ChatUiMessage(
+                sender = SenderType.AI.name,
+                text = "This is a fake AI reply",
+                imagePath = emptyList()
+            )
+        )
+        onClearUserMessage()
+    }
+    if (isMicOn) {
+        stopVoiceInput()
+        setMicOn(false)
+    }
+}
+
+@Composable
+fun ChatMessagesList(
+    modifier: Modifier,
+    chatMessages: List<ChatUiMessage>,
+    onPlayClick: (String) -> Unit,
+) {
+
+    val listState = rememberLazyListState()
+    LaunchedEffect(chatMessages.size) {
+        if (chatMessages.isNotEmpty()) {
+            listState.animateScrollToItem(chatMessages.size - 1)
+        }
+    }
+    LazyColumn(modifier = modifier, state = listState) {
+        items(chatMessages) { item ->
+
+            if (item.sender == SenderType.USER.name) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = item.text,
+                        modifier = Modifier.background(Color(0xFFD1FFD6), RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { onPlayClick(item.text) }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = "Play AI"
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .background(Color(0xFFE8E8E8), RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                    ) {
+                        AiRichMessage(text = item.text)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(spacing8))
+        }
+    }
+}
+
+@Composable
+fun TopBarTabs(
+    material: MaterialDomain,
+    learningUnit: LearningUnitDomain,
+    changeHistoryVisibleStatus: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(GrayLightBoard)
+            .padding(top = spacing16, start = spacing8), horizontalArrangement = Arrangement.Start
+    ) {
+        IconButton(
+            modifier = Modifier.align(Alignment.CenterVertically),
+            onClick = { changeHistoryVisibleStatus() }) {
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = "Toggle History"
+            )
+        }
+        ChatUiHeader(
+            material,
+            learningUnit,
+            Modifier.align(Alignment.CenterVertically).weight(1f).padding(end = spacing8)
+        )
+    }
+}
+
+@Composable
+fun ChatUiHeader(material: MaterialDomain, learningUnit: LearningUnitDomain, modifier: Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        val statusFileText =
+            if (material.fileUploaded) uploaded_file_success_title else uploaded_file_failure_title
+        val learningText =
+            if (material.fileUploaded) "\n$learning_unit_title : ${learningUnit.title}" else ""
+        Text(
+            text =
+                "$material_title : ${material.fileName} - $statusFileText \n" + learningText,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(bottom = spacing4).align(Alignment.CenterHorizontally)
+        )
     }
 }
 
@@ -240,183 +555,152 @@ fun ChatInputField(
     isMicOn: Boolean,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(spacing8),
+        modifier = Modifier.fillMaxWidth().padding(spacing8),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        TextField(
-            value = userMessage,
-            onValueChange = onMessageChange,
-            placeholder = { Text(type_your_message) },
-            modifier = Modifier.weight(1f)
-        )
-
+        if (fileUploaded) {
+            TextField(
+                value = userMessage,
+                onValueChange = onMessageChange,
+                placeholder = { Text(type_your_message) },
+                modifier = Modifier.weight(1f)
+            )
+        }
         // Upload PDF button
-        IconButton(
-            onClick = onUploadPdfClick,
-            enabled = !fileUploaded
-        ) {
-            Icon(Icons.Default.UploadFile, contentDescription = "Upload PDF")
+        if (!fileUploaded) {
+            IconButton(
+                onClick = onUploadPdfClick,
+                enabled = !fileUploaded
+            ) { Icon(Icons.Default.UploadFile, contentDescription = "Upload PDF") }
         }
-
-        // Mic
-        IconButton(onClick = onMicClick) {
-            Icon(
-                if (isMicOn) Icons.Default.Mic else Icons.Default.MicOff,
-                contentDescription = "Mic"
-            )
-        }
-
-        // Send
-        IconButton(onClick = onSendClick) {
-            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
-        }
-    }
-}
-
-
-@Composable
-fun ChatUiHeader(material: MaterialDomain, learningUnit: LearningUnitDomain) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(GrayLightBoard)
-            .padding(vertical = spacing12),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        val statusFileText =
-            if (material.fileUploaded) uploaded_file_success_title else uploaded_file_failure_title
-        Text(
-            text = "$material_title : ${material.fileName} - $statusFileText",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = spacing4)
-        )
-
-        Text(
-            text = "$learning_unit_title : ${learningUnit.title}",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
-        )
-    }
-}
-
-@Composable
-fun ChatMessagesList(
-    modifier: Modifier,
-    chatMessages: List<Pair<String, String>>,
-    onPlayClick: (String) -> Unit,
-) {
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(chatMessages.size) {
-        if (chatMessages.isNotEmpty()) {
-            listState.animateScrollToItem(chatMessages.size - 1)
-        }
-    }
-
-    LazyColumn(
-        modifier = modifier,
-        state = listState
-    ) {
-        items(chatMessages) { (sender, message) ->
-            if (sender == SenderType.USER.name) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = message,
-                        modifier = Modifier
-                            .background(Color(0xFFD1FFD6), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
-                    )
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { onPlayClick(message) }) {
-                        Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Play AI")
-                    }
-                    Text(
-                        text = message,
-                        modifier = Modifier
-                            .background(Color(0xFFE8E8E8), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
-                    )
-                }
+        if (fileUploaded) {
+            // Mic
+            IconButton(onClick = onMicClick) {
+                Icon(
+                    if (isMicOn) Icons.Default.Mic else Icons.Default.MicOff,
+                    contentDescription = "Mic"
+                )
             }
-            Spacer(modifier = Modifier.height(spacing8))
-        }
-    }
-}
-
-
-@Composable
-fun TopBarTabs(
-    selectedTab: String,
-    onTabSelected: (String) -> Unit,
-    changeHistoryVisibleStatus: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(GrayLightBoard)
-            .padding(top = spacing16, start = spacing8),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        IconButton(
-            modifier = Modifier.align(Alignment.CenterVertically),
-            onClick = { changeHistoryVisibleStatus() }
-        ) {
-            Icon(Icons.Default.Menu, contentDescription = "Toggle History")
-        }
-        TabCard(
-            modifier = Modifier.align(Alignment.CenterVertically).weight(1f).padding(end = spacing8)
-                .noRippleClickable { onTabSelected(go_on_button) },
-            go_on_button,
-            selectedTab == go_on_button
-        )
-        TabCard(
-            modifier = Modifier.align(Alignment.CenterVertically).weight(1f).padding(end = spacing8)
-                .noRippleClickable { onTabSelected(learning_units) },
-            learning_units,
-            selectedTab == learning_units
-        )
-
-    }
-}
-
-@Composable
-fun TabCard(
-    modifier: Modifier,
-    label: String,
-    selected: Boolean,
-    shape: Shape = CardDefaults.shape,
-) {
-    val backgroundColor = if (selected) Color.Blue else Color.LightGray
-    val contentColor = if (selected) Color.White else Color.Black
-
-    Surface(
-        modifier = modifier,
-        shape = shape,
-        color = backgroundColor,
-        contentColor = contentColor,
-        shadowElevation = if (selected) spacing4 else 0.dp
-    ) {
-        Column(content = {
-            Text(
-                text = label,
-                color = if (selected) Color.White else Color.Black,
-                modifier = Modifier.padding(spacing12).align(Alignment.CenterHorizontally),
-                textAlign = TextAlign.Center
+        } // Send
+        IconButton(onClick = onSendClick) {
+            Icon(
+                Icons.AutoMirrored.Filled.Send,
+                contentDescription = "Send"
             )
-        })
+        }
     }
+}
+
+@Composable
+fun AiRichMessage(
+    text: String,
+) {
+    val imageRegex = Validation.imageRegex
+    val quoteKeyRegex = Validation.quoteKeyRegex
+    val quotationRegex = Validation.quotationRegex
+    val anyMarker = Validation.anyMarker
+
+    var lastIndex = 0
+    println("Q12345 anyMarker ${anyMarker.containsMatchIn(text)}")
+    println("Q12345 text ${text}")
+    if (!anyMarker.containsMatchIn(text)) {
+        Text(text)
+        return
+    }
+    Column {
+        anyMarker.findAll(text).forEach { m ->
+            val start = m.range.first
+            val end = m.range.last + 1
+            val marker = m.value
+
+            val before = text.substring(lastIndex, start)
+            if (before.isNotBlank()) {
+                Text(before)
+                Spacer(Modifier.height(6.dp))
+            }
+
+            // 1) [image 2.2.1] / [image_2.2.1] / [image: 2.2.1]
+            val imgMatch = imageRegex.find(marker)
+            if (imgMatch != null) {
+                val num = imgMatch.groupValues[1] // "2.2.1"
+                val path = "files/images/image_${num}.png"
+                val bmp = rememberBmpFromResPath(path)
+                if (bmp != null) {
+                    Image(
+                        bitmap = bmp,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 220.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                    Spacer(Modifier.height(6.dp))
+                } else {
+                    Text("🖼️ [image $num]")
+                }
+                Spacer(Modifier.height(6.dp))
+                lastIndex = end
+                return@forEach
+            }
+
+            // 2) [quote_beware]
+            val quoteKeyMatch = quoteKeyRegex.find(marker)
+            if (quoteKeyMatch != null) {
+                val key = quoteKeyMatch.groupValues[1].lowercase()
+                val path = "files/images/$key.png"
+                val bmp = rememberBmpFromResPath(path)
+
+                if (bmp != null) {
+                    Image(
+                        bitmap = bmp,
+                        contentDescription = key,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 180.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                } else {
+                    Text("🧾 $marker")
+                    println("Q12345 missing quote asset marker=$marker path=$path")
+                }
+
+                Spacer(Modifier.height(6.dp))
+                lastIndex = end
+                return@forEach
+            }
+
+            // 3) [Hot Tip = quotation] ή [quotation] -> βάλε default quote image
+            if (quotationRegex.containsMatchIn(marker)) {
+                val path = "files/images/quote_hot_tip.png" // default
+                val bmp = rememberBmpFromResPath(path)
+
+                if (bmp != null) {
+                    Image(
+                        bitmap = bmp,
+                        contentDescription = "quotation",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 180.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                } else {
+                    Text("🧾 $marker")
+                    println("Q12345 missing quotation default asset path=$path")
+                }
+
+                Spacer(Modifier.height(6.dp))
+                lastIndex = end
+                return@forEach
+            }
+
+            // 4) unknown marker
+            Text(marker)
+            Spacer(Modifier.height(6.dp))
+            lastIndex = end
+        }
+
+        val tail = text.substring(lastIndex)
+        if (tail.isNotBlank()) Text(tail)
+    }
+
 }

@@ -1,5 +1,8 @@
 package org.example.project.tutor.networkModel
 
+import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
+
 data class ChatSessionStartResponse(
     val material: MaterialState?,
     val learningUnit: LearningUnitState?,
@@ -22,7 +25,7 @@ data class LearningUnitState(
     val quizAvailable: Boolean?,
     val analysisCompleted: Boolean?, // analysis before quiz
     val quizCompleted: Boolean?,
-    val nextAction: NextAction?
+    val nextAction: NextAction?,
 )
 
 enum class NextAction {
@@ -59,105 +62,5 @@ data class ChatMessageState(
     val content: String?,
     val timestamp: Long?,
     val type: String,    // "TEXT", "FILE", "MARKDOWN"
+    val imagePath: List<UnitImageDomain>?,
 )
-
-// ΠΑΡΑΔΕΙΓΜΑ RESPONSE JSON (ΤΕΛΕΙΟ ΓΙΑ ΚΛΙΕΝΤ)
-//Case: Ο χρήστης μπαίνει σε ένα active LU με existing chat
-//{
-//  "material": {
-//    "materialId": "mat_123",
-//    "fileUploaded": true,
-//    "fileName": "my_physics.pdf",
-//    "canUpload": false,
-//    "totalUnits": 8
-//  },
-//  "learningUnit": {
-//    "luId": "lu_3",
-//    "title": "Newton's Second Law",
-//    "orderIndex": 2,
-//    "quizAvailable": true,
-//    "analysisCompleted": true,
-//    "quizCompleted": false,
-//    "nextAction": "DO_QUIZ"
-//  },
-//  "instance": {
-//    "instanceId": "inst_455",
-//    "status": "ACTIVE",
-//    "progressPercent": 70,
-//    "startedAt": 1710004000,
-//    "lastUpdatedAt": 1710008000,
-//    "canContinue": true,
-//    "canRestart": false,
-//    "isLocked": false
-//  },
-//  "chat": {
-//    "chatSessionId": "chat_888",
-//    "createNewSession": false,
-//    "messages": [
-//      {
-//        "id": "m1",
-//        "sender": "AI",
-//        "content": "Let's start Newton's second law.",
-//        "timestamp": 1710004001,
-//        "type": "TEXT"
-//      },
-//      {
-//        "id": "m2",
-//        "sender": "USER",
-//        "content": "Ok, explain it please",
-//        "timestamp": 1710004002,
-//        "type": "TEXT"
-//      }
-//    ]
-//  }
-//}
-
-//Case: Ο χρήστης ανοίγει ένα COMPLETED LU → πρέπει να δημιουργηθεί ΝΕΟ chat
-//{
-//  "material": {
-//    "materialId": "mat_123",
-//    "fileUploaded": true,
-//    "fileName": "my_physics.pdf",
-//    "canUpload": false,
-//    "totalUnits": 8
-//  },
-//  "learningUnit": {
-//    "luId": "lu_3",
-//    "title": "Newton's Second Law",
-//    "orderIndex": 2,
-//    "quizAvailable": true,
-//    "analysisCompleted": true,
-//    "quizCompleted": true,
-//    "nextAction": "CHOOSE_NEXT_LU"
-//  },
-//  "instance": {
-//    "instanceId": "inst_455",
-//    "status": "COMPLETED",
-//    "progressPercent": 100,
-//    "startedAt": 1710004000,
-//    "lastUpdatedAt": 1710009000,
-//    "canContinue": false,
-//    "canRestart": true,
-//    "isLocked": false
-//  },
-//  "chat": {
-//    "chatSessionId": null,
-//    "createNewSession": true,
-//    "messages": []
-//  }
-//}
-//
-//🎯 Case: Ο χρήστης είπε “όχι δεν θέλω άλλη ανάλυση” → LU becomes inactive
-//{
-//  "learningUnit": {
-//    "nextAction": "FINISH_LU"
-//  },
-//  "instance": {
-//    "status": "INACTIVE",
-//    "isLocked": true
-//  },
-//  "chat": {
-//    "createNewSession": false,
-//    "messages": []
-//  }
-//}

@@ -28,8 +28,3 @@ data class PickedFile(
         return result
     }
 }
-
-interface PdfPicker {
-    suspend fun pickPdf(): PickedFile?
-}
-

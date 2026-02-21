@@ -1,5 +1,11 @@
 package org.example.project.tutor.state
 
+import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.domainModels.file.PickedFile
+import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
 import org.example.project.utils.EmptyValues
 
 data class TutorState(
@@ -9,17 +15,35 @@ data class TutorState(
     val message: String = EmptyValues.EMPTY_STRING,
     val isError: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val showCustomMessage: Boolean = EmptyValues.EMPTY_BOOLEAN,
+    val loading: Boolean = true,
+    val error: String? = null,
+    val session: ChatSessionStartDomain = ChatSessionStartDomain(),
+    val currentUnit: LearningUnitContentDomain = LearningUnitContentDomain(),
+    val chatHistory: ChatHistoryDomain = ChatHistoryDomain(),
+    val allUnits: List<LearningUnitContentDomain> = emptyList(),
+    val currentIndex: Int = 0,
+    val subjectTitle: String = "",
+    val unlockedCount: Int = 1,
 )
 
 sealed class TutorUiEvents {
     data object None : TutorUiEvents()
+    data object NewChat : TutorUiEvents()
     data object Logout : TutorUiEvents()
+    data class SelectLearningUnit(val luId: String) : TutorUiEvents()
     data object InitializeStateAfterShowingMessage : TutorUiEvents()
     data object ClearUiEvent : TutorUiEvents()
+    data object NextUnit : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
+    data class DeleteMaterial(val subjectId: String) : TutorUiEvents()
+    data class OpenUnit(val index: Int) : TutorUiEvents()
+    data class UploadPdf(val file : PickedFile
+//        val file: UploadFile,val  idToken: String
+    ) : TutorUiEvents()
 }
 
 sealed class TutorEvents {
     data object None : TutorEvents()
+    data object Loaded : TutorEvents()
     data object NavigateToLogOut : TutorEvents()
 }
