@@ -14,7 +14,6 @@ import java.io.File
 import java.util.UUID
 
 fun Route.pdfRoutes(repo: PdfJobRepository) {
-
     route("/v1/pdfs") {
 
         post("/upload") {

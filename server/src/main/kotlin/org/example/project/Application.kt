@@ -24,7 +24,7 @@ import java.util.Properties
 private const val SERVER_PORT = 8080
 
 fun main() {
-    FirebaseAdminInit.init()
+     FirebaseAdminInit.init()
 
     embeddedServer(
         Netty,
@@ -63,21 +63,18 @@ fun Application.module() {
     val apiKey = props.getProperty("OPENAI_PROMPTING_API_KEY")
         ?: error("Missing OPENAI_PROMPTING_API_KEY in local.properties")
 
-    val firestore = FirebaseAdminInit.firestore()
+     val firestore = FirebaseAdminInit.firestore()
+     val repo: PdfJobRepository = FirestorePdfJobRepository(firestore)
+     val llm = PromptLlmClient(apiKey = apiKey)
 
-    val repo: PdfJobRepository = FirestorePdfJobRepository(firestore)
-    val llm = PromptLlmClient(apiKey = apiKey)
-
-    val worker = PdfJobWorker(repo = repo, llm = llm)
-    worker.start(this)
+     val worker = PdfJobWorker(repo = repo, llm = llm)
+     worker.start(this)
 
     routing {
         get("/health") { call.respondText("ok") }
 
-        // serve generated images
         staticFiles("/uploads", File("uploads"))
 
-        // pdf upload + status
-        pdfRoutes(repo)
+         pdfRoutes(repo)
     }
 }

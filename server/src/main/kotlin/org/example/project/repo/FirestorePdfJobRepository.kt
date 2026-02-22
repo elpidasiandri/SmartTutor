@@ -24,12 +24,8 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
     ) {
         val now = Timestamp.now()
 
-        // Αν δεν θες userId, βάλε fixed.
-        val userId = "single_user"
-
         col.document(documentId).set(
             mapOf(
-                "userId" to userId,
                 "documentId" to documentId,
                 "fileName" to fileName,
                 "storagePath" to storagePath,
@@ -52,12 +48,9 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
             )
         ).get()
 
-        // Προαιρετικό mirror σε users index
-        db.collection("users").document(userId)
-            .collection("pdfs").document(documentId)
+        db.collection("pdfs").document(documentId)
             .set(
                 mapOf(
-                    "userId" to userId,
                     "documentId" to documentId,
                     "fileName" to fileName,
                     "status" to JobStatus.Queued.value,
@@ -258,14 +251,12 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
     ) {
         val doc = col.document(documentId).get().get()
         if (!doc.exists()) return
-        val userId = doc.getString("userId") ?: return
 
         val updates = mutableMapOf<String, Any>("updatedAt" to now)
         if (status != null) updates["status"] = status
         if (progress != null) updates["progress"] = progress
 
-        db.collection("users").document(userId)
-            .collection("pdfs").document(documentId)
+        db.collection("pdfs").document(documentId)
             .update(updates)
             .get()
     }

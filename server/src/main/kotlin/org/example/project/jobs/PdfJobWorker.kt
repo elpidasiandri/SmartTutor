@@ -9,10 +9,12 @@ import org.example.project.pdf.PromptLlmClient
 import org.example.project.pdfChunker.PdfChunker
 import org.example.project.repo.PdfJob
 import org.example.project.repo.PdfJobRepository
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import java.io.File
 import java.util.UUID
+import kotlin.random.Random
 
 class PdfJobWorker(
     private val repo: PdfJobRepository,
@@ -32,6 +34,7 @@ class PdfJobWorker(
                     process(job)
                 } catch (t: Throwable) {
                     println("Worker loop error: ${t.message}")
+                    t.printStackTrace()
                     delay(1000)
                 }
             }
@@ -45,13 +48,18 @@ class PdfJobWorker(
 
             val pdf = File(job.storagePath)
             repo.setProgress(job.documentId, 3)
+
             val chunksDir = File("uploads/${job.documentId}/chunks")
-            val chunks = PdfChunker.splitPdfIntoChunks(
+            val chunks = PdfChunker.splitPdfByTocChapters(
                 input = pdf,
                 outDir = chunksDir,
-                pagesPerChunk = 12,
-                overlapPages = 1
+                tocStartPage = 1,
+                tocEndPageInclusive = 6,
+                pageNumberOffset = 0,
+                overlapPages = 1,
+                fallbackPagesPerChunk = 12
             )
+
             if (chunks.isEmpty()) {
                 repo.completeError(job.documentId, "PDF split produced 0 chunks")
                 return
@@ -64,30 +72,28 @@ class PdfJobWorker(
             for ((i, chunk) in chunks.withIndex()) {
                 repo.heartbeat(job.documentId, workerId)
 
-                // progress mapping: 5..70 for preview loop
                 val p = 5 + ((i + 1).toDouble() / chunks.size.toDouble() * 65.0).toInt()
                 repo.setProgress(job.documentId, p)
 
-                // 1) preview from chunk + carry
-                val preview = llm.generatePreviewUnitFromPdfChunkWithCarry(
-                    pdfChunkFile = chunk,
-                    language = job.language,
-                    fileName = job.fileName,
-                    unitNumber = unitNumber,
-                    carry = carry
-                )
-
-                carry = preview.carry
-
-                val unitOnly = preview.unit
-                if (unitOnly == null) {
-                    // Not enough to form a good unit yet; continue to next chunk with carry
+                val preview = try {
+                    llm.generatePreviewUnitFromPdfChunkWithCarry(
+                        pdfChunkFile = chunk,
+                        language = job.language,
+                        fileName = job.fileName,
+                        unitNumber = unitNumber,
+                        carry = carry
+                    )
+                } catch (t: Throwable) {
+                    println("Chunk preview failed (chunk=${chunk.name}): ${t.message}")
+                    t.printStackTrace()
                     continue
                 }
 
-                // 2) immediately append unit (without exercises yet) and save partial
-                units.add(unitOnly)
+                carry = preview.carry
 
+                val unitOnly = preview.unit ?: continue
+
+                units.add(unitOnly)
                 repo.savePartialResult(
                     documentId = job.documentId,
                     partial = LearningUnitsPrototypeDto(
@@ -96,38 +102,69 @@ class PdfJobWorker(
                         totalUnits = units.size,
                         learningUnits = units.toList()
                     ),
-                    progress = (p.coerceAtMost(85))
+                    progress = p.coerceAtMost(85)
                 )
 
-                // 3) exercises for this unit
                 repo.setProgress(job.documentId, (p + 2).coerceAtMost(90))
-                val exercises = llm.generateExercisesForUnit(
-                    unit = unitOnly,
-                    language = job.language,
-                    fileName = job.fileName
-                )
+
+                val exercises: List<ExerciseDto> = run {
+                    var lastErr: Throwable? = null
+                    repeat(3) { attempt ->
+                        try {
+                            return@run llm.generateExercisesForUnit(
+                                unit = unitOnly,
+                                language = job.language,
+                                fileName = job.fileName,
+                                targetMinutes = 55
+                            )
+                        } catch (t: Throwable) {
+                            lastErr = t
+                            println("Exercises failed (unit=$unitNumber attempt=${attempt + 1}): ${t.message}")
+                            t.printStackTrace()
+                            delay(1500L + Random.nextLong(0, 900))
+                        }
+                    }
+                    error("Exercises failed permanently (unit=$unitNumber): ${lastErr?.message}")
+                }
 
                 var unitFull = unitOnly.copy(exercises = exercises)
 
-                // 4) optional image generation
-                val img0 = unitFull.images.firstOrNull()
-                val prompt = img0?.prompt?.trim().orEmpty()
-                if (prompt.isNotBlank()) {
-                    val rel = llm.generateAndSaveImage(
-                        documentId = job.documentId,
-                        unitNumber = unitNumber,
-                        imageIndex = 1,
-                        prompt = prompt
-                    )
-                    unitFull = unitFull.copy(
-                        images = unitFull.images.mapIndexed { idx, it ->
-                            if (idx == 0) it.copy(relativePath = rel) else it
+                run {
+                    val maxImgs = 2
+                    val imgs = unitFull.images.take(maxImgs)
+                    if (imgs.isNotEmpty()) {
+                        val newImgs = unitFull.images.toMutableList()
+                        for ((idx, img) in imgs.withIndex()) {
+                            val prompt = img.prompt?.trim().orEmpty()
+                            if (prompt.isBlank()) continue
+
+                            val rel: String? = try {
+                                llm.generateAndSaveImage(
+                                    documentId = job.documentId,
+                                    unitNumber = unitNumber,
+                                    imageIndex = idx + 1,
+                                    prompt = prompt
+                                )
+                            } catch (t: Throwable) {
+                                println("Image gen failed (unit=$unitNumber idx=${idx + 1}): ${t.message}")
+                                t.printStackTrace()
+                                null
+                            }
+
+                            if (!rel.isNullOrBlank()) {
+                                newImgs[idx] = newImgs[idx].copy(relativePath = rel)
+                            }
                         }
-                    )
+                        unitFull = unitFull.copy(images = newImgs)
+                    }
                 }
 
-                // 5) replace last unit with full version and save partial again
+                unitFull = unitFull.copy(
+                    images = unitFull.images.filter { !it.relativePath.isNullOrBlank() }
+                )
+
                 units[units.lastIndex] = unitFull
+
                 repo.savePartialResult(
                     documentId = job.documentId,
                     partial = LearningUnitsPrototypeDto(
@@ -142,20 +179,24 @@ class PdfJobWorker(
                 unitNumber++
             }
 
-// 6) If still have carry at end, try to finalize one last unit (optional but recommended)
             if (carry.isNotBlank()) {
-                // Reuse the last chunk to help model anchor, but mainly consume carry
                 val lastChunk = chunks.last()
 
-                val preview = llm.generatePreviewUnitFromPdfChunkWithCarry(
-                    pdfChunkFile = lastChunk,
-                    language = job.language,
-                    fileName = job.fileName,
-                    unitNumber = unitNumber,
-                    carry = carry
-                )
+                val preview = try {
+                    llm.generatePreviewUnitFromPdfChunkWithCarry(
+                        pdfChunkFile = lastChunk,
+                        language = job.language,
+                        fileName = job.fileName,
+                        unitNumber = unitNumber,
+                        carry = carry
+                    )
+                } catch (t: Throwable) {
+                    println("Final carry preview failed: ${t.message}")
+                    t.printStackTrace()
+                    null
+                }
 
-                val unitOnly = preview.unit
+                val unitOnly = preview?.unit
                 if (unitOnly != null) {
                     units.add(unitOnly)
 
@@ -170,25 +211,64 @@ class PdfJobWorker(
                         progress = 94
                     )
 
-                    val exercises = llm.generateExercisesForUnit(
-                        unit = unitOnly,
-                        language = job.language,
-                        fileName = job.fileName
-                    )
-                    var unitFull = unitOnly.copy(exercises = exercises)
-
-                    val img0 = unitFull.images.firstOrNull()
-                    val prompt = img0?.prompt?.trim().orEmpty()
-                    if (prompt.isNotBlank()) {
-                        val rel = llm.generateAndSaveImage(job.documentId, unitNumber, 1, prompt)
-                        unitFull = unitFull.copy(
-                            images = unitFull.images.mapIndexed { idx, it ->
-                                if (idx == 0) it.copy(relativePath = rel) else it
+                    val exercises: List<ExerciseDto> = run {
+                        var lastErr: Throwable? = null
+                        repeat(3) { attempt ->
+                            try {
+                                return@run llm.generateExercisesForUnit(
+                                    unit = unitOnly,
+                                    language = job.language,
+                                    fileName = job.fileName,
+                                    targetMinutes = 55
+                                )
+                            } catch (t: Throwable) {
+                                lastErr = t
+                                println("Final exercises failed (unit=$unitNumber attempt=${attempt + 1}): ${t.message}")
+                                t.printStackTrace()
+                                delay(1500L + Random.nextLong(0, 900))
                             }
-                        )
+                        }
+                        error("Final exercises failed permanently (unit=$unitNumber): ${lastErr?.message}")
                     }
 
+                    var unitFull = unitOnly.copy(exercises = exercises)
+
+                    run {
+                        val maxImgs = 2
+                        val imgs = unitFull.images.take(maxImgs)
+                        if (imgs.isNotEmpty()) {
+                            val newImgs = unitFull.images.toMutableList()
+                            for ((idx, img) in imgs.withIndex()) {
+                                val prompt = img.prompt?.trim().orEmpty()
+                                if (prompt.isBlank()) continue
+
+                                val rel: String? = try {
+                                    llm.generateAndSaveImage(
+                                        documentId = job.documentId,
+                                        unitNumber = unitNumber,
+                                        imageIndex = idx + 1,
+                                        prompt = prompt
+                                    )
+                                } catch (t: Throwable) {
+                                    println("Final image gen failed (unit=$unitNumber idx=${idx + 1}): ${t.message}")
+                                    t.printStackTrace()
+                                    null
+                                }
+
+                                if (!rel.isNullOrBlank()) {
+                                    newImgs[idx] = newImgs[idx].copy(relativePath = rel)
+                                }
+                            }
+                            unitFull = unitFull.copy(images = newImgs)
+                        }
+                    }
+
+                    unitFull = unitFull.copy(
+                        images = unitFull.images.filter { !it.relativePath.isNullOrBlank() }
+                    )
+
                     units[units.lastIndex] = unitFull
+
                     repo.savePartialResult(
                         documentId = job.documentId,
                         partial = LearningUnitsPrototypeDto(
@@ -202,7 +282,6 @@ class PdfJobWorker(
                 }
             }
 
-// 7) finalize success
             val result = LearningUnitsPrototypeDto(
                 prototypeTitle = job.fileName.removeSuffix(".pdf"),
                 language = job.language,

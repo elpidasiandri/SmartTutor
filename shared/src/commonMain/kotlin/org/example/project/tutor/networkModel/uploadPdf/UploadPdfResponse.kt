@@ -71,6 +71,29 @@ data class UnitWithCarryDto(
     @SerialName("carry") val carry: String = "",
 )
 
+// only for prompting
+@Serializable
+data class UnitExercisesOnlyDto(
+    @SerialName("exercises") val exercises: List<ExerciseDto> = emptyList(),
+)
+
+@Serializable
+data class ImageGenRequest(
+    @SerialName("model") val model: String = "gpt-image-1",
+    @SerialName("prompt") val prompt: String,
+    @SerialName("size") val size: String = "1024x1024",
+)
+
+@Serializable
+data class ImageGenResponse(
+    @SerialName("data") val data: List<ImageGenData> = emptyList(),
+)
+
+@Serializable
+data class ImageGenData(
+    @SerialName("b64_json") val b64Json: String? = null,
+)
+
 enum class JobStatus(val value: String) {
     Queued("queued"),
     Processing("processing"),
