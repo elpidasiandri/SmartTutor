@@ -16,9 +16,7 @@ import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 class TutorIntroViewModel(
     logout: LogoutUseCase,
     private val getLearningUnitUseCase: LearningUnitsUseCase,
-    private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
     private val platform: TutorPlatform,
-    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
 ) : ViewModel() {
     private val common = TutorCommonViewModel(
@@ -26,8 +24,6 @@ class TutorIntroViewModel(
         getLearningUnitUseCase = getLearningUnitUseCase,
         scope = viewModelScope,
         platform = platform,
-        pdfUploadServiceUseCase = pdfUploadServiceUseCase,
-        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
         loadTutorFromPdfUseCase = loadTutorFromPdfUseCase
     )
     val state: StateFlow<TutorState> = common.state

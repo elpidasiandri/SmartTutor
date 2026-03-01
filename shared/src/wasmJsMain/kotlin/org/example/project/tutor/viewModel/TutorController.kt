@@ -11,14 +11,10 @@ import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
-import org.example.project.tutor.useCases.PdfUploadServiceUseCase
-import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 class TutorController(
     private val logoutUseCase: LogoutUseCase,
     private val getLearningUnitUseCase: LearningUnitsUseCase,
-    private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
-    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
     platform: TutorPlatform,
 ) {
@@ -28,8 +24,6 @@ class TutorController(
         getLearningUnitUseCase = getLearningUnitUseCase,
         scope = scope,
         platform = platform,
-        pdfUploadServiceUseCase = pdfUploadServiceUseCase,
-        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
         loadTutorFromPdfUseCase = loadTutorFromPdfUseCase
     )
 

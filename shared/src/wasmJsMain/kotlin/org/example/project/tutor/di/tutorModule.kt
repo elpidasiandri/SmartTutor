@@ -50,6 +50,6 @@ val tutorModule = module {
             }
         }
     }
-    single { TutorController(get(), get(), get(), get(), get(), get()) }
+    single { TutorController(get(), get(), get(), get()) }
     includes(logoutModule)
 }

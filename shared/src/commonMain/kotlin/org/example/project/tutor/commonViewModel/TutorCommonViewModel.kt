@@ -20,8 +20,6 @@ import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
-import org.example.project.tutor.useCases.PdfUploadServiceUseCase
-import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.utils.EmptyValues
 
 interface TutorPlatform {
@@ -36,8 +34,6 @@ class TutorCommonViewModel(
     private val getLearningUnitUseCase: LearningUnitsUseCase,
     private val scope: CoroutineScope,
     private val platform: TutorPlatform,
-    private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
-    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
 ) {
     private val _state = MutableStateFlow(TutorState())
@@ -148,7 +144,9 @@ class TutorCommonViewModel(
                         showCustomMessage = true,
                         message = "Template loaded (${res.languageEnum.value})",
                         isError = false,
-                        tabInfoMessage = buildLearningTabMessage(units.firstOrNull()?: LearningUnitContentDomain())
+                        tabInfoMessage = buildLearningTabMessage(
+                            units.firstOrNull() ?: LearningUnitContentDomain()
+                        )
                     )
                 }
             } catch (t: Throwable) {
@@ -206,7 +204,8 @@ class TutorCommonViewModel(
                 unlockedCount = newUnlocked,
                 currentUnit = units.getOrNull(nextIndex) ?: LearningUnitContentDomain(),
                 session = session,
-                chatHistory = history
+                chatHistory = history,
+                selectedTab = TutorTab.Learning
             )
         }
     }

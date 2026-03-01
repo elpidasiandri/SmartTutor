@@ -57,7 +57,7 @@ val tutorModule = module {
     }
 
     viewModel {
-        TutorIntroViewModel(get(), get(), get(), get(), get(), get())
+        TutorIntroViewModel(get(), get(), get(), get())
     }
 
     includes(logoutModule)
