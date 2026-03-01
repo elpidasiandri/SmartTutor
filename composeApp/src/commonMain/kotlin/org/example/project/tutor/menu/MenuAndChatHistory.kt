@@ -64,7 +64,7 @@ fun MenuAndChatHistory(
     onLogoutClick: () -> Unit = {},
     onChatClick: (subjectId: String) -> Unit = { _ -> },
     onChatTitleClick: () -> Unit,
-    onDeleteSubject: (subjectId: String) -> Unit
+    onDeleteSubject: (subjectId: String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -234,8 +234,8 @@ fun SubjectHistoryItem(
         if (expanded) {
             subject.learningUnits.forEach { lu ->
                 LearningUnitRow(
-                    onClick = {onClick(subject.subjectId) },
-                    title ="Tett"
+                    onClick = { onClick(subject.subjectId) },
+                    title = lu.title
                 )
             }
         }

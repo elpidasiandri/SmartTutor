@@ -122,7 +122,7 @@ class TutorCommonViewModel(
                 val subjectTitle = res.prototype.title
 
                 val session = buildChatSessionStart(
-                    fileName = res.fileName,
+                    fileName = subjectTitle,
                     units = units,
                     activeIndex = 0
                 )
@@ -189,7 +189,7 @@ class TutorCommonViewModel(
         val newUnlocked = maxOf(_state.value.unlockedCount, nextIndex + 1)
 
         val session = buildChatSessionStart(
-            fileName = "files/material_learning_units.json",
+            fileName = _state.value.session.material.fileName,
             units = units,
             activeIndex = nextIndex
         )
@@ -258,7 +258,7 @@ class TutorCommonViewModel(
             val unlockedCount = 1
 
             val session = buildChatSessionStart(
-                fileName = "files/material_learning_units.json",
+                fileName = _state.value.session.material.fileName,
                 units = units,
                 activeIndex = currentIndex
             )

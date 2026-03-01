@@ -192,7 +192,7 @@ fun TutorChatUI(
     selectedTab: TutorTab,
     tabInfoMessage: String,
     currentUnit: LearningUnitContentDomain,
-    ) {
+) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -371,8 +371,8 @@ private fun TutorScaffold(
     Scaffold(
         topBar = {
             TopBarTabs(
-                chatData.material,
-                chatData.learningUnit,
+                material = chatData.material,
+                learningUnit = chatData.learningUnit,
                 changeHistoryVisibleStatus = onToggleDrawer
             )
         },
@@ -398,7 +398,7 @@ private fun TutorChatContent(
     onChangeTab: (TutorTab) -> Unit,
     selectedTab: TutorTab,
     tabInfoMessage: String,
-    currentUnit: LearningUnitContentDomain
+    currentUnit: LearningUnitContentDomain,
 ) {
     Column(
         modifier = Modifier
@@ -658,7 +658,11 @@ fun TopBarTabs(
 }
 
 @Composable
-fun ChatUiHeader(material: MaterialDomain, learningUnit: LearningUnitDomain, modifier: Modifier) {
+fun ChatUiHeader(
+    material: MaterialDomain,
+    learningUnit: LearningUnitDomain,
+    modifier: Modifier,
+) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -668,9 +672,10 @@ fun ChatUiHeader(material: MaterialDomain, learningUnit: LearningUnitDomain, mod
             if (material.fileUploaded) uploaded_file_success_title else uploaded_file_failure_title
         val learningText =
             if (material.fileUploaded) "\n$learning_unit_title : ${learningUnit.title}" else ""
+        val titleToShow = material.fileName
+
         Text(
-            text =
-                "$material_title : ${material.fileName} - $statusFileText \n" + learningText,
+            text = "$material_title : $titleToShow - $statusFileText \n$learningText",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             modifier = Modifier.padding(bottom = spacing4).align(Alignment.CenterHorizontally)
