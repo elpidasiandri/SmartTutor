@@ -13,6 +13,7 @@ import kotlinx.datetime.Clock
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
+import org.example.project.tutor.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.domainModels.learningUnits.QuotationDomain
 import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
@@ -42,6 +43,7 @@ fun LearningUnitsPrototypeDto.toDomain(): LearningUnitsPrototypeDomain {
         learningUnits = units
     )
 }
+
 fun LearningUnitDto.toDomain(defaultIndex: Int): LearningUnitContentDomain =
     LearningUnitContentDomain(
         title = title.orEmpty(),
@@ -67,7 +69,7 @@ fun QuotationDto.toDomain(): QuotationDomain =
 
 fun ExerciseDto.toDomain(): ExerciseDomain =
     ExerciseDomain(
-        type = type,
+        type = type.toExerciseType(),
         difficulty = difficulty.orEmpty(),
         estimatedMinutes = estimatedMinutes ?: 0,
         question = question.orEmpty(),
@@ -77,6 +79,13 @@ fun ExerciseDto.toDomain(): ExerciseDomain =
         explanation = explanation.orEmpty(),
         solution = solution.orEmpty(),
     )
+
+fun String?.toExerciseType(): ExerciseType = when (this?.lowercase()) {
+    "mcq" -> ExerciseType.MCQ
+    "true_false"-> ExerciseType.TRUE_FALSE
+    "open" -> ExerciseType.OPEN
+    else -> ExerciseType.NONE
+}
 
 fun buildLearningTabMessage(unit: LearningUnitContentDomain): String {
     val sb = StringBuilder()

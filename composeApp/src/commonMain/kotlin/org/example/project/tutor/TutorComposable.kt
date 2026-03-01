@@ -1,6 +1,5 @@
 package org.example.project.tutor
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,7 +59,6 @@ import kotlinx.coroutines.launch
 import org.example.project.colors.AppColors
 import org.example.project.colors.AppColors.GrayLightBoard
 import org.example.project.components.customToast.CustomToastComposable
-import org.example.project.components.loadImages.rememberBmpFromResPath
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
@@ -72,15 +69,14 @@ import org.example.project.strings.SmartTutorStrings.type_your_message
 import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
 import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatUiMessage
-import org.example.project.tutor.domainModels.tutorChat.LUStatusDomain
 import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.menu.MenuAndChatHistory
-import org.example.project.utils.validation.Validation
 
 @Composable
 fun TutorScreen(
@@ -109,27 +105,26 @@ fun TutorScreen(
     onChangeTab: (TutorTab) -> Unit,
     selectedTab: TutorTab,
     tabInfoMessage: String,
+    currentUnit: LearningUnitContentDomain,
 ) {
 
-
     Box(modifier = Modifier.fillMaxSize()) {
-
         TutorChatUI(
             chatData = chatData,
             chatHistory = chatHistory,
-            showCustomMessage =showCustomMessage,
-            message =message,
+            showCustomMessage = showCustomMessage,
+            message = message,
             isError = isError,
             userMessage = userMessage,
-            onMessageChange = {p1->
+            onMessageChange = { p1 ->
                 onMessageChange(p1)
             },
             widthDividerMenu = widthDividerMenu,
             playAIMessage = playAIMessage,
             startVoiceInput = startVoiceInput,
             stopVoiceInput = stopVoiceInput,
-            onSettingsClick = {onSettingsClick()},
-            onLogoutClick = {onLogoutClick()},
+            onSettingsClick = { onSettingsClick() },
+            onLogoutClick = { onLogoutClick() },
             onMessageDismiss = {
                 onMessageDismiss()
             },
@@ -148,12 +143,13 @@ fun TutorScreen(
             startNewChat = {
                 startNewChat()
             },
-            deleteSubject = { p1->
+            deleteSubject = { p1 ->
                 deleteSubject(p1)
             },
             selectedTab = selectedTab,
-            onChangeTab = { onChangeTab(it)},
-            tabInfoMessage = tabInfoMessage
+            onChangeTab = { onChangeTab(it) },
+            tabInfoMessage = tabInfoMessage,
+            currentUnit = currentUnit
         )
 
         if (isLoading) {
@@ -168,6 +164,7 @@ fun TutorScreen(
         }
     }
 }
+
 @Composable
 fun TutorChatUI(
     chatData: ChatSessionStartDomain,
@@ -194,7 +191,8 @@ fun TutorChatUI(
     onChangeTab: (TutorTab) -> Unit,
     selectedTab: TutorTab,
     tabInfoMessage: String,
-) {
+    currentUnit: LearningUnitContentDomain,
+    ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -245,7 +243,7 @@ fun TutorChatUI(
                     scope = scope,
                     onSettingsClick = onSettingsClick,
                     onLogoutClick = onLogoutClick,
-                    onChatClick = {selectLearningUnits()},
+                    onChatClick = { selectLearningUnits() },
                     onNewChatClick = {
                         scope.launch {
                             startNewChat()
@@ -300,8 +298,9 @@ fun TutorChatUI(
                             )
                         },
                         selectedTab = selectedTab,
-                        onChangeTab = { onChangeTab(it)},
-                        tabInfoMessage = tabInfoMessage
+                        onChangeTab = { onChangeTab(it) },
+                        tabInfoMessage = tabInfoMessage,
+                        currentUnit = currentUnit
                     )
                 }
             )
@@ -399,42 +398,60 @@ private fun TutorChatContent(
     onChangeTab: (TutorTab) -> Unit,
     selectedTab: TutorTab,
     tabInfoMessage: String,
-    ) {
+    currentUnit: LearningUnitContentDomain
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
     ) {
-//        TutorTopActionsRow(
-//            fileUploaded = chatData.material.fileUploaded,
-//            onExercisesClick = onExercisesClick,
-//            onNextUnitClick = onNextUnitClick
-//        )
         TutorTopActionsRow(
             fileUploaded = chatData.material.fileUploaded,
-            selectedTab =selectedTab,
+            selectedTab = selectedTab,
             onTabChange = { onChangeTab(it) },
             onNextUnitClick = onNextUnitClick
         )
 
         Spacer(modifier = Modifier.height(spacing8))
-        val info = tabInfoMessage.takeIf { it.isNotBlank() }
-        val combined = buildList {
-            if (info != null) {
-                add(ChatUiMessage(sender = SenderType.AI.name, text = info, imagePath = emptyList()))
-            }
-            addAll(chatMessages)
-        }
-        ChatMessagesList(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = spacing8),
-            chatMessages = combined,
-            onPlayClick = onPlayClick
-        )
 
-        if (chatData.instance.status != LUStatusDomain.INACTIVE) {
+        when (selectedTab) {
+            TutorTab.Learning -> {
+                val info = tabInfoMessage.takeIf { it.isNotBlank() }
+                val combined = buildList {
+                    if (info != null) {
+                        add(
+                            ChatUiMessage(
+                                sender = SenderType.AI.name,
+                                text = info,
+                                imagePath = emptyList()
+                            )
+                        )
+                    }
+                    addAll(chatMessages)
+                }
+
+                ChatMessagesList(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = spacing8),
+                    chatMessages = combined,
+                    onPlayClick = onPlayClick
+                )
+            }
+
+            TutorTab.Exercises -> {
+                ExercisesTab(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = spacing8),
+                    exercises = currentUnit.exercises
+                )
+            }
+        }
+
+        if (selectedTab == TutorTab.Learning) {
             TutorInputSection(
                 fileUploaded = chatData.material.fileUploaded,
                 userMessageState = userMessageState,
@@ -488,6 +505,7 @@ private fun TutorTopActionsRow(
         )
     }
 }
+
 @Composable
 private fun TutorActionButton(
     text: String,

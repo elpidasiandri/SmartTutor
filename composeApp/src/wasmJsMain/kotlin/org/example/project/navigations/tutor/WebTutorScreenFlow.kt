@@ -93,6 +93,7 @@ fun WebTutorScreenFlow(navController: NavController) {
 
         selectedTab = state.selectedTab,
         onChangeTab = { controller.onEvent(TutorUiEvents.ChangeTab(it)) },
-        tabInfoMessage = state.tabInfoMessage
+        tabInfoMessage = state.tabInfoMessage,
+        currentUnit = state.currentUnit
     )
 }

@@ -18,8 +18,9 @@ data class LearningUnitContentDomain(
     val exercises: List<ExerciseDomain> = emptyList(),
 )
 
+
 data class ExerciseDomain(
-    val type: String,
+    val type: ExerciseType,
     val difficulty: String,
     val estimatedMinutes: Int,
     val question: String,
@@ -29,7 +30,14 @@ data class ExerciseDomain(
     val explanation: String,
     val solution: String,
 )
-enum class ExerciseType { MCQ, TRUE_FALSE, OPEN }
+
+enum class ExerciseType {
+    MCQ,
+    TRUE_FALSE,
+    OPEN,
+    NONE
+}
+
 data class UnitImageDomain(
     val relativePath: String = "",
     val caption: String = "",

@@ -117,7 +117,8 @@ class TutorIntroFragment : Fragment() {
 
                     selectedTab = state.selectedTab,
                     onChangeTab = {  viewModel.onEvent(TutorUiEvents.ChangeTab(it))},
-                    tabInfoMessage = state.tabInfoMessage
+                    tabInfoMessage = state.tabInfoMessage,
+                    currentUnit = state.currentUnit
                 )
             }
         }
