@@ -14,16 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,11 +40,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -76,7 +67,11 @@ import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
+import org.example.project.tutor.utils.normalizeForHeaderCompare
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @Composable
 fun TutorScreen(
@@ -87,10 +82,6 @@ fun TutorScreen(
     isError: Boolean,
     userMessage: String,
     widthDividerMenu: Int = 2,
-    onMessageChange: (String) -> Unit,
-    playAIMessage: (String) -> Unit,
-    startVoiceInput: (onResult: (String) -> Unit) -> Unit,
-    stopVoiceInput: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
@@ -116,13 +107,7 @@ fun TutorScreen(
             message = message,
             isError = isError,
             userMessage = userMessage,
-            onMessageChange = { p1 ->
-                onMessageChange(p1)
-            },
             widthDividerMenu = widthDividerMenu,
-            playAIMessage = playAIMessage,
-            startVoiceInput = startVoiceInput,
-            stopVoiceInput = stopVoiceInput,
             onSettingsClick = { onSettingsClick() },
             onLogoutClick = { onLogoutClick() },
             onMessageDismiss = {
@@ -174,10 +159,6 @@ fun TutorChatUI(
     isError: Boolean,
     userMessage: String,
     widthDividerMenu: Int = 2,
-    onMessageChange: (String) -> Unit,
-    playAIMessage: (String) -> Unit,
-    startVoiceInput: (onResult: (String) -> Unit) -> Unit,
-    stopVoiceInput: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
@@ -197,8 +178,6 @@ fun TutorChatUI(
     var errorMessage by remember(message) { mutableStateOf(message) }
 
     val chatMessages = remember { mutableStateListOf<ChatUiMessage>() }
-
-    var isMicOn by remember { mutableStateOf(false) }
     var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
 
     LaunchedEffect(
@@ -214,7 +193,8 @@ fun TutorChatUI(
                 ChatUiMessage(
                     sender = msg.sender,
                     text = msg.content,
-                    imagePath = msg.imagePath
+                    imagePath = msg.imagePath,
+                    id = msg.id
                 )
             }
         )
@@ -268,33 +248,16 @@ fun TutorChatUI(
                         padding = padding,
                         chatData = chatData,
                         chatMessages = chatMessages,
-                        isMicOn = isMicOn,
                         userMessageState = userMessageState,
                         onUserMessageChangeLocal = { userMessageState = it },
-                        onPlayClick = playAIMessage,
                         onExercisesClick = onExercisesClick,
                         onNextUnitClick = onNextUnitClick,
                         onUploadPdfClick = onUploadPdfClick,
-                        onStopVoiceInput = {
-                            stopVoiceInput()
-                            isMicOn = false
-                        },
-                        onStartVoiceInput = { onResult ->
-                            startVoiceInput { result ->
-                                onMessageChange(result)
-                                isMicOn = false
-                                onResult(result)
-                            }
-                            isMicOn = true
-                        },
                         onSendClick = {
                             TutorHandleSend(
                                 userMessageState = userMessageState,
                                 onClearUserMessage = { userMessageState = "" },
                                 chatMessages = chatMessages,
-                                isMicOn = isMicOn,
-                                stopVoiceInput = stopVoiceInput,
-                                setMicOn = { isMicOn = it }
                             )
                         },
                         selectedTab = selectedTab,
@@ -385,15 +348,11 @@ private fun TutorChatContent(
     padding: PaddingValues,
     chatData: ChatSessionStartDomain,
     chatMessages: List<ChatUiMessage>,
-    isMicOn: Boolean,
     userMessageState: String,
     onUserMessageChangeLocal: (String) -> Unit,
-    onPlayClick: (String) -> Unit,
     onExercisesClick: () -> Unit,
     onNextUnitClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    onStopVoiceInput: () -> Unit,
-    onStartVoiceInput: (onResult: (String) -> Unit) -> Unit,
     onSendClick: () -> Unit,
     onChangeTab: (TutorTab) -> Unit,
     selectedTab: TutorTab,
@@ -416,27 +375,23 @@ private fun TutorChatContent(
 
         when (selectedTab) {
             TutorTab.Learning -> {
-                val info = tabInfoMessage.takeIf { it.isNotBlank() }
-                val combined = buildList {
-                    if (info != null) {
-                        add(
-                            ChatUiMessage(
-                                sender = SenderType.AI.name,
-                                text = info,
-                                imagePath = emptyList()
-                            )
-                        )
-                    }
-                    addAll(chatMessages)
-                }
 
-                ChatMessagesList(
+                val filteredMessages =
+                    if (tabInfoMessage.isBlank()) chatMessages
+                    else {
+                        val headerNorm = normalizeForHeaderCompare(tabInfoMessage)
+                        chatMessages.filterNot { msg ->
+                            msg.sender == SenderType.AI.name &&
+                                    normalizeForHeaderCompare(msg.text) == headerNorm
+                        }
+                    }
+
+                LearningMessagesList(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
-                    chatMessages = combined,
-                    onPlayClick = onPlayClick
+                    chatMessages = filteredMessages
                 )
             }
 
@@ -456,17 +411,7 @@ private fun TutorChatContent(
                 fileUploaded = chatData.material.fileUploaded,
                 userMessageState = userMessageState,
                 onUserMessageChangeLocal = onUserMessageChangeLocal,
-                isMicOn = isMicOn,
                 onSendClick = onSendClick,
-                onMicClick = {
-                    if (!isMicOn) {
-                        onStartVoiceInput { result ->
-                            onUserMessageChangeLocal(result)
-                        }
-                    } else {
-                        onStopVoiceInput()
-                    }
-                },
                 onUploadPdfClick = onUploadPdfClick
             )
         }
@@ -529,9 +474,7 @@ private fun TutorInputSection(
     fileUploaded: Boolean,
     userMessageState: String,
     onUserMessageChangeLocal: (String) -> Unit,
-    isMicOn: Boolean,
     onSendClick: () -> Unit,
-    onMicClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
 ) {
     ChatInputField(
@@ -539,98 +482,35 @@ private fun TutorInputSection(
         userMessage = userMessageState,
         onMessageChange = onUserMessageChangeLocal,
         onSendClick = onSendClick,
-        onMicClick = onMicClick,
         onUploadPdfClick = onUploadPdfClick,
-        isMicOn = isMicOn
     )
 }
 
+@OptIn(ExperimentalUuidApi::class)
 private fun TutorHandleSend(
     userMessageState: String,
     onClearUserMessage: () -> Unit,
     chatMessages: MutableList<ChatUiMessage>,
-    isMicOn: Boolean,
-    stopVoiceInput: () -> Unit,
-    setMicOn: (Boolean) -> Unit,
 ) {
     if (userMessageState.isNotBlank()) {
         chatMessages.add(
             ChatUiMessage(
                 sender = SenderType.USER.name,
-                text = userMessageState
+                text = userMessageState,
+                id = Uuid.random().toString() //todo fix
             )
         )
         chatMessages.add(
             ChatUiMessage(
                 sender = SenderType.AI.name,
                 text = "This is a fake AI reply",
-                imagePath = emptyList()
+                imagePath = emptyList(),
+                id = Uuid.random().toString() //todo fix
             )
         )
         onClearUserMessage()
     }
-    if (isMicOn) {
-        stopVoiceInput()
-        setMicOn(false)
-    }
 }
-
-@Composable
-fun ChatMessagesList(
-    modifier: Modifier,
-    chatMessages: List<ChatUiMessage>,
-    onPlayClick: (String) -> Unit,
-) {
-
-    val listState = rememberLazyListState()
-    LaunchedEffect(chatMessages.size) {
-        if (chatMessages.isNotEmpty()) {
-            listState.animateScrollToItem(chatMessages.size - 1)
-        }
-    }
-    LazyColumn(modifier = modifier, state = listState) {
-        items(chatMessages) { item ->
-
-            if (item.sender == SenderType.USER.name) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = item.text,
-                        modifier = Modifier.background(Color(0xFFD1FFD6), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
-                    )
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { onPlayClick(item.text) }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = "Play AI"
-                        )
-                    }
-                    Column(
-                        modifier = Modifier
-                            .background(Color(0xFFE8E8E8), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
-                    ) {
-                        AiRichMessageWithCode(
-                            text = item.text
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(spacing8))
-        }
-    }
-}
-
 @Composable
 fun TopBarTabs(
     material: MaterialDomain,
@@ -689,9 +569,7 @@ fun ChatInputField(
     userMessage: String,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onMicClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    isMicOn: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(spacing8),
@@ -712,15 +590,7 @@ fun ChatInputField(
                 enabled = !fileUploaded
             ) { Icon(Icons.Default.UploadFile, contentDescription = "Upload PDF") }
         }
-        if (fileUploaded) {
-            // Mic
-            IconButton(onClick = onMicClick) {
-                Icon(
-                    if (isMicOn) Icons.Default.Mic else Icons.Default.MicOff,
-                    contentDescription = "Mic"
-                )
-            }
-        } // Send
+        // Send
         IconButton(onClick = onSendClick) {
             Icon(
                 Icons.AutoMirrored.Filled.Send,

@@ -24,6 +24,7 @@ import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
 import org.example.project.tutor.networkModel.uploadPdf.UnitImageDto
+import kotlin.uuid.ExperimentalUuidApi
 
 fun String?.toLanguageEnum(): LanguageOfLearningUnitsEnum =
     when (this?.lowercase()) {
@@ -82,7 +83,7 @@ fun ExerciseDto.toDomain(): ExerciseDomain =
 
 fun String?.toExerciseType(): ExerciseType = when (this?.lowercase()) {
     "mcq" -> ExerciseType.MCQ
-    "true_false"-> ExerciseType.TRUE_FALSE
+    "true_false" -> ExerciseType.TRUE_FALSE
     "open" -> ExerciseType.OPEN
     else -> ExerciseType.NONE
 }
@@ -112,7 +113,6 @@ fun buildLearningTabMessage(unit: LearningUnitContentDomain): String {
             sb.append("\n")
         }
     }
-
     return sb.toString().trim()
 }
 
@@ -166,6 +166,7 @@ fun buildChatHistoryFromUnits(
     )
 }
 
+@OptIn(ExperimentalUuidApi::class)
 fun buildChatSessionStart(
     fileName: String,
     units: List<LearningUnitContentDomain>,
@@ -177,7 +178,7 @@ fun buildChatSessionStart(
     val ts = Clock.System.now().toEpochMilliseconds()
 
     val introText = buildString {
-        appendLine("${lu?.title.orEmpty()}")
+        appendLine(lu?.title.orEmpty())
         appendLine()
         appendLine(lu?.text.orEmpty())
     }
@@ -189,7 +190,8 @@ fun buildChatSessionStart(
                 content = introText,
                 timestamp = ts,
                 type = "TEXT",
-                imagePath = lu?.images.orEmpty()
+                imagePath = lu?.images.orEmpty(),
+                id = ts.toString() + introText.take(10)
             )
         )
     } else emptyList()

@@ -51,10 +51,6 @@ fun WebTutorScreenFlow(navController: NavController) {
         message = state.message,
         isError = state.isError,
         userMessage = userMessage,
-        onMessageChange = { userMessage = it },
-        playAIMessage = { text -> controller.playAIMessage(text) },
-        startVoiceInput = { controller.startVoiceInput(it) },
-        stopVoiceInput = { controller.stopVoiceInput() },
         onSettingsClick = {
             navController.navigate(WebScreen.Settings)
         },

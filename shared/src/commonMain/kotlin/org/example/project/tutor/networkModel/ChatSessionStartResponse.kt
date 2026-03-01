@@ -1,14 +1,7 @@
 package org.example.project.tutor.networkModel
 
 import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
 
-data class ChatSessionStartResponse(
-    val material: MaterialState?,
-    val learningUnit: LearningUnitState?,
-    val instance: LearningUnitInstanceState?,
-    val chat: ChatState?,
-)
 
 data class MaterialState(
     val materialId: String?,

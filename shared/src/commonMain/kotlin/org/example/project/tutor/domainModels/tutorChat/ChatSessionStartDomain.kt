@@ -63,6 +63,7 @@ data class ChatMessageDomain(
     val content: String = EMPTY_STRING,
     val timestamp: Long = EMPTY_LONG,
     val type: String = EMPTY_STRING,
+    val id: String = EMPTY_STRING, //todo fix
     val imagePath: List<UnitImageDomain> = emptyList(),
 )
 

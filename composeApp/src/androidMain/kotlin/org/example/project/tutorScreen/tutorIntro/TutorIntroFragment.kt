@@ -82,16 +82,6 @@ class TutorIntroFragment : Fragment() {
                     message = state.message,
                     isError = state.isError,
                     userMessage = userMessage,
-                    onMessageChange = { userMessage = it },
-                    playAIMessage = { text -> playAIMessage(text) },
-                    startVoiceInput = { onResult ->
-                        checkAudioPermissions {
-                            startVoiceInput { result ->
-                                userMessage = result
-                            }
-                        }
-                    },
-                    stopVoiceInput = { stopVoiceInput() },
                     onSettingsClick = {
                         settingsLauncher.launch(SettingsActivity.newIntent(requireContext()))
                     },

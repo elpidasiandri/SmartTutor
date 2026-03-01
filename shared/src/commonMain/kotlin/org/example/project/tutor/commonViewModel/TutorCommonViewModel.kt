@@ -88,7 +88,6 @@ class TutorCommonViewModel(
             units = units,
             activeIndex = index
         )
-
         _state.update {
             it.copy(
                 currentIndex = index,
@@ -148,7 +147,8 @@ class TutorCommonViewModel(
                         chatHistory = history,
                         showCustomMessage = true,
                         message = "Template loaded (${res.languageEnum.value})",
-                        isError = false
+                        isError = false,
+                        tabInfoMessage = buildLearningTabMessage(units.firstOrNull()?: LearningUnitContentDomain())
                     )
                 }
             } catch (t: Throwable) {
@@ -284,7 +284,6 @@ class TutorCommonViewModel(
                     )
                 }
             }
-
         } catch (t: Throwable) {
             platform.log("TutorStore", "initializeData failed", t)
             _state.update {
@@ -309,7 +308,11 @@ class TutorCommonViewModel(
 
     private fun initializeStateAfterShowingMessage() {
         _state.update {
-            it.copy(showCustomMessage = false, message = EmptyValues.EMPTY_STRING, isError = false)
+            it.copy(
+                showCustomMessage = false,
+                message = EmptyValues.EMPTY_STRING,
+                isError = false
+            )
         }
     }
 
