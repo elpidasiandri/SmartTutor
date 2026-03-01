@@ -11,23 +11,19 @@ import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.NextActionDomain
 import kotlinx.datetime.Clock
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
-import org.example.project.tutor.domainModels.chatHistory.LearningUnitHistoryDomain
 import org.example.project.tutor.domainModels.chatHistory.SubjectHistoryDomain
-import org.example.project.tutor.domainModels.learningUnits.DskContentDomain
 import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitsPageDomain
 import org.example.project.tutor.domainModels.learningUnits.QuotationDomain
 import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
-import org.example.project.tutor.networkModel.learningUnits.DskItemDto
-import org.example.project.tutor.networkModel.learningUnits.ExerciseDto
-import org.example.project.tutor.networkModel.learningUnits.LanguageOfLearningUnitsEnum
-import org.example.project.tutor.networkModel.learningUnits.LearningUnitDto
-import org.example.project.tutor.networkModel.learningUnits.LearningUnitsPrototypeDto
-import org.example.project.tutor.networkModel.learningUnits.QuotationDto
-import org.example.project.tutor.networkModel.learningUnits.UnitImageDto
-import org.example.project.utils.nonNull
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
+import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum
+import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
+import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
+import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
+import org.example.project.tutor.networkModel.uploadPdf.UnitImageDto
+
 fun String?.toLanguageEnum(): LanguageOfLearningUnitsEnum =
     when (this?.lowercase()) {
         LanguageOfLearningUnitsEnum.English.value -> LanguageOfLearningUnitsEnum.English
@@ -36,37 +32,24 @@ fun String?.toLanguageEnum(): LanguageOfLearningUnitsEnum =
     }
 
 fun LearningUnitsPrototypeDto.toDomain(): LearningUnitsPrototypeDomain {
-    val units = learningUnits?.mapIndexedNotNull { index, dto ->
-        dto?.toDomain(defaultIndex = index + 1)
-    }?:emptyList()
+    val units = learningUnits.mapIndexed { index, dto ->
+        dto.toDomain(defaultIndex = index + 1)
+    }
     return LearningUnitsPrototypeDomain(
         title = prototypeTitle.orEmpty(),
-        language = language.toLanguageEnum(),
+        language = language.toLanguageEnum().name,
         totalUnits = totalUnits ?: units.size,
         learningUnits = units
     )
 }
 fun LearningUnitDto.toDomain(defaultIndex: Int): LearningUnitContentDomain =
     LearningUnitContentDomain(
-        id = id ?: "lu_$defaultIndex",
         title = title.orEmpty(),
         numbering = numbering ?: defaultIndex,
-
-        // Προτιμάς summary για chat:
-        text = (text ?: basetext).orEmpty(),
-
-        dsk = domainSpecificKnowledge?.mapNotNull { it?.toDomain() }?:emptyList(),
-        images = images?.mapNotNull { it?.toDomain() }?:emptyList(),
-        quotations = quotations?.mapNotNull { it?.toDomain() }?:emptyList(),
-        exercises = exercises?.mapNotNull { it?.toDomain() }?:emptyList()
-    )
-
-fun DskItemDto.toDomain(): DskContentDomain =
-    DskContentDomain(
-        type = type,
-        dsc = content.orEmpty(),
-        caption = caption.orEmpty(),
-        numbering = numbering ?: 0
+        text = textInfo.orEmpty(),
+        images = images.map { it.toDomain() },
+        quotations = quotations.map { it.toDomain() },
+        exercises = exercises.map { it.toDomain() }
     )
 
 fun UnitImageDto.toDomain(): UnitImageDomain =
@@ -78,7 +61,6 @@ fun UnitImageDto.toDomain(): UnitImageDomain =
 
 fun QuotationDto.toDomain(): QuotationDomain =
     QuotationDomain(
-        imageRelativePath = image?.relativePath.orEmpty(),
         text = text.orEmpty(),
         numbering = numbering ?: 0
     )
@@ -86,87 +68,129 @@ fun QuotationDto.toDomain(): QuotationDomain =
 fun ExerciseDto.toDomain(): ExerciseDomain =
     ExerciseDomain(
         type = type,
+        difficulty = difficulty.orEmpty(),
+        estimatedMinutes = estimatedMinutes?:0,
         question = question.orEmpty(),
         options = options,
-        answerIndex = answerIndex,
+        answerIndex = answerIndex?:0,
+        hint = hint.orEmpty(),
         explanation = explanation.orEmpty(),
-        sampleAnswer = sampleAnswer.orEmpty()
+        solution = solution.orEmpty(),
     )
 
+fun buildLearningTabMessage(unit: LearningUnitContentDomain): String {
+    val sb = StringBuilder()
+
+    sb.append("${unit.numbering}. ${unit.title}\n\n")
+    if (unit.text.isNotBlank()) sb.append(unit.text.trim()).append("\n\n")
+
+    if (unit.quotations.isNotEmpty()) {
+        sb.append("Quotations\n")
+        unit.quotations.sortedBy { it.numbering }.forEach { q ->
+            sb.append("[Hot Tip = quotation]\n")
+            sb.append(q.text.trim()).append("\n\n")
+        }
+    }
+
+    if (unit.images.isNotEmpty()) {
+        sb.append("Images\n")
+        unit.images.sortedBy { it.numbering }.forEach { img ->
+            val num = img.relativePath.substringAfter("image_").substringBefore(".png")
+                .ifBlank { img.numbering.toString() }
+
+            sb.append("[image $num]\n")
+            if (img.caption.isNotBlank()) sb.append(img.caption.trim()).append("\n")
+            sb.append("\n")
+        }
+    }
+
+    return sb.toString().trim()
+}
+
+fun buildExercisesTabMessage(unit: LearningUnitContentDomain): String {
+    val sb = StringBuilder()
+
+    sb.append("Exercises — ${unit.numbering}. ${unit.title}\n\n")
+
+    if (unit.exercises.isEmpty()) {
+        sb.append("No exercises found for this unit.")
+        return sb.toString()
+    }
+
+    unit.exercises.forEachIndexed { i, ex ->
+        sb.append("Exercise ${i + 1} (${ex.type}, ${ex.difficulty}, ~${ex.estimatedMinutes} min)\n")
+        sb.append(ex.question.trim()).append("\n\n")
+
+        if (ex.options.isNotEmpty()) {
+            ex.options.forEachIndexed { idx, opt ->
+                val letter = ('A' + idx)
+                sb.append("$letter) ").append(opt).append("\n")
+            }
+            sb.append("\n")
+        }
+
+        if (ex.hint.isNotBlank()) sb.append("💡 Hint: ").append(ex.hint.trim()).append("\n")
+        if (ex.explanation.isNotBlank()) sb.append("Explanation: ").append(ex.explanation.trim()).append("\n")
+        if (ex.solution.isNotBlank()) sb.append("Solution: ").append(ex.solution.trim()).append("\n")
+
+        sb.append("\n---\n\n")
+    }
+
+    return sb.toString().trim()
+}
 
 fun buildChatHistoryFromUnits(
     units: List<LearningUnitContentDomain>,
-    materialId: String,
+//    materialId: String,
     unlockedCount: Int,
     subjectTitle: String,
 ): ChatHistoryDomain {
-    val visible = units.take(unlockedCount)
-
     return ChatHistoryDomain(
         subjects = listOf(
             SubjectHistoryDomain(
                 title = subjectTitle.ifBlank { "Material" },
-                subjectId = materialId,
-                learningUnits = visible.map { lu ->
-                    LearningUnitHistoryDomain(
-                        luId = lu.id,
-                        luTitle = lu.title,
-                        materialId = materialId,
-                        chatId = "" // later
-                    )
-                }
+                learningUnits = units
             )
         )
     )
 }
-
 fun buildChatSessionStart(
-    materialId: String,
     fileName: String,
     units: List<LearningUnitContentDomain>,
-    activeIndex: Int = 0,
+    activeIndex: Int = 0
 ): ChatSessionStartDomain {
 
     val total = units.size.coerceAtLeast(0)
     val lu = units.getOrNull(activeIndex)
     val ts = Clock.System.now().toEpochMilliseconds()
+
     val introText = buildString {
-        appendLine("📘 ${lu?.title.orEmpty()}")
+        appendLine("${lu?.title.orEmpty()}")
         appendLine()
         appendLine(lu?.text.orEmpty())
-
-        val dsk = lu?.dsk.orEmpty()
-        if (dsk.isNotEmpty()) {
-            appendLine()
-            appendLine("🔑 Σημεία-κλειδιά:")
-            dsk.sortedBy { it.numbering }.forEach { item ->
-                appendLine("• ${item.caption}")
-            }
-        }
     }
+
     val initialMessages = if (introText.isNotBlank()) {
         listOf(
             ChatMessageDomain(
-                id = "m_${lu?.id.orEmpty()}_intro",
                 sender = SenderType.AI.name,
                 content = introText,
                 timestamp = ts,
                 type = "TEXT",
-                imagePath = lu?.images.nonNull
+                imagePath = lu?.images.orEmpty()
             )
         )
     } else emptyList()
+    val sessionId = "session_${Clock.System.now().toEpochMilliseconds()}"
 
     return ChatSessionStartDomain(
         material = MaterialDomain(
-            materialId = materialId,
             fileUploaded = true,
             fileName = fileName,
-            canUpload = total == 0,
+            canUpload = true,
             totalUnits = total
         ),
         learningUnit = LearningUnitDomain(
-            luId = lu?.id.orEmpty(),
             title = lu?.title.orEmpty(),
             orderIndex = lu?.numbering ?: 0,
             quizAvailable = true,
@@ -175,7 +199,6 @@ fun buildChatSessionStart(
             nextAction = NextActionDomain.CONTINUE_CHAT
         ),
         instance = LearningUnitInstanceDomain(
-            instanceId = "instance_${lu?.id.orEmpty()}",
             status = LUStatusDomain.ACTIVE,
             progressPercent = 0,
             startedAt = ts,
@@ -185,47 +208,25 @@ fun buildChatSessionStart(
             isLocked = false
         ),
         chat = ChatDomain(
-            chatSessionId = "chat_${lu?.id.orEmpty()}",
+            sessionId,
             createNewSession = false,
             messages = initialMessages
         )
     )
 }
 
-
-fun LearningUnitsPrototypeDomain.toChatHistoryDomain(
-    materialId: String,
-    subjectTitle: String = "My Material",
-): ChatHistoryDomain {
-    val units = this.learningUnits.map { lu ->
-        LearningUnitHistoryDomain(
-            luId = "lu_${lu.numbering}",
-            luTitle = lu.title,
-            materialId = materialId,
-            chatId = ""
-        )
-    }
-
-    val subject = SubjectHistoryDomain(
-        title = subjectTitle,
-        subjectId = materialId,
-        learningUnits = units
-    )
-    return ChatHistoryDomain(subjects = listOf(subject))
-}
-
 fun buildEmptyChatSessionStart(): ChatSessionStartDomain {
     val ts = Clock.System.now().toEpochMilliseconds()
+    val sessionId = "session_${Clock.System.now().toEpochMilliseconds()}"
+
     return ChatSessionStartDomain(
         material = MaterialDomain(
-            materialId = "",
             fileUploaded = false,
             fileName = "",
             canUpload = true,
             totalUnits = 0
         ),
         learningUnit = LearningUnitDomain(
-            luId = "",
             title = "",
             orderIndex = 0,
             quizAvailable = false,
@@ -244,7 +245,7 @@ fun buildEmptyChatSessionStart(): ChatSessionStartDomain {
             isLocked = false
         ),
         chat = ChatDomain(
-            chatSessionId = "chat_empty_$ts",
+            sessionId,
             createNewSession = true,
             messages = emptyList()
         )

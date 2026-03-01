@@ -60,7 +60,7 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
             }
 
             if (badRequest != null) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to badRequest!!))
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to badRequest))
                 return@post
             }
 
@@ -88,7 +88,7 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
         get("/{documentId}") {
             val documentId = call.parameters["documentId"]
                 ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing documentId"))
-
+            println("HIT GET /v1/pdfs/$documentId")
             val status = repo.getStatus(documentId)
                 ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Not found"))
 

@@ -100,3 +100,8 @@ enum class JobStatus(val value: String) {
     Done("done"),
     Failed("failed")
 }
+
+enum class LanguageOfLearningUnitsEnum(val value :String){
+    Greek("el"),
+    English("en")
+}

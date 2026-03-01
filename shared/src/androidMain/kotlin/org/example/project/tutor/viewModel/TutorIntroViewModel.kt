@@ -9,6 +9,7 @@ import org.example.project.tutor.commonViewModel.TutorCommonViewModel
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
@@ -18,6 +19,7 @@ class TutorIntroViewModel(
     private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
     private val platform: TutorPlatform,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
 ) : ViewModel() {
     private val common = TutorCommonViewModel(
         logoutUseCase = logout,
@@ -25,7 +27,8 @@ class TutorIntroViewModel(
         scope = viewModelScope,
         platform = platform,
         pdfUploadServiceUseCase = pdfUploadServiceUseCase,
-        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase
+        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
+        loadTutorFromPdfUseCase = loadTutorFromPdfUseCase
     )
     val state: StateFlow<TutorState> = common.state
 

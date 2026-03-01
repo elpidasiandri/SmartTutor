@@ -2,13 +2,15 @@ package org.example.project.tutor.repo
 
 import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.*
-import io.ktor.client.call.*
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.serialization.json.Json
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 import kotlin.coroutines.resume
@@ -24,9 +26,8 @@ class TutorIntroRepoImpl(
         file: UploadFile,
         idToken: String,
     ): UploadPdfResponse {
-
         val response = httpClient.submitFormWithBinaryData(
-            url = "$baseUrl/v1/pdfs",
+            url = "$baseUrl/v1/pdfs/upload",
             formData = formData {
                 append(
                     key = "file",
@@ -43,9 +44,15 @@ class TutorIntroRepoImpl(
         ) {
             header(HttpHeaders.Authorization, "Bearer $idToken")
             accept(ContentType.Application.Json)
+            expectSuccess = false
         }
         val raw = response.bodyAsText()
-        return response.body()
+
+        if (!response.status.isSuccess()) {
+            error("Upload failed: ${response.status} body=$raw")
+        }
+
+        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
     }
 
 
@@ -79,11 +86,41 @@ class TutorIntroRepoImpl(
             }
     }
 
-    override suspend fun getPdfJobStatus(documentId: String, idToken: String): PdfJobStatusResponse {
-        return httpClient.get("$baseUrl/v1/pdfs/$documentId") {
+    override suspend fun getPdfJobStatus(
+        documentId: String,
+        idToken: String,
+    ): PdfJobStatusResponse {
+        val response = httpClient.get("$baseUrl/v1/pdfs/$documentId") {
             header(HttpHeaders.Authorization, "Bearer $idToken")
             accept(ContentType.Application.Json)
-        }.body()
+            expectSuccess = false
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Get status failed: ${response.status} body=$raw")
+        }
+
+        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
     }
 
+    override suspend fun getPdfJobRaw(
+        documentId: String,
+        idToken: String,
+    ): PdfJobStatusRawResponse {
+        val response = httpClient.get("$baseUrl/v1/pdfs/$documentId") {
+            header(HttpHeaders.Authorization, "Bearer $idToken")
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Get status failed: ${response.status} body=$raw")
+        }
+
+        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+    }
 }

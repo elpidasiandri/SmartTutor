@@ -14,6 +14,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
+        isLenient = true
     }
 
     override fun createAndEnqueue(

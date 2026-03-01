@@ -22,7 +22,6 @@ data class MaterialDomain(
 )
 
 data class LearningUnitDomain(
-    val luId: String = EMPTY_STRING,
     val title: String = EMPTY_STRING,
     val orderIndex: Int = EMPTY_INT,
     val quizAvailable: Boolean = EMPTY_BOOLEAN,
@@ -60,7 +59,6 @@ data class ChatDomain(
 )
 
 data class ChatMessageDomain(
-    val id: String = EMPTY_STRING,
     val sender: String = EMPTY_STRING,
     val content: String = EMPTY_STRING,
     val timestamp: Long = EMPTY_LONG,

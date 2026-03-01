@@ -1,7 +1,7 @@
 package org.example.project.tutor.repo
 
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.accept
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
@@ -11,15 +11,18 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import org.example.project.extensions.await
 import org.example.project.registration.firebase.FirebaseApp
 import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.signOut
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 
@@ -27,12 +30,12 @@ class WebTutorRepoImpl(
     private val firebase: FirebaseApp,
     private val httpClient: HttpClient,
     private val baseUrl: String,
-): ITutorRepo {
+) : ITutorRepo {
     private val auth: FirebaseAuth = getAuth(firebase)
 
     override suspend fun uploadFile(file: UploadFile, idToken: String): UploadPdfResponse {
-        val resp = httpClient.submitFormWithBinaryData(
-            url = "$baseUrl/v1/pdfs",
+        val response = httpClient.submitFormWithBinaryData(
+            url = "$baseUrl/v1/pdfs/upload",
             formData = formData {
                 append(
                     key = "file",
@@ -49,11 +52,15 @@ class WebTutorRepoImpl(
         ) {
             header(HttpHeaders.Authorization, "Bearer $idToken")
             accept(ContentType.Application.Json)
+            expectSuccess = false
         }
-        println("Q12345 status ${resp.status.value}")
-        println("Q12345 text ${resp.bodyAsText()}")
 
-        return resp.body()
+        val raw = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            error("Upload failed: ${response.status} body=$raw")
+        }
+
+        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
     }
 
     @OptIn(ExperimentalWasmJsInterop::class)
@@ -78,12 +85,42 @@ class WebTutorRepoImpl(
         return jsToken.toString()
     }
 
-    override suspend fun getPdfJobStatus(documentId: String, idToken: String): PdfJobStatusResponse {
-        val resp = httpClient.get("$baseUrl/v1/pdfs/$documentId") {
+
+    override suspend fun getPdfJobStatus(
+        documentId: String,
+        idToken: String,
+    ): PdfJobStatusResponse {
+        val response = httpClient.get("$baseUrl/v1/pdfs/$documentId") {
             header(HttpHeaders.Authorization, "Bearer $idToken")
             accept(ContentType.Application.Json)
+            expectSuccess = false
         }
-        return resp.body()
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Get status failed: ${response.status} body=$raw")
+        }
+
+        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
     }
 
+    override suspend fun getPdfJobRaw(
+        documentId: String,
+        idToken: String,
+    ): PdfJobStatusRawResponse {
+        val response = httpClient.get("$baseUrl/v1/pdfs/$documentId") {
+            header(HttpHeaders.Authorization, "Bearer $idToken")
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Get status failed: ${response.status} body=$raw")
+        }
+
+        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+    }
 }

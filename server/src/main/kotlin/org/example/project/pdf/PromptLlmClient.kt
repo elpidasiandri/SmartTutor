@@ -267,12 +267,6 @@ class PromptLlmClient(
             error("Total minutes hard bounds $hardMin..$hardMax (got $total)")
         }
 
-        val softMin = targetMinutes - tolerance
-        val softMax = targetMinutes + tolerance
-        if (total !in softMin..softMax) {
-            println("WARN: total minutes outside soft target $softMin..$softMax (got $total)")
-        }
-
         val mcq = exercises.count { it.type == "mcq" }
         val tf = exercises.count { it.type == "true_false" }
         val op = exercises.count { it.type == "open" }

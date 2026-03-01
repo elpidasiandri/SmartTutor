@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -77,9 +78,96 @@ import org.example.project.tutor.domainModels.tutorChat.LUStatusDomain
 import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
+import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.utils.validation.Validation
 
+@Composable
+fun TutorScreen(
+    chatData: ChatSessionStartDomain,
+    chatHistory: ChatHistoryDomain,
+    showCustomMessage: Boolean,
+    message: String,
+    isError: Boolean,
+    userMessage: String,
+    widthDividerMenu: Int = 2,
+    onMessageChange: (String) -> Unit,
+    playAIMessage: (String) -> Unit,
+    startVoiceInput: (onResult: (String) -> Unit) -> Unit,
+    stopVoiceInput: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onMessageDismiss: () -> Unit,
+    onUploadPdfClick: () -> Unit,
+    selectLearningUnits: () -> Unit,
+    onNextUnitClick: () -> Unit,
+    onExercisesClick: () -> Unit,
+    startNewChat: () -> Unit,
+    deleteSubject: (String) -> Unit,
+    isWebFlow: Boolean = false,
+    isLoading: Boolean = false,
+    onChangeTab: (TutorTab) -> Unit,
+    selectedTab: TutorTab,
+    tabInfoMessage: String,
+) {
+
+
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        TutorChatUI(
+            chatData = chatData,
+            chatHistory = chatHistory,
+            showCustomMessage =showCustomMessage,
+            message =message,
+            isError = isError,
+            userMessage = userMessage,
+            onMessageChange = {p1->
+                onMessageChange(p1)
+            },
+            widthDividerMenu = widthDividerMenu,
+            playAIMessage = playAIMessage,
+            startVoiceInput = startVoiceInput,
+            stopVoiceInput = stopVoiceInput,
+            onSettingsClick = {onSettingsClick()},
+            onLogoutClick = {onLogoutClick()},
+            onMessageDismiss = {
+                onMessageDismiss()
+            },
+            onUploadPdfClick = {
+                onUploadPdfClick()
+            },
+            selectLearningUnits = {
+                selectLearningUnits()
+            },
+            onNextUnitClick = {
+                onNextUnitClick()
+            },
+            onExercisesClick = {
+                onExercisesClick()
+            },
+            startNewChat = {
+                startNewChat()
+            },
+            deleteSubject = { p1->
+                deleteSubject(p1)
+            },
+            selectedTab = selectedTab,
+            onChangeTab = { onChangeTab(it)},
+            tabInfoMessage = tabInfoMessage
+        )
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    }
+}
 @Composable
 fun TutorChatUI(
     chatData: ChatSessionStartDomain,
@@ -97,12 +185,15 @@ fun TutorChatUI(
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    selectLearningUnits: (String) -> Unit,
+    selectLearningUnits: () -> Unit,
     onNextUnitClick: () -> Unit,
     onExercisesClick: () -> Unit,
     startNewChat: () -> Unit,
     deleteSubject: (String) -> Unit,
     isWebFlow: Boolean = false,
+    onChangeTab: (TutorTab) -> Unit,
+    selectedTab: TutorTab,
+    tabInfoMessage: String,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -112,7 +203,12 @@ fun TutorChatUI(
     var isMicOn by remember { mutableStateOf(false) }
     var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
 
-    LaunchedEffect(chatData.chat.chatSessionId) {
+    LaunchedEffect(
+        chatData.chat.chatSessionId,
+        chatData.material.fileName,
+        chatData.learningUnit.title,
+        chatData.chat.messages.size
+    ) {
         chatMessages.clear()
 
         chatMessages.addAll(
@@ -149,7 +245,7 @@ fun TutorChatUI(
                     scope = scope,
                     onSettingsClick = onSettingsClick,
                     onLogoutClick = onLogoutClick,
-                    onChatClick = { _, luId -> luId?.let(selectLearningUnits) },
+                    onChatClick = {selectLearningUnits()},
                     onNewChatClick = {
                         scope.launch {
                             startNewChat()
@@ -202,7 +298,10 @@ fun TutorChatUI(
                                 stopVoiceInput = stopVoiceInput,
                                 setMicOn = { isMicOn = it }
                             )
-                        }
+                        },
+                        selectedTab = selectedTab,
+                        onChangeTab = { onChangeTab(it)},
+                        tabInfoMessage = tabInfoMessage
                     )
                 }
             )
@@ -243,7 +342,7 @@ private fun TutorDrawerContent(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onChatClick: (subjectId: String, luId: String?) -> Unit,
+    onChatClick: (subjectId: String) -> Unit,
     onNewChatClick: () -> Unit,
     onDeleteSubject: (subjectId: String) -> Unit,
 ) {
@@ -299,26 +398,41 @@ private fun TutorChatContent(
     onStopVoiceInput: () -> Unit,
     onStartVoiceInput: (onResult: (String) -> Unit) -> Unit,
     onSendClick: () -> Unit,
-) {
+    onChangeTab: (TutorTab) -> Unit,
+    selectedTab: TutorTab,
+    tabInfoMessage: String,
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
     ) {
+//        TutorTopActionsRow(
+//            fileUploaded = chatData.material.fileUploaded,
+//            onExercisesClick = onExercisesClick,
+//            onNextUnitClick = onNextUnitClick
+//        )
         TutorTopActionsRow(
             fileUploaded = chatData.material.fileUploaded,
-            onExercisesClick = onExercisesClick,
+            selectedTab =selectedTab,
+            onTabChange = { onChangeTab(it) },
             onNextUnitClick = onNextUnitClick
         )
 
         Spacer(modifier = Modifier.height(spacing8))
-
+        val info = tabInfoMessage.takeIf { it.isNotBlank() }
+        val combined = buildList {
+            if (info != null) {
+                add(ChatUiMessage(sender = SenderType.AI.name, text = info, imagePath = emptyList()))
+            }
+            addAll(chatMessages)
+        }
         ChatMessagesList(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = spacing8),
-            chatMessages = chatMessages,
+            chatMessages = combined,
             onPlayClick = onPlayClick
         )
 
@@ -347,7 +461,8 @@ private fun TutorChatContent(
 @Composable
 private fun TutorTopActionsRow(
     fileUploaded: Boolean,
-    onExercisesClick: () -> Unit,
+    selectedTab: TutorTab,
+    onTabChange: (TutorTab) -> Unit,
     onNextUnitClick: () -> Unit,
 ) {
     Row(
@@ -357,15 +472,17 @@ private fun TutorTopActionsRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         TutorActionButton(
-            text = "Learning",
+            text = if (selectedTab == TutorTab.Learning) "Learning ✓" else "Learning",
             enabled = fileUploaded,
-            onClick = { /* TODO */ }
+            onClick = { onTabChange(TutorTab.Learning) }
         )
+
         TutorActionButton(
-            text = "Exercises",
+            text = if (selectedTab == TutorTab.Exercises) "Exercises ✓" else "Exercises",
             enabled = fileUploaded,
-            onClick = onExercisesClick
+            onClick = { onTabChange(TutorTab.Exercises) }
         )
+
         TutorActionButton(
             text = "Next ➜",
             enabled = fileUploaded,
@@ -373,7 +490,6 @@ private fun TutorTopActionsRow(
         )
     }
 }
-
 @Composable
 private fun TutorActionButton(
     text: String,
@@ -601,8 +717,7 @@ fun AiRichMessage(
     val anyMarker = Validation.anyMarker
 
     var lastIndex = 0
-    println("Q12345 anyMarker ${anyMarker.containsMatchIn(text)}")
-    println("Q12345 text ${text}")
+
     if (!anyMarker.containsMatchIn(text)) {
         Text(text)
         return
@@ -636,7 +751,7 @@ fun AiRichMessage(
                     )
                     Spacer(Modifier.height(6.dp))
                 } else {
-                    Text("🖼️ [image $num]")
+                    Text("[image $num]")
                 }
                 Spacer(Modifier.height(6.dp))
                 lastIndex = end
@@ -660,8 +775,7 @@ fun AiRichMessage(
                             .clip(RoundedCornerShape(10.dp))
                     )
                 } else {
-                    Text("🧾 $marker")
-                    println("Q12345 missing quote asset marker=$marker path=$path")
+                    Text("$marker")
                 }
 
                 Spacer(Modifier.height(6.dp))
@@ -684,8 +798,7 @@ fun AiRichMessage(
                             .clip(RoundedCornerShape(10.dp))
                     )
                 } else {
-                    Text("🧾 $marker")
-                    println("Q12345 missing quotation default asset path=$path")
+                    Text("$marker")
                 }
 
                 Spacer(Modifier.height(6.dp))
@@ -704,3 +817,4 @@ fun AiRichMessage(
     }
 
 }
+

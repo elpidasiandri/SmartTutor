@@ -61,7 +61,6 @@ fun rememberBmpFromResPath(resourcePath: String?): ImageBitmap? {
         }.onSuccess { bmp = it }
             .onFailure { e ->
                 bmp = null
-                println("Q12345 image load failed for $resourcePath : ${e.message}")
             }
     }
     return bmp

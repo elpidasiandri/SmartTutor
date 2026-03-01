@@ -33,7 +33,6 @@ class PdfJobWorker(
                     }
                     process(job)
                 } catch (t: Throwable) {
-                    println("Worker loop error: ${t.message}")
                     t.printStackTrace()
                     delay(1000)
                 }
@@ -84,7 +83,6 @@ class PdfJobWorker(
                         carry = carry
                     )
                 } catch (t: Throwable) {
-                    println("Chunk preview failed (chunk=${chunk.name}): ${t.message}")
                     t.printStackTrace()
                     continue
                 }
@@ -119,7 +117,6 @@ class PdfJobWorker(
                             )
                         } catch (t: Throwable) {
                             lastErr = t
-                            println("Exercises failed (unit=$unitNumber attempt=${attempt + 1}): ${t.message}")
                             t.printStackTrace()
                             delay(1500L + Random.nextLong(0, 900))
                         }
@@ -146,7 +143,6 @@ class PdfJobWorker(
                                     prompt = prompt
                                 )
                             } catch (t: Throwable) {
-                                println("Image gen failed (unit=$unitNumber idx=${idx + 1}): ${t.message}")
                                 t.printStackTrace()
                                 null
                             }
@@ -191,7 +187,6 @@ class PdfJobWorker(
                         carry = carry
                     )
                 } catch (t: Throwable) {
-                    println("Final carry preview failed: ${t.message}")
                     t.printStackTrace()
                     null
                 }
@@ -223,7 +218,6 @@ class PdfJobWorker(
                                 )
                             } catch (t: Throwable) {
                                 lastErr = t
-                                println("Final exercises failed (unit=$unitNumber attempt=${attempt + 1}): ${t.message}")
                                 t.printStackTrace()
                                 delay(1500L + Random.nextLong(0, 900))
                             }
@@ -250,7 +244,6 @@ class PdfJobWorker(
                                         prompt = prompt
                                     )
                                 } catch (t: Throwable) {
-                                    println("Final image gen failed (unit=$unitNumber idx=${idx + 1}): ${t.message}")
                                     t.printStackTrace()
                                     null
                                 }

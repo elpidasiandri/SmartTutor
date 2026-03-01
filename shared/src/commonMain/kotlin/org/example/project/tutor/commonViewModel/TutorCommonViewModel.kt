@@ -9,14 +9,17 @@ import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.tutor.domainModels.file.PickedFile
-import org.example.project.tutor.domainModels.file.UploadFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.mappers.learningUnits.buildChatHistoryFromUnits
 import org.example.project.tutor.mappers.learningUnits.buildChatSessionStart
 import org.example.project.tutor.mappers.learningUnits.buildEmptyChatSessionStart
+import org.example.project.tutor.mappers.learningUnits.buildExercisesTabMessage
+import org.example.project.tutor.mappers.learningUnits.buildLearningTabMessage
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.utils.EmptyValues
@@ -35,6 +38,7 @@ class TutorCommonViewModel(
     private val platform: TutorPlatform,
     private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
 ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -51,10 +55,14 @@ class TutorCommonViewModel(
             TutorUiEvents.ClearUiEvent -> clearUiEvent()
             is TutorUiEvents.ShowErrorMessage -> stateForErrorMessage(event.message)
             is TutorUiEvents.DeleteMaterial -> deleteMaterialLocal(event.subjectId)
-            is TutorUiEvents.SelectLearningUnit -> selectLearningUnit(event.luId)
+            is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title)
             TutorUiEvents.NextUnit -> goNext()
-            is TutorUiEvents.OpenUnit -> openUnit(event.index)
+            TutorUiEvents.OpenUnit -> openUnit()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
+            is TutorUiEvents.ChangeTab -> {
+                refreshTabInfoMessage(event.tab)
+            }
+
             else -> {}
         }
     }
@@ -65,74 +73,91 @@ class TutorCommonViewModel(
 
     fun startVoiceInput(onResult: (String) -> Unit) = platform.startVoice(onResult)
     fun stopVoiceInput() = platform.stopVoice()
-    private fun selectLearningUnit(luId: String) {
-        scope.launch {
-            val prototype = getLearningUnitUseCase()
-            val units = prototype.learningUnits
 
-            val index = units.indexOfFirst { it.id == luId }
-            if (index == -1) return@launch
+    private fun selectLearningUnitByTitle(title: String) {
+        val units = _state.value.allUnits
+        if (units.isEmpty()) return
 
-            val selected = units[index]
+        val index = units.indexOfFirst { it.title.trim() == title.trim() }
+        if (index == -1) return
 
-            val newSession = buildChatSessionStart(
-                materialId = _state.value.session.material.materialId,
-                fileName = _state.value.session.material.fileName,
-                units = units,
-                activeIndex = index
+        val selected = units[index]
+
+        val newSession = buildChatSessionStart(
+            fileName = _state.value.session.material.fileName,
+            units = units,
+            activeIndex = index
+        )
+
+        _state.update {
+            it.copy(
+                currentIndex = index,
+                currentUnit = selected,
+                session = newSession
             )
+        }
+    }
 
-            _state.update {
-                it.copy(
-                    session = newSession,
-                    currentUnit = selected
-                )
-            }
+    private fun refreshTabInfoMessage(tab: TutorTab) {
+        val unit = _state.value.currentUnit
+        val msg = when (tab) {
+            TutorTab.Learning -> buildLearningTabMessage(unit)
+            TutorTab.Exercises -> buildExercisesTabMessage(unit)
+        }
+        _state.update {
+            it.copy(
+                tabInfoMessage = msg,
+                selectedTab = tab
+            )
         }
     }
 
     private fun uploadPdf(picked: PickedFile) {
         scope.launch {
             try {
-                _state.update {
-                    it.copy(
-                        loading = true
-                    )
-                }
-                val uploadFile = UploadFile(
-                    bytes = picked.bytes,
-                    fileName = picked.name,
-                    contentType = picked.mimeType
+                _state.update { it.copy(loading = true) }
+
+                val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(picked)
+                val units = res.prototype.learningUnits
+                val subjectTitle = res.prototype.title
+
+                val session = buildChatSessionStart(
+                    fileName = res.fileName,
+                    units = units,
+                    activeIndex = 0
                 )
-                println("Q12345 uploadFile $uploadFile")
 
-                val token = getIdTokenSuspendUseCase()
-
-                val response = pdfUploadServiceUseCase(uploadFile, token)
-                println("Q12345 response $response")
+                val history = buildChatHistoryFromUnits(
+                    units = units,
+                    unlockedCount = 1,
+                    subjectTitle = subjectTitle,
+//                    materialId = res.materialId,
+//                    templateDocId = res.templateDocId,
+//                    language = res.languageEnum.value
+                )
 
                 _state.update {
                     it.copy(
                         loading = false,
+                        subjectTitle = subjectTitle,
+                        allUnits = units,
+                        currentIndex = 0,
+                        unlockedCount = 1,
+                        currentUnit = units.firstOrNull() ?: LearningUnitContentDomain(),
+                        session = session,
+                        chatHistory = history,
                         showCustomMessage = true,
-                        isError = false,
-                        message = "Uploaded: ${response.documentId}",
-                        session =  it.session.copy(
-                            material = it.session.material.copy(
-                                fileUploaded = true
-                            )
-                        )
+                        message = "Template loaded (${res.languageEnum.value})",
+                        isError = false
                     )
                 }
-
             } catch (t: Throwable) {
-                println("Q12345 Throwable $t")
                 _state.update {
                     it.copy(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message = "Upload failed"
+                        message = t.message ?: "Upload failed"
                     )
                 }
             }
@@ -141,39 +166,22 @@ class TutorCommonViewModel(
 
     private fun deleteMaterialLocal(materialId: String) {
         //todo elpida add
-        val currentMaterialId = _state.value.session.material.materialId
 
         val newSubjects = _state.value.chatHistory.subjects
             .filterNot { it.subjectId == materialId }
 
         val newHistory = _state.value.chatHistory.copy(subjects = newSubjects)
 
-        val shouldResetSession = currentMaterialId == materialId
-
-        if (shouldResetSession) {
-            _state.update {
-                it.copy(
-                    chatHistory = newHistory,
-                    session = buildEmptyChatSessionStart(),
-                    currentUnit = LearningUnitContentDomain(),
-                    allUnits = emptyList(),
-                    currentIndex = 0,
-                    unlockedCount = 1
-                )
-            }
-        } else {
-            _state.update {
-                it.copy(
-                    chatHistory = newHistory
-                )
-            }
+        _state.update {
+            it.copy(
+                chatHistory = newHistory
+            )
         }
     }
 
     private fun goNext() {
         val units = _state.value.allUnits
         val subjectTitle = _state.value.subjectTitle
-        val materialId = _state.value.session.material.materialId
 
         val nextIndex = (_state.value.currentIndex + 1).coerceAtMost(units.lastIndex)
         if (nextIndex == _state.value.currentIndex) return
@@ -181,7 +189,6 @@ class TutorCommonViewModel(
         val newUnlocked = maxOf(_state.value.unlockedCount, nextIndex + 1)
 
         val session = buildChatSessionStart(
-            materialId = materialId,
             fileName = "files/material_learning_units.json",
             units = units,
             activeIndex = nextIndex
@@ -189,7 +196,6 @@ class TutorCommonViewModel(
 
         val history = buildChatHistoryFromUnits(
             units = units,
-            materialId = materialId,
             unlockedCount = newUnlocked,
             subjectTitle = subjectTitle
         )
@@ -205,37 +211,25 @@ class TutorCommonViewModel(
         }
     }
 
-    private fun openUnit(index: Int) {
-        val units = _state.value.allUnits
-        if (index !in units.indices) return
-
-        val materialId = _state.value.session.material.materialId
-        val subjectTitle = _state.value.subjectTitle
-        val newUnlocked = maxOf(_state.value.unlockedCount, index + 1)
-
-        val session = buildChatSessionStart(
-            materialId = materialId,
-            fileName = "files/material_learning_units.json",
-            units = units,
-            activeIndex = index
-        )
-
-        val history = buildChatHistoryFromUnits(
-            units = units,
-            materialId = materialId,
-            unlockedCount = newUnlocked,
-            subjectTitle = subjectTitle
-        )
-
-        _state.update {
-            it.copy(
-                currentIndex = index,
-                unlockedCount = newUnlocked,
-                currentUnit = units.getOrNull(index) ?: LearningUnitContentDomain(),
-                session = session,
-                chatHistory = history
-            )
-        }
+    private fun openUnit() {
+//        val units = _state.value.allUnits
+//        if (index !in units.indices) return
+//
+//        val selected = units[index]
+//
+//        val newSession = buildChatSessionStart(
+//            fileName = _state.value.session.material.fileName,
+//            units = units,
+//            activeIndex = index
+//        )
+//
+//        _state.update {
+//            it.copy(
+//                currentIndex = index,
+//                currentUnit = selected,
+//                session = newSession
+//            )
+//        }
     }
 
     private fun startNewChat() {
@@ -249,31 +243,33 @@ class TutorCommonViewModel(
     }
 
     private fun initializeData() = scope.launch {
+
+        if (_state.value.session.material.fileUploaded) return@launch
+        refreshTabInfoMessage(TutorTab.Learning)
         try {
             _state.update { it.copy(loading = true, error = null) }
+
             val prototype = getLearningUnitUseCase()
             val units = prototype.learningUnits
             val subjectTitle = prototype.title
             val first = units.firstOrNull()
 
-            val materialId = "material_local_001"
             val currentIndex = 0
             val unlockedCount = 1
 
             val session = buildChatSessionStart(
-                materialId = materialId,
                 fileName = "files/material_learning_units.json",
                 units = units,
                 activeIndex = currentIndex
             )
+
             val chatHistory = buildChatHistoryFromUnits(
                 units = units,
-                materialId = materialId,
                 unlockedCount = unlockedCount,
                 subjectTitle = subjectTitle
             )
 
-            first?.let { currentUnit ->
+            first?.let {
                 _state.update {
                     it.copy(
                         loading = false,
@@ -281,14 +277,14 @@ class TutorCommonViewModel(
                         session = session,
                         currentIndex = currentIndex,
                         unlockedCount = unlockedCount,
-                        currentUnit = currentUnit,
+                        currentUnit = first,
                         chatHistory = chatHistory,
-                        showCustomMessage = false,
                         subjectTitle = subjectTitle,
                         event = TutorEvents.Loaded
                     )
                 }
             }
+
         } catch (t: Throwable) {
             platform.log("TutorStore", "initializeData failed", t)
             _state.update {

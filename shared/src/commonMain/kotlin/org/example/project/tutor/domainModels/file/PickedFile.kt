@@ -19,6 +19,8 @@ data class PickedFile(
 
         return true
     }
+    override fun toString(): String =
+        "PickedFile(name=$name, mimeType=$mimeType, bytes=${bytes.size}B)"
 
     override fun hashCode(): Int {
         var result = sizeBytes.hashCode()

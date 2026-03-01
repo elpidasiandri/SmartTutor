@@ -30,7 +30,7 @@ import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
 import org.example.project.tutor.AndroidPdfPicker
-import org.example.project.tutor.TutorChatUI
+import org.example.project.tutor.TutorScreen
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.module.tutorModule
@@ -75,7 +75,7 @@ class TutorIntroFragment : Fragment() {
 
                 var userMessage by remember { mutableStateOf("") }
 
-                TutorChatUI(
+                TutorScreen(
                     chatData = state.session,
                     chatHistory = state.chatHistory,
                     showCustomMessage = state.showCustomMessage,
@@ -102,10 +102,8 @@ class TutorIntroFragment : Fragment() {
                     onUploadPdfClick = {
                         uploadPdfFile()
                     },
-                    selectLearningUnits = { luId ->
-                        val units = state.allUnits
-                        val index = units.indexOfFirst { it.id == luId }
-                        if (index >= 0) viewModel.onEvent(TutorUiEvents.OpenUnit(index))
+                    selectLearningUnits = {
+//                   viewModel.onEvent(TutorUiEvents.OpenUnit)
                     },
                     onNextUnitClick = { viewModel.onEvent(TutorUiEvents.NextUnit) },
                     onExercisesClick = { },
@@ -115,7 +113,11 @@ class TutorIntroFragment : Fragment() {
                     deleteSubject = { subjectId ->
                         viewModel.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
 
-                    }
+                    },
+
+                    selectedTab = state.selectedTab,
+                    onChangeTab = {  viewModel.onEvent(TutorUiEvents.ChangeTab(it))},
+                    tabInfoMessage = state.tabInfoMessage
                 )
             }
         }
@@ -140,8 +142,6 @@ class TutorIntroFragment : Fragment() {
 
                 is PdfValidationResult.Success -> {
                     viewModel.onEvent(TutorUiEvents.UploadPdf(result.file))
-                    Log.d("Q12345 Success", "$result")
-                    Log.d("PDF", "Selected: ${result.file.name}")
                 }
             }
         }

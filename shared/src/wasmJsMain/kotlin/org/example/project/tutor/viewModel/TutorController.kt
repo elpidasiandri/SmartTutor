@@ -10,6 +10,7 @@ import org.example.project.tutor.commonViewModel.TutorCommonViewModel
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
@@ -18,6 +19,7 @@ class TutorController(
     private val getLearningUnitUseCase: LearningUnitsUseCase,
     private val pdfUploadServiceUseCase: PdfUploadServiceUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
     platform: TutorPlatform,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -27,7 +29,8 @@ class TutorController(
         scope = scope,
         platform = platform,
         pdfUploadServiceUseCase = pdfUploadServiceUseCase,
-        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase
+        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
+        loadTutorFromPdfUseCase = loadTutorFromPdfUseCase
     )
 
     val state: StateFlow<TutorState> = common.state

@@ -62,7 +62,7 @@ fun MenuAndChatHistory(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onChatClick: (subjectId: String, luId: String?) -> Unit = { _, _ -> },
+    onChatClick: (subjectId: String) -> Unit = { _ -> },
     onChatTitleClick: () -> Unit,
     onDeleteSubject: (subjectId: String) -> Unit
 ) {
@@ -125,7 +125,7 @@ private fun ChatHistoryList(
     chatHistory: ChatHistoryDomain,
     drawerState: DrawerState,
     scope: CoroutineScope,
-    onChatClick: (subjectId: String, luId: String?) -> Unit,
+    onChatClick: (subjectId: String) -> Unit,
     onDeleteSubject: (subjectId: String) -> Unit,
     modifier: Modifier,
 ) {
@@ -135,8 +135,8 @@ private fun ChatHistoryList(
         chatHistory.subjects.forEach { subject ->
             SubjectHistoryItem(
                 subject = subject,
-                onClick = { subjectId, luId ->
-                    onChatClick(subjectId, luId)
+                onClick = { subjectId ->
+                    onChatClick(subjectId)
                     scope.launch { drawerState.close() }
                 },
                 onDeleteSubject = { subjectId ->
@@ -196,7 +196,7 @@ private fun BottomRow(onLogoutClick: () -> Unit) {
 @Composable
 fun SubjectHistoryItem(
     subject: SubjectHistoryDomain,
-    onClick: (subjectId: String, luId: String?) -> Unit,
+    onClick: (subjectId: String) -> Unit,
     onDeleteSubject: (subjectId: String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -207,7 +207,7 @@ fun SubjectHistoryItem(
         SubjectHeaderRow(
             subject = subject,
             expanded = expanded,
-            onRowClick = { onClick(subject.subjectId, null) },
+            onRowClick = { onClick(subject.subjectId) },
             onToggleExpand = { expanded = !expanded },
             onMoreClick = { menuOpen = true }
         )
@@ -234,8 +234,8 @@ fun SubjectHistoryItem(
         if (expanded) {
             subject.learningUnits.forEach { lu ->
                 LearningUnitRow(
-                    title = lu.luTitle,
-                    onClick = { onClick(subject.subjectId, lu.luId) }
+                    onClick = {onClick(subject.subjectId) },
+                    title ="Tett"
                 )
             }
         }

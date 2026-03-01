@@ -17,6 +17,7 @@ fun validatePdf(file: PickedFile): PdfValidationResult {
 }
 
 sealed class PdfValidationResult {
-    data class Success(val file: PickedFile) : PdfValidationResult()
-    data class Error(val message: String) : PdfValidationResult()
+    data class Success(val file: PickedFile) : PdfValidationResult() {
+        override fun toString(): String = "Success(file=${file.name}, size=${file.bytes.size}B)"
+    }    data class Error(val message: String) : PdfValidationResult()
 }

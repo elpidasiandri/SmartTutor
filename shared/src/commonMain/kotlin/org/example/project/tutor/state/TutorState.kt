@@ -2,10 +2,9 @@ package org.example.project.tutor.state
 
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.file.PickedFile
-import org.example.project.tutor.domainModels.file.UploadFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
+import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.utils.EmptyValues
 
 data class TutorState(
@@ -24,22 +23,23 @@ data class TutorState(
     val currentIndex: Int = 0,
     val subjectTitle: String = "",
     val unlockedCount: Int = 1,
+    val selectedTab: TutorTab = TutorTab.Learning,
+    val tabInfoMessage: String = "",
 )
 
 sealed class TutorUiEvents {
     data object None : TutorUiEvents()
     data object NewChat : TutorUiEvents()
     data object Logout : TutorUiEvents()
-    data class SelectLearningUnit(val luId: String) : TutorUiEvents()
+    data class SelectLearningUnit(val title: String) : TutorUiEvents()
     data object InitializeStateAfterShowingMessage : TutorUiEvents()
     data object ClearUiEvent : TutorUiEvents()
     data object NextUnit : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
     data class DeleteMaterial(val subjectId: String) : TutorUiEvents()
-    data class OpenUnit(val index: Int) : TutorUiEvents()
-    data class UploadPdf(val file : PickedFile
-//        val file: UploadFile,val  idToken: String
-    ) : TutorUiEvents()
+    data object OpenUnit : TutorUiEvents()
+    data class UploadPdf(val file : PickedFile) : TutorUiEvents()
+    data class ChangeTab(val tab: TutorTab) : TutorUiEvents()
 }
 
 sealed class TutorEvents {

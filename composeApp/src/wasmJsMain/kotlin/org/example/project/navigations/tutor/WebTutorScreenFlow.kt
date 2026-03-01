@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
-import org.example.project.tutor.TutorChatUI
+import org.example.project.tutor.TutorScreen
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.di.tutorModule
@@ -44,24 +44,24 @@ fun WebTutorScreenFlow(navController: NavController) {
             else -> {}
         }
     }
-
-    TutorChatUI(
+    TutorScreen(
+        chatData = state.session,
+        chatHistory = state.chatHistory,
+        showCustomMessage = state.showCustomMessage,
+        message = state.message,
+        isError = state.isError,
         userMessage = userMessage,
         onMessageChange = { userMessage = it },
         playAIMessage = { text -> controller.playAIMessage(text) },
         startVoiceInput = { controller.startVoiceInput(it) },
         stopVoiceInput = { controller.stopVoiceInput() },
-        showCustomMessage = state.showCustomMessage,
-        widthDividerMenu = 4,
-        message = state.message,
-        isError = state.isError,
-        onSettingsClick = { navController.navigate(WebScreen.Settings) },
+        onSettingsClick = {
+            navController.navigate(WebScreen.Settings)
+        },
         onLogoutClick = { controller.onEvent(TutorUiEvents.Logout) },
         onMessageDismiss = {
             controller.onEvent(TutorUiEvents.InitializeStateAfterShowingMessage)
         },
-        chatData = state.session,
-        chatHistory = state.chatHistory,
         onUploadPdfClick = {
             CoroutineScope(Dispatchers.Default).launch {
                 val file = pdfPicker.pickPdf()
@@ -73,16 +73,13 @@ fun WebTutorScreenFlow(navController: NavController) {
 
                         is PdfValidationResult.Success -> {
                             controller.onEvent(TutorUiEvents.UploadPdf(result.file))
-                            println("PDF Success: ${result.file.name}, ${result.file.sizeBytes}")
                         }
                     }
                 }
             }
         },
-        selectLearningUnits = { luId ->
-            val units = state.allUnits
-            val index = units.indexOfFirst { it.id == luId }
-            if (index >= 0) controller.onEvent(TutorUiEvents.OpenUnit(index))
+        selectLearningUnits = {
+//                   viewModel.onEvent(TutorUiEvents.OpenUnit)
         },
         onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
         onExercisesClick = { },
@@ -91,7 +88,11 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         deleteSubject = { subjectId ->
             controller.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
+
         },
-        isWebFlow = true
+
+        selectedTab = state.selectedTab,
+        onChangeTab = { controller.onEvent(TutorUiEvents.ChangeTab(it)) },
+        tabInfoMessage = state.tabInfoMessage
     )
 }

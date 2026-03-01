@@ -21,7 +21,7 @@ import org.example.project.routes.pdfRoutes
 import java.io.File
 import java.util.Properties
 
-private const val SERVER_PORT = 8080
+private const val SERVER_PORT = 8081
 
 fun main() {
      FirebaseAdminInit.init()
@@ -42,6 +42,7 @@ fun Application.module() {
                 ignoreUnknownKeys = true
                 prettyPrint = true
                 encodeDefaults = true
+                isLenient = true
             }
         )
     }

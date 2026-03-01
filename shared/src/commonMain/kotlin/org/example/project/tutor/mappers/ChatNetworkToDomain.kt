@@ -32,7 +32,6 @@ fun MaterialState.toDomain() = MaterialDomain(
 )
 
 fun LearningUnitState.toDomain() = LearningUnitDomain(
-    luId = luId.nonNull,
     title = title.nonNull,
     orderIndex = orderIndex.nonNull,
     quizAvailable = quizAvailable.nonNull,
@@ -53,7 +52,6 @@ fun LearningUnitInstanceState.toDomain() = LearningUnitInstanceDomain(
 )
 
 fun ChatState.toDomain() = ChatDomain(
-    chatSessionId = chatSessionId.nonNull,
     createNewSession = createNewSession.nonNull,
     messages = messages
         ?.mapNotNull { it?.toDomain() }
@@ -61,7 +59,6 @@ fun ChatState.toDomain() = ChatDomain(
 )
 
 fun ChatMessageState.toDomain() = ChatMessageDomain(
-    id = id.nonNull,
     sender = sender.nonNull,
     content = content.nonNull,
     timestamp = timestamp.nonNull,

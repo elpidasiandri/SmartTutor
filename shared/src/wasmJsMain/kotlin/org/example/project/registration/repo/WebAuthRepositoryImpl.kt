@@ -64,9 +64,7 @@ class WebAuthRepositoryImpl(
         CoroutineScope(Dispatchers.Default).launch() {
             try {
                 val credential = signInWithEmailAndPassword(auth, email, password).await()
-                getIdToken { _, token ->
-                    println("FIREBASE_TOKEN_WEB: $token")
-                }
+
                 onResult(true, credential.user.uid)
             } catch (e: Throwable) {
                 onResult(false, null)
