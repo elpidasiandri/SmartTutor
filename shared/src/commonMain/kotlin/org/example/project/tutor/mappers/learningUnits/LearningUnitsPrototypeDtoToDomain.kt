@@ -69,10 +69,10 @@ fun ExerciseDto.toDomain(): ExerciseDomain =
     ExerciseDomain(
         type = type,
         difficulty = difficulty.orEmpty(),
-        estimatedMinutes = estimatedMinutes?:0,
+        estimatedMinutes = estimatedMinutes ?: 0,
         question = question.orEmpty(),
         options = options,
-        answerIndex = answerIndex?:0,
+        answerIndex = answerIndex ?: 0,
         hint = hint.orEmpty(),
         explanation = explanation.orEmpty(),
         solution = solution.orEmpty(),
@@ -129,9 +129,11 @@ fun buildExercisesTabMessage(unit: LearningUnitContentDomain): String {
             sb.append("\n")
         }
 
-        if (ex.hint.isNotBlank()) sb.append("💡 Hint: ").append(ex.hint.trim()).append("\n")
-        if (ex.explanation.isNotBlank()) sb.append("Explanation: ").append(ex.explanation.trim()).append("\n")
-        if (ex.solution.isNotBlank()) sb.append("Solution: ").append(ex.solution.trim()).append("\n")
+        if (ex.hint.isNotBlank()) sb.append("Hint: ").append(ex.hint.trim()).append("\n")
+        if (ex.explanation.isNotBlank()) sb.append("Explanation: ").append(ex.explanation.trim())
+            .append("\n")
+        if (ex.solution.isNotBlank()) sb.append("Solution: ").append(ex.solution.trim())
+            .append("\n")
 
         sb.append("\n---\n\n")
     }
@@ -154,10 +156,11 @@ fun buildChatHistoryFromUnits(
         )
     )
 }
+
 fun buildChatSessionStart(
     fileName: String,
     units: List<LearningUnitContentDomain>,
-    activeIndex: Int = 0
+    activeIndex: Int = 0,
 ): ChatSessionStartDomain {
 
     val total = units.size.coerceAtLeast(0)

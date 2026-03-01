@@ -29,7 +29,7 @@ data class ExerciseDomain(
     val explanation: String,
     val solution: String,
 )
-
+enum class ExerciseType { MCQ, TRUE_FALSE, OPEN }
 data class UnitImageDomain(
     val relativePath: String = "",
     val caption: String = "",

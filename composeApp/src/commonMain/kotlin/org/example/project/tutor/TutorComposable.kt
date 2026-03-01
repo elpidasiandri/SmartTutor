@@ -309,8 +309,6 @@ fun TutorChatUI(
     }
 }
 
-/* --------------------------- PRIVATE HELPERS --------------------------- */
-
 @Composable
 private fun TutorToastHost(
     showErrorMessage: Boolean,
@@ -604,7 +602,9 @@ fun ChatMessagesList(
                             .background(Color(0xFFE8E8E8), RoundedCornerShape(8.dp))
                             .padding(8.dp)
                     ) {
-                        AiRichMessage(text = item.text)
+                        AiRichMessageWithCode(
+                            text = item.text
+                        )
                     }
                 }
             }
@@ -706,115 +706,3 @@ fun ChatInputField(
         }
     }
 }
-
-@Composable
-fun AiRichMessage(
-    text: String,
-) {
-    val imageRegex = Validation.imageRegex
-    val quoteKeyRegex = Validation.quoteKeyRegex
-    val quotationRegex = Validation.quotationRegex
-    val anyMarker = Validation.anyMarker
-
-    var lastIndex = 0
-
-    if (!anyMarker.containsMatchIn(text)) {
-        Text(text)
-        return
-    }
-    Column {
-        anyMarker.findAll(text).forEach { m ->
-            val start = m.range.first
-            val end = m.range.last + 1
-            val marker = m.value
-
-            val before = text.substring(lastIndex, start)
-            if (before.isNotBlank()) {
-                Text(before)
-                Spacer(Modifier.height(6.dp))
-            }
-
-            // 1) [image 2.2.1] / [image_2.2.1] / [image: 2.2.1]
-            val imgMatch = imageRegex.find(marker)
-            if (imgMatch != null) {
-                val num = imgMatch.groupValues[1] // "2.2.1"
-                val path = "files/images/image_${num}.png"
-                val bmp = rememberBmpFromResPath(path)
-                if (bmp != null) {
-                    Image(
-                        bitmap = bmp,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 220.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                    )
-                    Spacer(Modifier.height(6.dp))
-                } else {
-                    Text("[image $num]")
-                }
-                Spacer(Modifier.height(6.dp))
-                lastIndex = end
-                return@forEach
-            }
-
-            // 2) [quote_beware]
-            val quoteKeyMatch = quoteKeyRegex.find(marker)
-            if (quoteKeyMatch != null) {
-                val key = quoteKeyMatch.groupValues[1].lowercase()
-                val path = "files/images/$key.png"
-                val bmp = rememberBmpFromResPath(path)
-
-                if (bmp != null) {
-                    Image(
-                        bitmap = bmp,
-                        contentDescription = key,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 180.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                    )
-                } else {
-                    Text("$marker")
-                }
-
-                Spacer(Modifier.height(6.dp))
-                lastIndex = end
-                return@forEach
-            }
-
-            // 3) [Hot Tip = quotation] ή [quotation] -> βάλε default quote image
-            if (quotationRegex.containsMatchIn(marker)) {
-                val path = "files/images/quote_hot_tip.png" // default
-                val bmp = rememberBmpFromResPath(path)
-
-                if (bmp != null) {
-                    Image(
-                        bitmap = bmp,
-                        contentDescription = "quotation",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 180.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                    )
-                } else {
-                    Text("$marker")
-                }
-
-                Spacer(Modifier.height(6.dp))
-                lastIndex = end
-                return@forEach
-            }
-
-            // 4) unknown marker
-            Text(marker)
-            Spacer(Modifier.height(6.dp))
-            lastIndex = end
-        }
-
-        val tail = text.substring(lastIndex)
-        if (tail.isNotBlank()) Text(tail)
-    }
-
-}
-
