@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.example.project.AppConfig
 import org.example.project.colors.AppColors
 import org.example.project.colors.AppColors.GrayLightBoard
 import org.example.project.components.customToast.CustomToastComposable
@@ -70,6 +71,7 @@ import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.tutor.utils.normalizeForHeaderCompare
+import org.koin.compose.koinInject
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -385,13 +387,15 @@ private fun TutorChatContent(
                                     normalizeForHeaderCompare(msg.text) == headerNorm
                         }
                     }
+                val config = koinInject<AppConfig>()
 
                 LearningMessagesList(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
-                    chatMessages = filteredMessages
+                    chatMessages = filteredMessages,
+                    baseUrl = config.baseUrl
                 )
             }
 
@@ -511,6 +515,7 @@ private fun TutorHandleSend(
         onClearUserMessage()
     }
 }
+
 @Composable
 fun TopBarTabs(
     material: MaterialDomain,

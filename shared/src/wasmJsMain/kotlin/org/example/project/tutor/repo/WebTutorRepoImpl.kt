@@ -1,3 +1,4 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 package org.example.project.tutor.repo
 
 import io.ktor.client.HttpClient
@@ -32,7 +33,8 @@ class WebTutorRepoImpl(
     private val baseUrl: String,
 ) : ITutorRepo {
     private val auth: FirebaseAuth = getAuth(firebase)
-
+    private val json = Json { ignoreUnknownKeys = true }
+    @OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
     override suspend fun uploadFile(file: UploadFile, idToken: String): UploadPdfResponse {
         val response = httpClient.submitFormWithBinaryData(
             url = "$baseUrl/v1/pdfs/upload",
@@ -59,8 +61,7 @@ class WebTutorRepoImpl(
         if (!response.status.isSuccess()) {
             error("Upload failed: ${response.status} body=$raw")
         }
-
-        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+        return json.decodeFromString(raw)
     }
 
     @OptIn(ExperimentalWasmJsInterop::class)
@@ -101,8 +102,7 @@ class WebTutorRepoImpl(
         if (!response.status.isSuccess()) {
             error("Get status failed: ${response.status} body=$raw")
         }
-
-        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+        return json.decodeFromString(raw)
     }
 
     override suspend fun getPdfJobRaw(

@@ -1,6 +1,7 @@
 package org.example.project.tutor.di
 
 import io.ktor.client.HttpClient
+import org.example.project.AppConfig
 import org.example.project.network.createWebHttpClient
 import org.example.project.registration.firebase.initFirebase
 import org.example.project.settings.logOut.logoutModule
@@ -18,7 +19,7 @@ import org.koin.dsl.module
 
 val tutorModule = module {
     single<HttpClient> { createWebHttpClient() }
-
+    single { AppConfig(baseUrl = "http://localhost:8081") }
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
     single<ITutorRepo> { WebTutorRepoImpl(
         firebase =  initFirebase().app  ,

@@ -18,28 +18,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import org.example.project.AppConfig
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.tutor.domainModels.tutorChat.ChatUiMessage
 import org.example.project.tutor.domainModels.tutorChat.SenderType
+import org.koin.compose.koinInject
 
 @Composable
 fun LearningMessagesList(
     modifier: Modifier,
     chatMessages: List<ChatUiMessage>,
+    baseUrl: String
 ) {
     val listState = rememberLazyListState()
-
     LazyColumn(modifier = modifier, state = listState) {
-
         items(
             items = chatMessages.distinctBy { it.id },
             key = { it.id }
         ) { item ->
+
             if (item.sender == SenderType.USER.name) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.End
                 ) {
                     Text(
                         text = item.text,
@@ -51,8 +52,7 @@ fun LearningMessagesList(
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.Start
                 ) {
                     Column(
                         modifier = Modifier
@@ -60,6 +60,14 @@ fun LearningMessagesList(
                             .padding(8.dp)
                     ) {
                         LearningRichMessage(item.text)
+
+                        if (item.imagePath.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            LearningUnitImages(
+                                images = item.imagePath,
+                                resolveUrl = { rel -> baseUrl.trimEnd('/') + "/" + rel.trimStart('/') }
+                            )
+                        }
                     }
                 }
             }

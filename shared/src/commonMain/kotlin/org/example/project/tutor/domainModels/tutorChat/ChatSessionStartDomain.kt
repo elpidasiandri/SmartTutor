@@ -26,18 +26,8 @@ data class LearningUnitDomain(
     val orderIndex: Int = EMPTY_INT,
     val quizAvailable: Boolean = EMPTY_BOOLEAN,
     val analysisCompleted: Boolean = EMPTY_BOOLEAN,
-    val quizCompleted: Boolean = EMPTY_BOOLEAN,
-    val nextAction: NextActionDomain = NextActionDomain.NONE,
+    val quizCompleted: Boolean = EMPTY_BOOLEAN
 )
-
-enum class NextActionDomain {
-    CONTINUE_CHAT,
-    DO_ANALYSIS,
-    DO_QUIZ,
-    CHOOSE_NEXT_LU,
-    FINISH_LU,
-    NONE
-}
 
 enum class LUStatusDomain { ACTIVE, COMPLETED, INACTIVE, NONE }
 

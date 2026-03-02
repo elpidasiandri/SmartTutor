@@ -62,6 +62,8 @@ kotlin {
             implementation(libs.firebase.firestore)
             implementation(libs.firebase.analytics)
             implementation(libs.koin.android)
+            implementation(libs.coil3.compose)
+            implementation(libs.coil3.network.okhttp)
         }
         commonMain.dependencies {
             implementation(libs.kotlin.stdlib)
@@ -78,14 +80,22 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
-
+//            implementation(libs.coil3.compose)
+//            implementation(libs.coil3.network.ktor3)
             //modules
             implementation(project(":shared"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.js)
+        }
+
         jvmMain.dependencies {
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.js)
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
         }

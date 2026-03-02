@@ -21,6 +21,7 @@ class TutorIntroRepoImpl(
     private val baseUrl: String,
     private val auth: FirebaseAuth,
 ) : ITutorRepo {
+    private val json = Json { ignoreUnknownKeys = true }
 
     override suspend fun uploadFile(
         file: UploadFile,
@@ -52,7 +53,7 @@ class TutorIntroRepoImpl(
             error("Upload failed: ${response.status} body=$raw")
         }
 
-        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+        return json.decodeFromString(raw)
     }
 
 
@@ -102,7 +103,7 @@ class TutorIntroRepoImpl(
             error("Get status failed: ${response.status} body=$raw")
         }
 
-        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+        return json.decodeFromString(raw)
     }
 
     override suspend fun getPdfJobRaw(
@@ -121,6 +122,6 @@ class TutorIntroRepoImpl(
             error("Get status failed: ${response.status} body=$raw")
         }
 
-        return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+        return json.decodeFromString(raw)
     }
 }

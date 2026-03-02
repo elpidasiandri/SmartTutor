@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import org.example.project.AppConfig
 import org.example.project.settings.logout.module.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
@@ -29,6 +30,7 @@ val tutorModule = module {
             FirebaseAuth.getInstance()
         )
     }
+    single { AppConfig(baseUrl = "http://10.0.2.2:8081") }
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
     single { LearningUnitsUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }

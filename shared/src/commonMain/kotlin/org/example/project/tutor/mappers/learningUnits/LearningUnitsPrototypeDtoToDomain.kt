@@ -8,7 +8,6 @@ import org.example.project.tutor.domainModels.tutorChat.LUStatusDomain
 import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.domainModels.tutorChat.LearningUnitInstanceDomain
 import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
-import org.example.project.tutor.domainModels.tutorChat.NextActionDomain
 import kotlinx.datetime.Clock
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.chatHistory.SubjectHistoryDomain
@@ -210,7 +209,6 @@ fun buildChatSessionStart(
             quizAvailable = true,
             analysisCompleted = true,
             quizCompleted = false,
-            nextAction = NextActionDomain.CONTINUE_CHAT
         ),
         instance = LearningUnitInstanceDomain(
             status = LUStatusDomain.ACTIVE,
@@ -246,7 +244,6 @@ fun buildEmptyChatSessionStart(): ChatSessionStartDomain {
             quizAvailable = false,
             analysisCompleted = false,
             quizCompleted = false,
-            nextAction = NextActionDomain.NONE
         ),
         instance = LearningUnitInstanceDomain(
             instanceId = "",
