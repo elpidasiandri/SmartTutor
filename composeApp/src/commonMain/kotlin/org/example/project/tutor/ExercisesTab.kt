@@ -35,6 +35,7 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.domainModels.learningUnits.ExerciseType
+import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
 fun ExercisesTab(
@@ -237,7 +238,7 @@ private fun OptionRow(
             .fillMaxWidth()
             .background(bg, RoundedCornerShape(10.dp))
             .padding(horizontal = 10.dp, vertical = 10.dp)
-            .clickable { onClick() },
+            .noRippleClickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (label.isNotBlank()) {
