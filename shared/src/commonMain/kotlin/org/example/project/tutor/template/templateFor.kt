@@ -5,8 +5,8 @@ import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsE
 
 object TemplateDocIds {
     //TODO ELPIDA CHANGE
-    const val EN = "doc_5bf2d6bd8f644c3a9508b4bf5bea7dd9"
-    const val EL = "doc_7b3d895fd1184d09a7de53fea9f20f0d"
+    const val EN = "doc_152cd7d8722041f7854e5c54bea61f02"
+    const val EL = "doc_152cd7d8722041f7854e5c54bea61f02"
 
     fun forLanguage(lang: LanguageOfLearningUnitsEnum): String =
         when (lang) {

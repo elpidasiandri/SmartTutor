@@ -412,11 +412,34 @@ class PromptLlmClient(
             - MUST contain at least 2 fenced Java code blocks relevant to the chunk OR (if theory-heavy) 1 code block + 1 diagram image.
             
             IMAGES:
-            - If needed, include 1 diagram image:
-              images[0].relativePath=null
-              images[0].caption MUST be in $captionLang.
-              images[0].prompt MUST be in English, diagram-style (even if caption is Greek).
+            - If needed, include 1 diagram image.
             
+            - images[0].relativePath = null
+            - images[0].caption MUST be in $captionLang.
+            - images[0].prompt MUST be in $captionLang and describe a clean educational diagram.
+            
+            DIAGRAM QUALITY RULES (MANDATORY):
+            
+            1. The diagram MUST represent concepts exactly as described in the UNIT_TEXT.
+            2. Do NOT invent new concepts not present in the text.
+            3. Do NOT duplicate labels.
+            4. Every label must appear only once unless repetition is logically required.
+            5. Ensure all major concepts mentioned in the explanation are represented.
+            6. Relationships between nodes must be logical (no arbitrary hierarchies).
+            
+            LAYOUT RULES:
+            - Top-down educational diagram.
+            - Rounded rectangles.
+            - Straight connector lines.
+            - Even spacing.
+            - No cropped or cut-off elements.
+            
+            COMPLETENESS RULES:
+            - Ensure the full diagram is visible inside the image.
+            - Do not omit key nodes.
+            - Do not duplicate nodes.
+            - Do not create invalid parent-child relationships.
+       
             QUOTATIONS:
             - quotations MUST be [] or 1..2 items.
             - quotations[i].text MUST be a single STRING. If unsure: quotations: [].
