@@ -1,5 +1,7 @@
 package org.example.project.tutor.template
 
+import org.example.project.shared.DocConfig.DOC_ENGLISH
+import org.example.project.shared.DocConfig.DOC_GREEK
 import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum
 
 
@@ -12,6 +14,6 @@ object TemplateDocIds {
 }
 
 object DocConfig {
-    const val DOC_ENGLISH_ID = "DOC_ENGLISH"
-    const val DOC_GREEK_ID = "DOC_GREEK"
+    const val DOC_ENGLISH_ID = DOC_ENGLISH
+    const val DOC_GREEK_ID = DOC_GREEK
 }
