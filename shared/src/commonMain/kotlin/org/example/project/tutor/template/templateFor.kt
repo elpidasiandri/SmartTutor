@@ -4,13 +4,14 @@ import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsE
 
 
 object TemplateDocIds {
-    //TODO ELPIDA CHANGE
-    const val EN = "doc_152cd7d8722041f7854e5c54bea61f02"
-    const val EL = "doc_152cd7d8722041f7854e5c54bea61f02"
-
     fun forLanguage(lang: LanguageOfLearningUnitsEnum): String =
         when (lang) {
-            LanguageOfLearningUnitsEnum.English -> EN
-            LanguageOfLearningUnitsEnum.Greek -> EL
+            LanguageOfLearningUnitsEnum.English -> DocConfig.DOC_ENGLISH_ID
+            LanguageOfLearningUnitsEnum.Greek -> DocConfig.DOC_GREEK_ID
         }
+}
+
+object DocConfig {
+    const val DOC_ENGLISH_ID = "DOC_ENGLISH"
+    const val DOC_GREEK_ID = "DOC_GREEK"
 }

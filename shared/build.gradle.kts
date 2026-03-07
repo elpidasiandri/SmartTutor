@@ -99,6 +99,42 @@ kotlin {
 
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
             }
+            abstract class GenerateDocConfigTask : DefaultTask() {
+
+                @OutputDirectory
+                val outputDir = project.layout.buildDirectory.dir("generated/doc/common")
+
+                @TaskAction
+                fun generate() {
+                    val localProperties = Properties().apply {
+                        val file = project.rootProject.file("local.properties")
+                        if (file.exists()) load(file.inputStream())
+                    }
+
+                    val outputFile = outputDir.get().asFile.resolve("DocConfig.kt")
+                    outputFile.parentFile.mkdirs()
+
+                    outputFile.writeText(
+                        """
+                package org.example.project.shared
+
+                object DocConfig {
+                    const val DOC_ENGLISH = "${localProperties["DOC_ENGLISH"] ?: ""}"
+                    const val DOC_GREEK = "${localProperties["DOC_GREEK"] ?: ""}"
+                }
+                """.trimIndent()
+                    )
+                }
+            }
+
+            val generateDocConfig = tasks.register<GenerateDocConfigTask>("generateDocConfig")
+
+            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+                dependsOn(generateDocConfig)
+            }
+
+            kotlin.srcDir(generateDocConfig.flatMap { it.outputDir })
+
         }
 
         jvmMain.dependencies {
@@ -143,6 +179,7 @@ kotlin {
                     )
                 }
             }
+
             val generateFirebaseConfig =
                 tasks.register<GenerateFirebaseConfigTask>("generateFirebaseConfig")
 

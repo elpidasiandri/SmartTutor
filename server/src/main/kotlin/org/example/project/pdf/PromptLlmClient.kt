@@ -408,7 +408,7 @@ class PromptLlmClient(
             TEXT:
             - Greek (if language=el), exam-focused, no fluff.
             - 3–7 paragraphs separated by \n.
-            - 350–900 words.
+            - 180–900 words.
             - MUST contain at least 2 fenced Java code blocks relevant to the chunk OR (if theory-heavy) 1 code block + 1 diagram image.
             
             IMAGES:
@@ -426,6 +426,11 @@ class PromptLlmClient(
             4. Every label must appear only once unless repetition is logically required.
             5. Ensure all major concepts mentioned in the explanation are represented.
             6. Relationships between nodes must be logical (no arbitrary hierarchies).
+            
+            TARGET COVERAGE:
+            - Across the whole book, aim to cover the major exam topics.
+            - Prefer creating a unit whenever you see a new major topic heading, rule, or algorithm.
+            - Avoid merging unrelated topics into one unit.
             
             LAYOUT RULES:
             - Top-down educational diagram.
@@ -461,7 +466,7 @@ class PromptLlmClient(
             Language: $language
             
             CARRY_FROM_PREVIOUS:
-            ${carry.take(8000)}
+            ${carry.take(3000)}
             
             CURRENT_CHUNK:
             (see attached PDF)
@@ -492,7 +497,7 @@ class PromptLlmClient(
             val mergedCarry = buildString {
                 if (carry.isNotBlank()) appendLine(carry.trim())
                 appendLine("[PREVIEW_INVALID_JSON]")
-            }.trim().take(8000)
+            }.trim().take(3000)
             return UnitWithCarryDto(unit = null, carry = mergedCarry)
         }
 
@@ -503,7 +508,7 @@ class PromptLlmClient(
                         if (carry.isNotBlank()) appendLine(carry.trim())
                         appendLine("MODEL_OUTPUT_DECODE_FAILED_PREVIEW:")
                         appendLine(out.take(2000))
-                    }.trim().take(8000)
+                    }.trim().take(3000)
                     return UnitWithCarryDto(unit = null, carry = mergedCarry)
                 }
 
@@ -520,17 +525,23 @@ class PromptLlmClient(
         val wordCount = text.split(Regex("""\s+""")).count { it.isNotBlank() }
         val codeBlocks = Regex("```java[\\s\\S]*?```").findAll(text).count()
 
-        if (fixedUnit != null && (paragraphs.size < 3 || wordCount < 350 || codeBlocks < 2)) {
+        val minParagraphs = 2
+        val minWords = 180
+
+        val hasEnoughText = paragraphs.size >= minParagraphs && wordCount >= minWords
+
+        val hasCodeOrEnoughTheory = (codeBlocks >= 1) || (wordCount >= 260)
+
+        if (fixedUnit != null && (!hasEnoughText || !hasCodeOrEnoughTheory)) {
             val mergedCarry = buildString {
                 if (carry.isNotBlank()) appendLine(carry.trim())
                 if (text.isNotBlank()) appendLine(text)
-            }.trim().take(8000)
+            }.trim().take(3000)
             return UnitWithCarryDto(unit = null, carry = mergedCarry)
         }
-
         return dto.copy(
             unit = fixedUnit,
-            carry = dto.carry.take(8000)
+            carry = dto.carry.take(3000)
         )
     }
 
@@ -576,8 +587,6 @@ class PromptLlmClient(
                     backoffMs = (backoffMs * 2).coerceAtMost(35_000L)
                     continue
                 }
-
-                error("OpenAI Responses HTTP $status: ${errMsg ?: text.take(800)}")
 
             } catch (t: Throwable) {
                 val retryable =
@@ -636,8 +645,6 @@ class PromptLlmClient(
                     backoffMs = (backoffMs * 2).coerceAtMost(35_000L)
                     continue
                 }
-
-                error("OpenAI Images HTTP $status: ${errMsg ?: text.take(800)}")
 
             } catch (t: Throwable) {
                 val retryable =
