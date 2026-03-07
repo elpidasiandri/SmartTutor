@@ -66,54 +66,66 @@ class PromptLlmClient(
         }.take(25_000)
 
         val system = """
-        MODE: UNIT_EXERCISES_ONLY
-        Return ONLY JSON matching schema (strict).
-        No citations.
-        
-        GOAL:
-        Generate a complete ~60-minute exam set based ONLY on the given UNIT.
-        
-        HARD RULES:
-        - Generate exercises ONLY from UNIT_TEXT/QUOTATIONS/IMAGES_CAPTIONS above.
-        - exercises MUST NOT be empty.
-        
-        TIME:
-        - Total estimatedMinutes MUST sum to ${targetMinutes - 3}..${targetMinutes + 3} minutes.
+            MODE: UNIT_EXERCISES_ONLY
+            Return ONLY JSON matching schema (strict).
+            No citations.
+            
+            GOAL:
+            Generate a complete ~60-minute exam set based ONLY on the given UNIT.
+            
+            HARD RULES:
+            - Generate exercises ONLY from UNIT_TEXT/QUOTATIONS/IMAGES_CAPTIONS above.
+            - exercises MUST NOT be empty.
+            
+            SELF-CONTAINED EXERCISE RULES:
+            - Every exercise must be fully self-contained.
+            - Never assume the student remembers any previous example, previous exercise, or earlier code from the learning unit.
+            - If a question depends on code, include the full necessary code snippet inside the same exercise question.
+            - If an exercise asks for output, bug-fixing, completion, extension, or explanation of code, the code must appear inside that same exercise.
+            - Do not refer to "the previous code", "the example above", "the program shown earlier", or similar wording.
+            - The student must be able to answer each exercise by reading only that exercise text.
+            
+            TIME:
+            - Total estimatedMinutes MUST sum to ${targetMinutes - 3}..${targetMinutes + 3} minutes.
 
-        COUNT:
-        - Total exercises MUST be between 16 and 30.
+            COUNT:
+            - Total exercises MUST be between 16 and 30.
 
-        MUST INCLUDE (variety):
-        - At least 6 MCQ
-        - At least 5 true_false
-        - At least 4 open (κριτικής σκέψης/αιτιολόγησης/μικρά προβλήματα/ ρωτήσεις κρίσεως/αιτιολόγησης η και να λυσει προβληματα, η να γραψει κωδικα)
-        - At least 1 coding exercise (write Java code). (May be more)
+            MUST INCLUDE (variety):
+            - At least 6 MCQ
+            - At least 5 true_false
+            - At least 4 open
+            - At least 1 coding exercise (write Java code). May be more.
 
-        DIFFICULTY:
-        - 2 exercises MUST have difficulty="hard" 
-        - All others MUST have difficulty="medium"
+            FOR OPEN AND CODING EXERCISES:
+            - If the task asks the student to analyze, fix, extend, or predict output of code, the complete relevant code must appear inside the question itself.
+            - Do not rely on hidden context from the unit text.
+            - Do not assume that the learner remembers earlier code examples.
 
-        REQUIREMENTS:
-        - Total estimatedMinutes sum: 52–60
-        - Total exercises: 16–30
+            DIFFICULTY:
+            - Exactly 2 exercises MUST have difficulty="hard"
+            - All others MUST have difficulty="medium"
 
-        MCQ OPTIONS:
-        - MCQ may have 3 to 6 options (NOT necessarily 4).
-        - answerIndex MUST be a valid index for the options array.
+            REQUIREMENTS:
+            - Total estimatedMinutes sum: 52–60
+            - Total exercises: 16–30
 
-        FORMAT RULES:
-        - mcq: options length 3..6, answerIndex 0..(len-1)
-        - true_false: options MUST be ["Σωστό","Λάθος"], answerIndex 0/1
-        - open: options MUST be ["(Ελεύθερη απάντηση)"], answerIndex MUST be null
-        - Every exercise MUST include hint + explanation + solution (non-empty).
-        
+            MCQ OPTIONS:
+            - MCQ may have 3 to 6 options.
+            - answerIndex MUST be a valid index for the options array.
+
+            FORMAT RULES:
+            - mcq: options length 3..6, answerIndex 0..(len-1)
+            - true_false: options MUST be ["Σωστό","Λάθος"], answerIndex 0/1
+            - open: options MUST be ["(Ελεύθερη απάντηση)"], answerIndex MUST be null
+            - Every exercise MUST include hint + explanation + solution (non-empty).
         """.trimIndent()
 
         val user = """
-        Filename: $fileName
-        Language: $language
+            Filename: $fileName
+            Language: $language
 
-        $unitText
+            $unitText
         """.trimIndent()
 
         val req = buildResponsesRequest(
@@ -127,32 +139,44 @@ class PromptLlmClient(
         onRawHook?.invoke("exercises_request", req)
 
         val resp = callOpenAIResponsesWithRetry(req)
+        if (resp.isNullOrBlank()) return emptyList()
+
         onRawHook?.invoke("exercises_response", resp)
-        ensureCompleted(resp)
 
-        val raw = extractOutputJson(resp)
+        if (!ensureCompleted(resp)) return emptyList()
+
+        val raw = extractOutputJson(resp) ?: return emptyList()
         val out = coerceToJsonObjectString(raw)
-        val dto = json.decodeFromString(UnitExercisesOnlyDto.serializer(), out)
 
-        val normalized = normalizeExercisesToTimeBudget(dto.exercises, targetMinutes)
-        val validated = runCatching {
-            validateExercisesOrThrow(normalized, targetMinutes, tolerance = 1, hardMin = 50, hardMax = 75)
-            normalized
-        }.getOrElse { err ->
-            val repaired = repairExercisesToMeetConstraints(
-                originalJson = out,
-                unitText = unitText,
-                language = language,
-                fileName = fileName,
-                targetMinutes = targetMinutes,
-                schemaOnly = schema
-            )
-            validateExercisesOrThrow(normalized, targetMinutes, tolerance = 1, hardMin = 50, hardMax = 75)
-            repaired
+        val dto = runCatching {
+            json.decodeFromString(UnitExercisesOnlyDto.serializer(), out)
+        }.getOrElse {
+            onRawHook?.invoke("exercises_decode_error", it.message ?: "decode failed")
+            return emptyList()
         }
 
-        return validated
+        val normalized = normalizeExercisesToTimeBudget(dto.exercises, targetMinutes)
+
+        if (validateExercises(normalized, targetMinutes, tolerance = 1, hardMin = 50, hardMax = 75)) {
+            return normalized
+        }
+
+        val repaired = repairExercisesToMeetConstraints(
+            originalJson = out,
+            unitText = unitText,
+            language = language,
+            fileName = fileName,
+            targetMinutes = targetMinutes,
+            schemaOnly = schema
+        )
+
+        if (validateExercises(repaired, targetMinutes, tolerance = 1, hardMin = 50, hardMax = 75)) {
+            return repaired
+        }
+
+        return emptyList()
     }
+
     private suspend fun repairExercisesToMeetConstraints(
         originalJson: String,
         unitText: String,
@@ -161,41 +185,53 @@ class PromptLlmClient(
         targetMinutes: Int,
         schemaOnly: String
     ): List<ExerciseDto> {
-
         val system = """
-        MODE: UNIT_EXERCISES_REPAIR
-        Return ONLY JSON matching schema (strict). No citations.
-        
-        GOAL:
-        Fix the provided exercises so that ALL constraints are satisfied.
-        
-        CONSTRAINTS (must be satisfied):
-        - Total exercises: 16..30
-        - Total estimatedMinutes sum: ${targetMinutes - 3}..${targetMinutes + 3}
-        - At least 6 mcq, at least 5 true_false, at least 4 open
-        - Exactly 2 hard, all others medium
-        - At least 1 Java coding exercise
-        - mcq options length 3..6, answerIndex valid
-        - true_false options exactly ["Σωστό","Λάθος"]
-        - open options exactly ["(Ελεύθερη απάντηση)"] and answerIndex null
-        
-        IMPORTANT:
-        You may:
-        - remove some exercises
-        - adjust estimatedMinutes down/up (small changes)
-        - rewrite questions if needed
-        But you must NOT introduce content not supported by UNIT_TEXT/QUOTATIONS/IMAGES_CAPTIONS.
+            MODE: UNIT_EXERCISES_REPAIR
+            Return ONLY JSON matching schema (strict).
+            No citations.
+            
+            GOAL:
+            Fix the provided exercises so that ALL constraints are satisfied.
+            
+            CONSTRAINTS (must be satisfied):
+            - Total exercises: 16..30
+            - Total estimatedMinutes sum: ${targetMinutes - 3}..${targetMinutes + 3}
+            - At least 6 mcq, at least 5 true_false, at least 4 open
+            - Exactly 2 hard, all others medium
+            - At least 1 Java coding exercise
+            - mcq options length 3..6, answerIndex valid
+            - true_false options exactly ["Σωστό","Λάθος"]
+            - open options exactly ["(Ελεύθερη απάντηση)"] and answerIndex null
+            
+            SELF-CONTAINED EXERCISE RULES:
+            - Every exercise must be fully self-contained.
+            - Never assume the student remembers previous examples, previous exercises, or earlier code from the learning unit.
+            - If a question depends on code, include the full necessary code snippet inside the same exercise question.
+            - If an exercise asks for output, bug-fixing, completion, extension, or explanation of code, the code must appear inside that same exercise.
+            - Do not refer to "the code above", "the previous example", "the program shown earlier", or similar wording.
+            - The student must be able to answer each exercise by reading only that exercise text.
+            
+            FOR OPEN AND CODING EXERCISES:
+            - If the task asks the student to analyze, fix, extend, or predict output of code, the complete relevant code must appear inside the question itself.
+            - Do not rely on hidden context from the unit text.
+            
+            IMPORTANT:
+            You may:
+            - remove some exercises
+            - adjust estimatedMinutes down/up (small changes)
+            - rewrite questions if needed
+            But you must NOT introduce content not supported by UNIT_TEXT/QUOTATIONS/IMAGES_CAPTIONS.
         """.trimIndent()
 
-                val user = """
-        Filename: $fileName
-        Language: $language
-        
-        UNIT:
-        $unitText
-        
-        ORIGINAL_EXERCISES_JSON:
-        $originalJson
+        val user = """
+            Filename: $fileName
+            Language: $language
+            
+            UNIT:
+            $unitText
+            
+            ORIGINAL_EXERCISES_JSON:
+            $originalJson
         """.trimIndent()
 
         val req = buildResponsesRequest(
@@ -206,109 +242,249 @@ class PromptLlmClient(
             maxOutputTokens = 4200
         )
 
-        val resp = callOpenAIResponsesWithRetry(req)
-        ensureCompleted(resp)
+        val resp = callOpenAIResponsesWithRetry(req) ?: return emptyList()
+        if (!ensureCompleted(resp)) return emptyList()
 
-        val raw = extractOutputJson(resp)
+        val raw = extractOutputJson(resp) ?: return emptyList()
         val fixedOut = coerceToJsonObjectString(raw)
 
-        val dto = json.decodeFromString(UnitExercisesOnlyDto.serializer(), fixedOut)
-        return dto.exercises
+        return runCatching {
+            json.decodeFromString(UnitExercisesOnlyDto.serializer(), fixedOut).exercises
+        }.getOrElse {
+            onRawHook?.invoke("repair_decode_error", it.message ?: "decode failed")
+            emptyList()
+        }
     }
+
     suspend fun generateAndSaveImage(
         documentId: String,
         unitNumber: Int,
         imageIndex: Int,
         prompt: String,
     ): String? {
-        val reqObj = ImageGenRequest(prompt = prompt)
+        val safePrompt = hardenImagePrompt(prompt)
+        val reqObj = ImageGenRequest(prompt = safePrompt)
         val reqJson = json.encodeToString(ImageGenRequest.serializer(), reqObj)
         onRawHook?.invoke("image_request", reqJson)
 
-        val respText: String = try {
-            callOpenAIImagesWithRetry(reqObj)
-        } catch (t: Throwable) {
-            onRawHook?.invoke("image_error", "Image gen failed permanently: ${t.message}")
-            return null
-        }
-
+        val respText = callOpenAIImagesWithRetry(reqObj) ?: return null
         onRawHook?.invoke("image_response", respText)
 
         val parsed = runCatching {
-            json.decodeFromString(
-                ImageGenResponse.serializer(),
-                respText
-            )
-        }.getOrNull()
-            ?: return null
+            json.decodeFromString(ImageGenResponse.serializer(), respText)
+        }.getOrElse {
+            onRawHook?.invoke("image_decode_error", it.message ?: "decode failed")
+            return null
+        }
 
         val b64 = parsed.data.firstOrNull()?.b64Json ?: return null
-        val bytes = Base64.getDecoder().decode(b64)
+        val bytes = runCatching { Base64.getDecoder().decode(b64) }.getOrNull() ?: return null
 
         val dir = File("uploads/$documentId/images").apply { mkdirs() }
         val file = File(dir, "unit_${unitNumber}_img_${imageIndex}.png")
-        file.writeBytes(bytes)
+        runCatching { file.writeBytes(bytes) }.getOrElse {
+            onRawHook?.invoke("image_save_error", it.message ?: "save failed")
+            return null
+        }
 
         return "uploads/$documentId/images/${file.name}"
     }
 
-    private fun validateExercisesOrThrow(
+    private fun validateExercises(
         exercises: List<ExerciseDto>,
         targetMinutes: Int,
         tolerance: Int = 3,
         hardMin: Int = 50,
         hardMax: Int = 75,
-    ) {
-        if (exercises.size !in 16..30) error("Exercise count must be 16..30 (got ${exercises.size})")
+    ): Boolean {
+        if (exercises.size !in 16..30) {
+            onRawHook?.invoke("exercise_validation", "Exercise count must be 16..30 (got ${exercises.size})")
+            return false
+        }
 
         val total = exercises.sumOf { it.estimatedMinutes ?: 0 }
+        val minTotal = targetMinutes - tolerance
+        val maxTotal = targetMinutes + tolerance
+
+        if (total !in minTotal..maxTotal) {
+            onRawHook?.invoke("exercise_validation", "Total minutes must be in $minTotal..$maxTotal (got $total)")
+            return false
+        }
 
         if (total < hardMin || total > hardMax) {
-            error("Total minutes hard bounds $hardMin..$hardMax (got $total)")
+            onRawHook?.invoke("exercise_validation", "Total minutes hard bounds $hardMin..$hardMax (got $total)")
+            return false
         }
 
         val mcq = exercises.count { it.type == "mcq" }
         val tf = exercises.count { it.type == "true_false" }
         val op = exercises.count { it.type == "open" }
 
-        if (mcq < 6) error("Need at least 6 MCQ (got $mcq)")
-        if (tf < 5) error("Need at least 5 true_false (got $tf)")
-        if (op < 4) error("Need at least 4 open (got $op)")
+        if (mcq < 6) {
+            onRawHook?.invoke("exercise_validation", "Need at least 6 MCQ (got $mcq)")
+            return false
+        }
+        if (tf < 5) {
+            onRawHook?.invoke("exercise_validation", "Need at least 5 true_false (got $tf)")
+            return false
+        }
+        if (op < 4) {
+            onRawHook?.invoke("exercise_validation", "Need at least 4 open (got $op)")
+            return false
+        }
 
         val hard = exercises.count { it.difficulty == "hard" }
-        if (hard != 2) error("Exactly 2 hard required (got $hard)")
+        if (hard != 2) {
+            onRawHook?.invoke("exercise_validation", "Exactly 2 hard required (got $hard)")
+            return false
+        }
 
         val notMediumOrHard = exercises.count { it.difficulty != "medium" && it.difficulty != "hard" }
-        if (notMediumOrHard != 0) error("Only 'medium' allowed except 2 'hard'")
+        if (notMediumOrHard != 0) {
+            onRawHook?.invoke("exercise_validation", "Only 'medium' allowed except 2 'hard'")
+            return false
+        }
 
         exercises.forEachIndexed { idx, ex ->
             val n = ex.options.size
             when (ex.type) {
                 "mcq" -> {
-                    if (n !in 3..6) error("MCQ options must be 3..6 at #${idx + 1} (got $n)")
-                    val ai = ex.answerIndex ?: error("MCQ answerIndex missing at #${idx + 1}")
-                    if (ai !in 0 until n) error("MCQ answerIndex out of range at #${idx + 1}")
+                    if (n !in 3..6) {
+                        onRawHook?.invoke("exercise_validation", "MCQ options must be 3..6 at #${idx + 1} (got $n)")
+                        return false
+                    }
+                    val ai = ex.answerIndex
+                    if (ai == null || ai !in 0 until n) {
+                        onRawHook?.invoke("exercise_validation", "MCQ answerIndex invalid at #${idx + 1}")
+                        return false
+                    }
                 }
+
                 "true_false" -> {
-                    if (ex.options != listOf("Σωστό", "Λάθος")) error("TF options must be [Σωστό, Λάθος] at #${idx + 1}")
-                    if (ex.answerIndex !in listOf(0, 1)) error("TF answerIndex must be 0/1 at #${idx + 1}")
+                    if (ex.options != listOf("Σωστό", "Λάθος")) {
+                        onRawHook?.invoke("exercise_validation", "TF options must be [Σωστό, Λάθος] at #${idx + 1}")
+                        return false
+                    }
+                    if (ex.answerIndex !in listOf(0, 1)) {
+                        onRawHook?.invoke("exercise_validation", "TF answerIndex must be 0/1 at #${idx + 1}")
+                        return false
+                    }
                 }
+
                 "open" -> {
-                    if (ex.options != listOf("(Ελεύθερη απάντηση)")) error("Open options invalid at #${idx + 1}")
-                    if (ex.answerIndex != null) error("Open answerIndex must be null at #${idx + 1}")
+                    if (ex.options != listOf("(Ελεύθερη απάντηση)")) {
+                        onRawHook?.invoke("exercise_validation", "Open options invalid at #${idx + 1}")
+                        return false
+                    }
+                    if (ex.answerIndex != null) {
+                        onRawHook?.invoke("exercise_validation", "Open answerIndex must be null at #${idx + 1}")
+                        return false
+                    }
                 }
-                else -> error("Unknown exercise type '${ex.type}' at #${idx + 1}")
+
+                else -> {
+                    onRawHook?.invoke("exercise_validation", "Unknown exercise type '${ex.type}' at #${idx + 1}")
+                    return false
+                }
             }
         }
 
-        val coding = exercises.count { ex ->
-            val q = ex.question?.lowercase().orEmpty()
-            val sol = ex.solution?.lowercase().orEmpty()
-            (q.contains("java") && (q.contains("γράψε") || q.contains("υλοποίησε") || q.contains("κώδικ"))) ||
-                    sol.contains("```java")
+        if (!validateSelfContainedExercises(exercises)) return false
+
+        val coding = exercises.count(::isCodingExercise)
+        if (coding < 1) {
+            onRawHook?.invoke("exercise_validation", "Need at least 1 coding exercise (Java)")
+            return false
         }
-        if (coding < 1) error("Need at least 1 coding exercise (Java)")
+
+        return true
     }
+
+    private fun validateSelfContainedExercises(exercises: List<ExerciseDto>): Boolean {
+        val bannedPhrases = listOf(
+            "παραπάνω κώδικ",
+            "προηγούμενο παράδειγμα",
+            "στο προηγούμενο παράδειγμα",
+            "στον παραπάνω κώδικα",
+            "όπως είδαμε παραπάνω",
+            "όπως είδαμε πριν",
+            "the code above",
+            "previous example",
+            "shown earlier",
+            "as shown above",
+            "the previous code",
+            "the example above",
+            "the program shown earlier"
+        )
+
+        exercises.forEachIndexed { idx, ex ->
+            val q = ex.question.orEmpty().lowercase()
+            val hint = ex.hint.orEmpty().lowercase()
+            val explanation = ex.explanation.orEmpty().lowercase()
+
+            val hasDirectMemoryReference = bannedPhrases.any {
+                q.contains(it) || hint.contains(it) || explanation.contains(it)
+            }
+
+            if (hasDirectMemoryReference) {
+                onRawHook?.invoke("exercise_validation", "Exercise #${idx + 1} refers to previous context")
+                return false
+            }
+
+            if (looksLikeItNeedsCodeButCodeIsMissing(ex)) {
+                onRawHook?.invoke("exercise_validation", "Exercise #${idx + 1} seems to depend on missing code/context")
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private fun looksLikeItNeedsCodeButCodeIsMissing(ex: ExerciseDto): Boolean {
+        val q = ex.question.orEmpty().lowercase()
+
+        val mentionsCodeTask = listOf(
+            "τι θα εμφανίσει",
+            "ποια θα είναι η έξοδος",
+            "να διορθώσεις",
+            "να συμπληρώσεις",
+            "να επεκτείνεις",
+            "να τροποποιήσεις",
+            "γράψε τι θα τυπωθεί",
+            "what is the output",
+            "what will be printed",
+            "fix the code",
+            "complete the code",
+            "extend the code",
+            "modify the code",
+            "analyze the code"
+        ).any { q.contains(it) }
+
+        val containsCodeSnippet =
+            q.contains("```java") ||
+                    q.contains("class ") ||
+                    q.contains("public static void main") ||
+                    q.contains("system.out.print") ||
+                    q.contains("system.out.println") ||
+                    q.contains(";")
+
+        return mentionsCodeTask && !containsCodeSnippet
+    }
+
+    private fun isCodingExercise(ex: ExerciseDto): Boolean {
+        val q = ex.question.orEmpty().lowercase()
+        val sol = ex.solution.orEmpty().lowercase()
+
+        return q.contains("```java") ||
+                sol.contains("```java") ||
+                (
+                        q.contains("java") && listOf(
+                            "γράψε", "υλοποίησε", "κώδικ", "πρόγραμμα",
+                            "write", "implement", "code", "program", "complete"
+                        ).any { q.contains(it) }
+                        )
+    }
+
     private fun normalizeExercisesToTimeBudget(
         exercises: List<ExerciseDto>,
         targetMinutes: Int,
@@ -319,22 +495,12 @@ class PromptLlmClient(
 
         fun total(xs: List<ExerciseDto>) = xs.sumOf { it.estimatedMinutes ?: 0 }
 
-        // already ok
         if (total(exercises) in minTotal..maxTotal) return exercises
-
-        // if too small, return as-is -> validation will fail -> retry/repair
         if (total(exercises) < minTotal) return exercises
 
         val kept = exercises.toMutableList()
 
-        fun hasCoding(xs: List<ExerciseDto>): Boolean {
-            return xs.any { ex ->
-                val q = ex.question?.lowercase().orEmpty()
-                val sol = ex.solution?.lowercase().orEmpty()
-                (q.contains("java") && (q.contains("γράψε") || q.contains("υλοποίησε") || q.contains("κώδικ"))) ||
-                        sol.contains("```java")
-            }
-        }
+        fun hasCoding(xs: List<ExerciseDto>): Boolean = xs.any(::isCodingExercise)
 
         fun okVariety(xs: List<ExerciseDto>): Boolean {
             val mcq = xs.count { it.type == "mcq" }
@@ -344,7 +510,6 @@ class PromptLlmClient(
             return mcq >= 6 && tf >= 5 && op >= 4 && hard == 2 && hasCoding(xs)
         }
 
-        // 1) try removing from end while still meeting constraints
         var i = kept.size - 1
         while (i >= 0 && total(kept) > maxTotal) {
             val candidate = kept.toMutableList().also { it.removeAt(i) }
@@ -356,8 +521,6 @@ class PromptLlmClient(
             i--
         }
 
-        // 2) if still too high, shrink minutes (non-hard preferred)
-        // priority: medium mcq/tf reduce to 2; open reduce to 3; keep hard as-is
         fun minAllowed(ex: ExerciseDto): Int {
             return when (ex.type) {
                 "mcq" -> 2
@@ -369,7 +532,6 @@ class PromptLlmClient(
 
         var safety = 500
         while (total(kept) > maxTotal && safety-- > 0) {
-            // pick best candidate to shrink:
             val idx = kept.indexOfFirst { ex ->
                 val cur = ex.estimatedMinutes ?: 0
                 ex.difficulty != "hard" && cur > minAllowed(ex)
@@ -391,8 +553,9 @@ class PromptLlmClient(
         carry: String,
     ): UnitWithCarryDto {
         val fileId = uploadPdfToOpenAI(pdfChunkFile)
-        val schema = unitWithCarrySchemaJson()
+            ?: return UnitWithCarryDto(unit = null, carry = carry.take(3000))
 
+        val schema = unitWithCarrySchemaJson()
         val captionLang = if (language.lowercase().startsWith("el")) "Greek" else "English"
 
         val system = """
@@ -409,42 +572,69 @@ class PromptLlmClient(
             - Greek (if language=el), exam-focused, no fluff.
             - 3–7 paragraphs separated by \n.
             - 180–900 words.
-            - MUST contain at least 2 fenced Java code blocks relevant to the chunk OR (if theory-heavy) 1 code block + 1 diagram image.
+            - Prefer at least 2 fenced Java code blocks when the topic supports code examples.
+            - For theory-heavy topics, 1 fenced Java code block is enough.
+            - Add 1 diagram image only if it clearly improves understanding and can be rendered clearly, fully, and accurately.
+            - Do not add an image just to satisfy formatting.
             
             IMAGES:
-            - If needed, include 1 diagram image.
-            
+            - Include 0 or 1 educational diagram image only if it clearly helps understanding.
+            - Prefer NO image over a wrong, cropped, incomplete, or confusing image.
             - images[0].relativePath = null
             - images[0].caption MUST be in $captionLang.
-            - images[0].prompt MUST be in $captionLang and describe a clean educational diagram.
+            - images[0].prompt MUST be in ENGLISH.
+            - All diagram labels and text inside the image MUST be in ENGLISH ONLY.
+            - Use short labels (1-3 words per node) to reduce text rendering errors.
             
-            DIAGRAM QUALITY RULES (MANDATORY):
+            IMAGE SUITABILITY:
+            - Generate an image only for simple conceptual diagrams such as taxonomy trees, type groups, operator classification, or simple control-flow diagrams.
+            - Do not generate an image for code-heavy explanations, syntax summaries, or topics requiring many text labels.
+            - If a correct and complete diagram is unlikely, return no image.
             
-            1. The diagram MUST represent concepts exactly as described in the UNIT_TEXT.
-            2. Do NOT invent new concepts not present in the text.
-            3. Do NOT duplicate labels.
-            4. Every label must appear only once unless repetition is logically required.
-            5. Ensure all major concepts mentioned in the explanation are represented.
-            6. Relationships between nodes must be logical (no arbitrary hierarchies).
+            LAYOUT SAFETY RULES:
+            - Everything must fit fully inside the frame with large margins.
+            - No cropped nodes, no cropped arrows, no cropped text.
+            - Use portrait layout only if all content fits comfortably; otherwise use landscape layout.
+            - Use large readable font.
+            - Maximum 6 nodes for complex diagrams, maximum 8 nodes for simple taxonomy diagrams.
+            - Prefer simple straight connectors.
+            - Avoid crossing lines.
+            - Ensure the full diagram is visible.
+            
+            TEXT RENDERING RULES:
+            - Use only uppercase/lowercase English labels.
+            - Avoid long sentences inside the diagram.
+            - Do not include paragraphs inside the image.
+            - Do not include code syntax unless the image is specifically a syntax chart.
+            - For syntax charts, use large simple text and very few examples.
+            
+            SELF-CONTAINED EXPLANATION RULES:
+            - Every explanation paragraph must be self-contained.
+            - Never refer to "previous example", "above code", "the code we saw earlier", or "as mentioned before".
+            - If you include multiple Java code examples, each code block MUST be independently understandable.
+            - Do not assume the learner remembers previous code blocks.
+            - If a later example needs context, repeat the necessary code/context briefly inside that example's explanation.
+            
+            CODE EXAMPLE INDEPENDENCE:
+            - Each Java code block is a standalone example.
+            - Never create an example that depends on variables, methods, or classes defined only in a previous example unless they are repeated again in the same example.
+            - Avoid phrases like "continue the previous program" or "modify the code above".
+            
+            DIAGRAM QUALITY RULES:
+            - The diagram MUST represent concepts exactly as described in the UNIT_TEXT.
+            - Do NOT invent new concepts not present in the text.
+            - Do NOT duplicate labels.
+            - Every label must appear only once unless repetition is logically required.
+            - Ensure all major concepts mentioned in the explanation are represented.
+            - Relationships between nodes must be logical.
+            - Do not omit key nodes.
+            - Do not create invalid parent-child relationships.
             
             TARGET COVERAGE:
             - Across the whole book, aim to cover the major exam topics.
             - Prefer creating a unit whenever you see a new major topic heading, rule, or algorithm.
             - Avoid merging unrelated topics into one unit.
             
-            LAYOUT RULES:
-            - Top-down educational diagram.
-            - Rounded rectangles.
-            - Straight connector lines.
-            - Even spacing.
-            - No cropped or cut-off elements.
-            
-            COMPLETENESS RULES:
-            - Ensure the full diagram is visible inside the image.
-            - Do not omit key nodes.
-            - Do not duplicate nodes.
-            - Do not create invalid parent-child relationships.
-       
             QUOTATIONS:
             - quotations MUST be [] or 1..2 items.
             - quotations[i].text MUST be a single STRING. If unsure: quotations: [].
@@ -459,7 +649,7 @@ class PromptLlmClient(
             
             ANTI-HALLUCINATION:
             - Use ONLY what is supported by CURRENT_CHUNK + carry.
-            """.trimIndent()
+        """.trimIndent()
 
         val user = """
             Filename: $fileName
@@ -470,7 +660,7 @@ class PromptLlmClient(
             
             CURRENT_CHUNK:
             (see attached PDF)
-            """.trimIndent()
+        """.trimIndent()
 
         val req = buildResponsesRequestWithPdfFile(
             model = "gpt-4o-mini",
@@ -484,11 +674,16 @@ class PromptLlmClient(
         onRawHook?.invoke("preview_request", req)
 
         val resp = callOpenAIResponsesWithRetry(req)
+            ?: return UnitWithCarryDto(unit = null, carry = carry.take(3000))
+
         onRawHook?.invoke("preview_response", resp)
 
-        ensureCompleted(resp)
+        if (!ensureCompleted(resp)) {
+            return UnitWithCarryDto(unit = null, carry = carry.take(3000))
+        }
 
         val raw = extractOutputJson(resp)
+            ?: return UnitWithCarryDto(unit = null, carry = carry.take(3000))
 
         val unwrapped = unwrapIfJsonString(raw)
         val out = extractFirstJsonObjectOrNull(unwrapped)
@@ -501,16 +696,16 @@ class PromptLlmClient(
             return UnitWithCarryDto(unit = null, carry = mergedCarry)
         }
 
-        val dto =
-            runCatching { json.decodeFromString(UnitWithCarryDto.serializer(), out) }.getOrNull()
-                ?: run {
-                    val mergedCarry = buildString {
-                        if (carry.isNotBlank()) appendLine(carry.trim())
-                        appendLine("MODEL_OUTPUT_DECODE_FAILED_PREVIEW:")
-                        appendLine(out.take(2000))
-                    }.trim().take(3000)
-                    return UnitWithCarryDto(unit = null, carry = mergedCarry)
-                }
+        val dto = runCatching {
+            json.decodeFromString(UnitWithCarryDto.serializer(), out)
+        }.getOrElse {
+            val mergedCarry = buildString {
+                if (carry.isNotBlank()) appendLine(carry.trim())
+                appendLine("MODEL_OUTPUT_DECODE_FAILED_PREVIEW:")
+                appendLine(out.take(2000))
+            }.trim().take(3000)
+            return UnitWithCarryDto(unit = null, carry = mergedCarry)
+        }
 
         val fixedUnit = dto.unit?.copy(
             numbering = unitNumber,
@@ -520,16 +715,14 @@ class PromptLlmClient(
         )
 
         val text = fixedUnit?.textInfo.orEmpty().trim()
-        val paragraphs =
-            text.split(Regex("""\n\s*\n""")).map { it.trim() }.filter { it.isNotBlank() }
+        val paragraphs = text.split(Regex("""\n\s*\n"""))
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+
         val wordCount = text.split(Regex("""\s+""")).count { it.isNotBlank() }
         val codeBlocks = Regex("```java[\\s\\S]*?```").findAll(text).count()
 
-        val minParagraphs = 2
-        val minWords = 180
-
-        val hasEnoughText = paragraphs.size >= minParagraphs && wordCount >= minWords
-
+        val hasEnoughText = paragraphs.size >= 2 && wordCount >= 180
         val hasCodeOrEnoughTheory = (codeBlocks >= 1) || (wordCount >= 260)
 
         if (fixedUnit != null && (!hasEnoughText || !hasCodeOrEnoughTheory)) {
@@ -539,6 +732,7 @@ class PromptLlmClient(
             }.trim().take(3000)
             return UnitWithCarryDto(unit = null, carry = mergedCarry)
         }
+
         return dto.copy(
             unit = fixedUnit,
             carry = dto.carry.take(3000)
@@ -548,8 +742,11 @@ class PromptLlmClient(
     private suspend fun callOpenAIResponsesWithRetry(
         reqBody: String,
         maxAttempts: Int = 8,
-    ): String {
-        validateJsonOrThrow(reqBody)
+    ): String? {
+        if (!validateJson(reqBody)) {
+            onRawHook?.invoke("responses_request_invalid_json", reqBody.take(2000))
+            return null
+        }
 
         var attempt = 0
         var backoffMs = 1_200L
@@ -568,9 +765,7 @@ class PromptLlmClient(
 
                 val status = resp.status.value
                 val text = resp.bodyAsText()
-
                 val retryAfterMs = resp.headers["retry-after"]?.toLongOrNull()?.times(1000)
-
                 val (errType, errMsg) = parseOpenAiError(text)
 
                 val ok = status in 200..299 && errMsg.isNullOrBlank()
@@ -578,8 +773,8 @@ class PromptLlmClient(
 
                 val retryableStatus = status in setOf(408, 409, 425, 429, 500, 502, 503, 504)
                 val retryableType = (errType == "server_error")
-
                 val shouldRetry = (retryableStatus || retryableType) && attempt < maxAttempts
+
                 if (shouldRetry) {
                     val jitter = Random.nextLong(0, 900)
                     val sleep = (retryAfterMs ?: (backoffMs + jitter)).coerceAtMost(35_000L)
@@ -588,6 +783,11 @@ class PromptLlmClient(
                     continue
                 }
 
+                onRawHook?.invoke(
+                    "responses_failed",
+                    "status=$status type=${errType ?: "unknown"} msg=${errMsg ?: text.take(1200)}"
+                )
+                return null
             } catch (t: Throwable) {
                 val retryable =
                     t is java.io.IOException ||
@@ -601,7 +801,9 @@ class PromptLlmClient(
                     backoffMs = (backoffMs * 2).coerceAtMost(35_000L)
                     continue
                 }
-                throw t
+
+                onRawHook?.invoke("responses_exception", t.message ?: t::class.simpleName.orEmpty())
+                return null
             }
         }
     }
@@ -609,7 +811,7 @@ class PromptLlmClient(
     private suspend fun callOpenAIImagesWithRetry(
         reqObj: ImageGenRequest,
         maxAttempts: Int = 8,
-    ): String {
+    ): String? {
         var attempt = 0
         var backoffMs = 1_200L
 
@@ -627,10 +829,9 @@ class PromptLlmClient(
 
                 val status = resp.status.value
                 val text = resp.bodyAsText()
-
                 val retryAfterMs = resp.headers["retry-after"]?.toLongOrNull()?.times(1000)
-
                 val (errType, errMsg) = parseOpenAiError(text)
+
                 val ok = status in 200..299 && errMsg.isNullOrBlank()
                 if (ok) return text
 
@@ -646,6 +847,11 @@ class PromptLlmClient(
                     continue
                 }
 
+                onRawHook?.invoke(
+                    "images_failed",
+                    "status=$status type=${errType ?: "unknown"} msg=${errMsg ?: text.take(1200)}"
+                )
+                return null
             } catch (t: Throwable) {
                 val retryable =
                     t is java.io.IOException ||
@@ -659,16 +865,44 @@ class PromptLlmClient(
                     backoffMs = (backoffMs * 2).coerceAtMost(35_000L)
                     continue
                 }
-                throw t
+
+                onRawHook?.invoke("images_exception", t.message ?: t::class.simpleName.orEmpty())
+                return null
             }
         }
     }
 
+    private fun hardenImagePrompt(prompt: String): String = """
+        $prompt
+
+        Create a clean educational diagram.
+        Requirements:
+        - ENGLISH labels only
+        - no cropped text
+        - no cropped arrows
+        - no missing nodes
+        - no duplicated nodes
+        - simple structure
+        - large readable labels
+        - enough spacing between elements
+        - accurate logical relationships only
+        - everything fully visible inside the frame
+        - if the diagram is complex, simplify it
+    """.trimIndent()
+
     private fun isValidJson(raw: String): Boolean {
-        return try {
+        return runCatching {
             json.parseToJsonElement(raw)
             true
-        } catch (_: Throwable) {
+        }.getOrDefault(false)
+    }
+
+    private fun validateJson(raw: String): Boolean {
+        return runCatching {
+            json.parseToJsonElement(raw)
+            true
+        }.getOrElse {
+            onRawHook?.invoke("request_json_invalid", it.message ?: "invalid json")
             false
         }
     }
@@ -683,33 +917,40 @@ class PromptLlmClient(
         }.getOrNull() ?: (null to null)
     }
 
-    private suspend fun uploadPdfToOpenAI(pdfFile: File): String {
-        val respText: String = openAiPermits.withPermit {
-            val resp = http.submitFormWithBinaryData(
-                url = "https://api.openai.com/v1/files",
-                formData = formData {
-                    append("purpose", "user_data")
-                    append(
-                        key = "file",
-                        value = pdfFile.readBytes(),
-                        headers = Headers.build {
-                            append(HttpHeaders.ContentType, "application/pdf")
-                            append(
-                                HttpHeaders.ContentDisposition,
-                                "form-data; name=\"file\"; filename=\"${pdfFile.name}\""
-                            )
-                        }
-                    )
+    private suspend fun uploadPdfToOpenAI(pdfFile: File): String? {
+        val respText = runCatching {
+            openAiPermits.withPermit {
+                val resp = http.submitFormWithBinaryData(
+                    url = "https://api.openai.com/v1/files",
+                    formData = formData {
+                        append("purpose", "user_data")
+                        append(
+                            key = "file",
+                            value = pdfFile.readBytes(),
+                            headers = Headers.build {
+                                append(HttpHeaders.ContentType, "application/pdf")
+                                append(
+                                    HttpHeaders.ContentDisposition,
+                                    "form-data; name=\"file\"; filename=\"${pdfFile.name}\""
+                                )
+                            }
+                        )
+                    }
+                ) {
+                    header(HttpHeaders.Authorization, "Bearer $apiKey")
                 }
-            ) { header(HttpHeaders.Authorization, "Bearer $apiKey") }
 
-            resp.bodyAsText()
+                resp.bodyAsText()
+            }
+        }.getOrElse {
+            onRawHook?.invoke("pdf_upload_exception", it.message ?: "upload failed")
+            return null
         }
 
-        val root = json.parseToJsonElement(respText).jsonObject
-        val id = root["id"]?.jsonPrimitive?.content
-        if (id.isNullOrBlank()) error("OpenAI /files upload failed: ${respText.take(600)}")
-        return id
+        val root = runCatching { json.parseToJsonElement(respText).jsonObject }.getOrNull()
+            ?: return null
+
+        return root["id"]?.jsonPrimitive?.content
     }
 
     private fun buildResponsesRequestWithPdfFile(
@@ -723,11 +964,7 @@ class PromptLlmClient(
         {
           "model": ${json.encodeToString(model)},
           "input": [
-            { "role": "system", "content": [ { "type": "input_text", "text": ${
-        json.encodeToString(
-            system
-        )
-    } } ] },
+            { "role": "system", "content": [ { "type": "input_text", "text": ${json.encodeToString(system)} } ] },
             {
               "role": "user",
               "content": [
@@ -746,7 +983,7 @@ class PromptLlmClient(
             }
           }
         }
-        """.trim()
+    """.trim()
 
     private fun buildResponsesRequest(
         model: String,
@@ -771,38 +1008,35 @@ class PromptLlmClient(
             }
           }
         }
-        """.trim()
+    """.trim()
 
-    private fun ensureCompleted(respText: String) {
-        val root = json.parseToJsonElement(respText).jsonObject
+    private fun ensureCompleted(respText: String): Boolean {
+        val root = runCatching { json.parseToJsonElement(respText).jsonObject }.getOrNull() ?: return false
 
         val status = root["status"]?.jsonPrimitive?.content
         if (status == "incomplete") {
             val reason = (root["incomplete_details"] as? JsonObject)
                 ?.get("reason")?.jsonPrimitive?.content
-            error("OpenAI returned incomplete response (reason=${reason ?: "unknown"})")
+            onRawHook?.invoke("responses_incomplete", reason ?: "unknown")
+            return false
         }
 
         val errMsg = (root["error"] as? JsonObject)
             ?.get("message")?.jsonPrimitive?.content
-        if (!errMsg.isNullOrBlank()) error("OpenAI error: $errMsg")
-    }
 
-    private fun validateJsonOrThrow(raw: String) {
-        try {
-            json.parseToJsonElement(raw)
-        } catch (e: Throwable) {
-            val head = raw.take(1500)
-            val tail = raw.takeLast(1500)
-            throw IllegalStateException(
-                "REQUEST JSON IS INVALID: ${e.message}\n\n---HEAD---\n$head\n\n---TAIL---\n$tail"
-            )
+        if (!errMsg.isNullOrBlank()) {
+            onRawHook?.invoke("responses_error", errMsg)
+            return false
         }
+
+        return true
     }
 
-    private fun extractOutputJson(responsesJson: String): String {
-        val root = json.parseToJsonElement(responsesJson).jsonObject
-        val output = root["output"]?.jsonArray ?: error("No output array in response")
+    private fun extractOutputJson(responsesJson: String): String? {
+        val root = runCatching { json.parseToJsonElement(responsesJson).jsonObject }.getOrNull()
+            ?: return null
+
+        val output = root["output"]?.jsonArray ?: return null
 
         for (item in output) {
             val obj = item.jsonObject
@@ -821,11 +1055,12 @@ class PromptLlmClient(
             for (c in contentArr) {
                 val co = c.jsonObject
                 if (co["type"]?.jsonPrimitive?.content == "output_text") {
-                    return co["text"]?.jsonPrimitive?.content ?: error("No text in output_text")
+                    return co["text"]?.jsonPrimitive?.content
                 }
             }
         }
-        error("No output_json/json or output_text found")
+
+        return null
     }
 
     private fun unitWithCarrySchemaJson(): String = """
@@ -882,7 +1117,7 @@ class PromptLlmClient(
             "carry":{"type":"string"}
           }
         }
-        """.trimIndent()
+    """.trimIndent()
 
     private fun extractFirstJsonObjectOrNull(raw: String): String? {
         val start = raw.indexOf('{')
@@ -970,6 +1205,5 @@ class PromptLlmClient(
             }
           }
         }
-        """.trimIndent()
-
+    """.trimIndent()
 }
