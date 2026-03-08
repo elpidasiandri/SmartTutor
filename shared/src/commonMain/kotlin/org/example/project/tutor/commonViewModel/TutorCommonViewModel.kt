@@ -244,7 +244,7 @@ class TutorCommonViewModel(
     private fun initializeData() = scope.launch {
 
         if (_state.value.session.material.fileUploaded) return@launch
-        refreshTabInfoMessage(TutorTab.Learning)
+//        refreshTabInfoMessage(TutorTab.Learning)
         try {
             _state.update { it.copy(loading = true, error = null) }
 
@@ -272,6 +272,8 @@ class TutorCommonViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
+                        tabInfoMessage = buildLearningTabMessage(first),
+                        selectedTab =  TutorTab.Learning,
                         allUnits = units,
                         session = session,
                         currentIndex = currentIndex,

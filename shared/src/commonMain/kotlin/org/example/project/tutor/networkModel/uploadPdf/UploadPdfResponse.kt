@@ -81,7 +81,7 @@ data class UnitExercisesOnlyDto(
 data class ImageGenRequest(
     @SerialName("model") val model: String = "gpt-image-1",
     @SerialName("prompt") val prompt: String,
-    @SerialName("size") val size: String = "1024x1024",
+    @SerialName("size") val size: String = "900x900",
 )
 
 @Serializable

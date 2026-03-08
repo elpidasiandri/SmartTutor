@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -259,7 +260,7 @@ fun TutorChatUI(
                             TutorHandleSend(
                                 userMessageState = userMessageState,
                                 onClearUserMessage = { userMessageState = "" },
-                                chatMessages = chatMessages,
+                                chatMessages = chatMessages.toMutableStateList(),
                             )
                         },
                         selectedTab = selectedTab,
@@ -387,6 +388,7 @@ private fun TutorChatContent(
                                     normalizeForHeaderCompare(msg.text) == headerNorm
                         }
                     }
+
                 val config = koinInject<AppConfig>()
 
                 LearningMessagesList(
@@ -394,7 +396,7 @@ private fun TutorChatContent(
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
-                    chatMessages = filteredMessages,
+                    chatMessages = chatMessages,
                     baseUrl = config.baseUrl
                 )
             }

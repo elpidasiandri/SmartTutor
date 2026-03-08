@@ -22,15 +22,16 @@ fun LearningUnitImages(
         images.forEach { img ->
             val path = img.relativePath.trim()
             if (path.isBlank()) return@forEach
+            val fullUrl = resolveUrl(path)
 
             RemoteImage(
-                url = resolveUrl(path),
+                url = fullUrl,
                 contentDescription = img.caption,
                 modifier = Modifier
                     .fillMaxWidth()
             )
 
-            if (img.caption.isNotBlank()) {
+            if (img.relativePath.isNotBlank() && img.caption.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
                 Text(img.caption, style = MaterialTheme.typography.bodySmall)
             }

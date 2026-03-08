@@ -1,7 +1,6 @@
 package org.example.project.tutor
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +34,7 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.domainModels.learningUnits.ExerciseType
+import org.example.project.tutor.excercise.ExerciseRichItem
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
@@ -110,8 +110,7 @@ private fun ExerciseCard(
         Spacer(Modifier.height(spacing8))
 
         // Question
-        Text(text = exercise.question)
-
+        ExerciseRichItem(text = exercise.question)
         Spacer(Modifier.height(spacing8))
 
         when (type) {
@@ -262,6 +261,6 @@ private fun ExpandSection(
     ) {
         Text(title, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        Text(text)
+        ExerciseRichItem(text = text)
     }
 }
