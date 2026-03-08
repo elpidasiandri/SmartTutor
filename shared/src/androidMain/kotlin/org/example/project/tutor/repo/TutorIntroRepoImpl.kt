@@ -2,6 +2,7 @@ package org.example.project.tutor.repo
 
 import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.*
+import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
@@ -10,6 +11,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
+import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
@@ -123,5 +126,16 @@ class TutorIntroRepoImpl(
         }
 
         return json.decodeFromString(raw)
+    }
+
+    override suspend fun createChatFromDocument(
+        request: CreateChatFromDocumentRequest,
+        token: String,
+    ): CreateChatFromDocumentResponse {
+        return httpClient.post("$baseUrl/v1/chats/from-document") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
     }
 }

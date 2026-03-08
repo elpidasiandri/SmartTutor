@@ -3,6 +3,7 @@ package org.example.project.tutor.useCases
 import org.example.project.tutor.domainModels.file.PickedFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain
 import org.example.project.tutor.mappers.learningUnits.toDomain
+import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum
 import org.example.project.tutor.template.TemplateDocIds
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
@@ -12,29 +13,41 @@ data class TutorLoadResult(
     val fileName: String,
     val languageEnum: LanguageOfLearningUnitsEnum,
     val templateDocId: String,
-    val prototype: LearningUnitsPrototypeDomain,
+    val chatId: String,
+    val prototype: LearningUnitsPrototypeDomain
 )
 
 class LoadTutorFromPdfUseCase(
     private val pdfUpload: PdfUploadServiceUseCase,
     private val getToken: GetIdTokenSuspendUseCase,
 ) {
-    suspend fun loadTemplateForPickedPdf(picked: PickedFile): TutorLoadResult {
+    suspend fun loadTemplateForPickedPdf(
+        picked: PickedFile,
+        userId: String
+    ): TutorLoadResult {
         val token = getToken()
 
-        val languageEnum = detectLanguage(picked) // Greek/English
+        val languageEnum = detectLanguage(picked)
         val templateDocId = TemplateDocIds.forLanguage(languageEnum)
 
-        val status = pdfUpload.getPdfJobStatus(templateDocId, token)
+        val chatResponse = pdfUpload.createChatFromDocument(
+            request = CreateChatFromDocumentRequest(
+                userId = userId,
+                documentId = templateDocId
+            ),
+            token = token
+        )
 
-        val dto = status.result ?: status.partialResult
-        ?: error("Template has no resultJson/partialResult yet for $templateDocId")
+        val chat = chatResponse.chat
+        val dto = chat.result ?: chat.partialResult
+        ?: error("Chat has no result/partialResult for $templateDocId")
 
         return TutorLoadResult(
             materialId = templateDocId,
             fileName = picked.name,
             languageEnum = languageEnum,
             templateDocId = templateDocId,
+            chatId = chat.chatId,
             prototype = dto.toDomain()
         )
     }

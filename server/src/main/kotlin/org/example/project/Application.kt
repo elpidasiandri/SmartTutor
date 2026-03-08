@@ -15,16 +15,19 @@ import org.example.project.firebaseAdmin.FirebaseAdminInit
 import io.ktor.server.plugins.cors.routing.*
 import org.example.project.jobs.PdfJobWorker
 import org.example.project.pdf.PromptLlmClient
+import org.example.project.repo.FirestoreChatRepository
 import org.example.project.repo.FirestorePdfJobRepository
 import org.example.project.repo.PdfJobRepository
+import org.example.project.routes.chatRoutes
 import org.example.project.routes.pdfRoutes
+import org.example.project.tutor.repo.IChatRepository
 import java.io.File
 import java.util.Properties
 
 private const val SERVER_PORT = 8081
 
 fun main() {
-     FirebaseAdminInit.init()
+    FirebaseAdminInit.init()
 
     embeddedServer(
         Netty,
@@ -64,18 +67,19 @@ fun Application.module() {
     val apiKey = props.getProperty("OPENAI_PROMPTING_API_KEY")
         ?: error("Missing OPENAI_PROMPTING_API_KEY in local.properties")
 
-     val firestore = FirebaseAdminInit.firestore()
-     val repo: PdfJobRepository = FirestorePdfJobRepository(firestore)
-     val llm = PromptLlmClient(apiKey = apiKey)
+    val firestore = FirebaseAdminInit.firestore()
+    val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore)
+    val chatRepo: IChatRepository = FirestoreChatRepository(firestore)
+    val llm = PromptLlmClient(apiKey = apiKey)
 
-     val worker = PdfJobWorker(repo = repo, llm = llm)
-     worker.start(this)
+    val worker = PdfJobWorker(repo = pdfRepo, llm = llm)
+    worker.start(this)
 
     routing {
         get("/health") { call.respondText("ok") }
 
         staticFiles("/uploads", File("uploads"))
-
-         pdfRoutes(repo)
+        pdfRoutes(pdfRepo)
+        chatRoutes(chatRepo)
     }
 }

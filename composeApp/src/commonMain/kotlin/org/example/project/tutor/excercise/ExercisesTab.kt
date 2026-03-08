@@ -1,4 +1,4 @@
-package org.example.project.tutor
+package org.example.project.tutor.excercise
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +34,6 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.domainModels.learningUnits.ExerciseType
-import org.example.project.tutor.excercise.ExerciseRichItem
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable

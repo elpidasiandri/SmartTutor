@@ -9,6 +9,5 @@ data class PdfJobStatusRawResponse(
     @SerialName("language") val language: String? = null,
     @SerialName("totalUnits") val totalUnits: Int? = null,
     @SerialName("resultJson") val resultJson: String? = null,
-
     @SerialName("partialResultJson") val partialResultJson: String? = null,
 )

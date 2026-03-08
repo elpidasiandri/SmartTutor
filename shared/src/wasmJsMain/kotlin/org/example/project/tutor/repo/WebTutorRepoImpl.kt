@@ -2,16 +2,20 @@
 package org.example.project.tutor.repo
 
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.request.accept
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +27,8 @@ import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.signOut
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
+import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
@@ -34,6 +40,7 @@ class WebTutorRepoImpl(
 ) : ITutorRepo {
     private val auth: FirebaseAuth = getAuth(firebase)
     private val json = Json { ignoreUnknownKeys = true }
+
     @OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
     override suspend fun uploadFile(file: UploadFile, idToken: String): UploadPdfResponse {
         val response = httpClient.submitFormWithBinaryData(
@@ -122,5 +129,16 @@ class WebTutorRepoImpl(
         }
 
         return Json { ignoreUnknownKeys = true }.decodeFromString(raw)
+    }
+
+    override suspend fun createChatFromDocument(
+        request: CreateChatFromDocumentRequest,
+        token: String,
+    ): CreateChatFromDocumentResponse {
+        return httpClient.post("$baseUrl/v1/chats/from-document") {
+            header("Authorization", "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
     }
 }

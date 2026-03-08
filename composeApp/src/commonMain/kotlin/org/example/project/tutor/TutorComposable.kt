@@ -69,6 +69,7 @@ import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.excercise.ExercisesTab
 import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.tutor.utils.normalizeForHeaderCompare

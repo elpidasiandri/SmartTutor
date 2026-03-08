@@ -112,7 +112,11 @@ class TutorCommonViewModel(
             try {
                 _state.update { it.copy(loading = true) }
 
-                val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(picked)
+                val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
+                    picked = picked,
+                    userId = "test_user_1"
+                )
+
                 val units = res.prototype.learningUnits
                 val subjectTitle = res.prototype.title
 
@@ -125,15 +129,13 @@ class TutorCommonViewModel(
                 val history = buildChatHistoryFromUnits(
                     units = units,
                     unlockedCount = 1,
-                    subjectTitle = subjectTitle,
-//                    materialId = res.materialId,
-//                    templateDocId = res.templateDocId,
-//                    language = res.languageEnum.value
+                    subjectTitle = subjectTitle
                 )
 
                 _state.update {
                     it.copy(
                         loading = false,
+                        activeChatId = res.chatId,
                         subjectTitle = subjectTitle,
                         allUnits = units,
                         currentIndex = 0,
@@ -142,7 +144,7 @@ class TutorCommonViewModel(
                         session = session,
                         chatHistory = history,
                         showCustomMessage = true,
-                        message = "Template loaded (${res.languageEnum.value})",
+                        message = "Chat loaded (${res.languageEnum.value})",
                         isError = false,
                         tabInfoMessage = buildLearningTabMessage(
                             units.firstOrNull() ?: LearningUnitContentDomain()

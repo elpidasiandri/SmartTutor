@@ -25,6 +25,8 @@ data class TutorState(
     val unlockedCount: Int = 1,
     val selectedTab: TutorTab = TutorTab.Learning,
     val tabInfoMessage: String = "",
+    val activeDocumentId: String = EmptyValues.EMPTY_STRING,
+    val activeChatId: String = EmptyValues.EMPTY_STRING,
 )
 
 sealed class TutorUiEvents {
