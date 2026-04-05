@@ -66,7 +66,6 @@ fun WebTutorScreenFlow(navController: NavController) {
                         is PdfValidationResult.Error -> {
                             controller.onEvent(TutorUiEvents.ShowErrorMessage(result.message))
                         }
-
                         is PdfValidationResult.Success -> {
                             controller.onEvent(TutorUiEvents.UploadPdf(result.file))
                         }
@@ -74,8 +73,8 @@ fun WebTutorScreenFlow(navController: NavController) {
                 }
             }
         },
-        selectLearningUnits = {
-//                   viewModel.onEvent(TutorUiEvents.OpenUnit)
+        selectLearningUnit = { title ->
+            controller.onEvent(TutorUiEvents.SelectLearningUnit(title))
         },
         onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
         onExercisesClick = { },
@@ -84,9 +83,7 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         deleteSubject = { subjectId ->
             controller.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
-
         },
-
         selectedTab = state.selectedTab,
         onChangeTab = { controller.onEvent(TutorUiEvents.ChangeTab(it)) },
         tabInfoMessage = state.tabInfoMessage,

@@ -90,7 +90,7 @@ fun TutorScreen(
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    selectLearningUnits: () -> Unit,
+    selectLearningUnit: (String) -> Unit,
     onNextUnitClick: () -> Unit,
     onExercisesClick: () -> Unit,
     startNewChat: () -> Unit,
@@ -120,8 +120,8 @@ fun TutorScreen(
             onUploadPdfClick = {
                 onUploadPdfClick()
             },
-            selectLearningUnits = {
-                selectLearningUnits()
+            selectLearningUnit = { title ->
+                selectLearningUnit(title)
             },
             onNextUnitClick = {
                 onNextUnitClick()
@@ -167,7 +167,7 @@ fun TutorChatUI(
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    selectLearningUnits: () -> Unit,
+    selectLearningUnit: (String) -> Unit,
     onNextUnitClick: () -> Unit,
     onExercisesClick: () -> Unit,
     startNewChat: () -> Unit,
@@ -227,7 +227,7 @@ fun TutorChatUI(
                     scope = scope,
                     onSettingsClick = onSettingsClick,
                     onLogoutClick = onLogoutClick,
-                    onChatClick = { selectLearningUnits() },
+                    onLearningUnitClick = { title -> selectLearningUnit(title) },
                     onNewChatClick = {
                         scope.launch {
                             startNewChat()
@@ -306,9 +306,9 @@ private fun TutorDrawerContent(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onChatClick: (subjectId: String) -> Unit,
+    onLearningUnitClick: (String) -> Unit,
     onNewChatClick: () -> Unit,
-    onDeleteSubject: (subjectId: String) -> Unit,
+    onDeleteSubject: (String) -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -322,7 +322,7 @@ private fun TutorDrawerContent(
             scope = scope,
             onSettingsClick = onSettingsClick,
             onLogoutClick = onLogoutClick,
-            onChatClick = onChatClick,
+            onLearningUnitClick = onLearningUnitClick,
             onChatTitleClick = onNewChatClick,
             onDeleteSubject = onDeleteSubject
         )

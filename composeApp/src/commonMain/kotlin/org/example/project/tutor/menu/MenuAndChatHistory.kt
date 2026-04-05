@@ -62,9 +62,9 @@ fun MenuAndChatHistory(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onChatClick: (subjectId: String) -> Unit = { _ -> },
+    onLearningUnitClick: (String) -> Unit = {},
     onChatTitleClick: () -> Unit,
-    onDeleteSubject: (subjectId: String) -> Unit,
+    onDeleteSubject: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -81,7 +81,7 @@ fun MenuAndChatHistory(
             chatHistory = chatHistory,
             drawerState = drawerState,
             scope = scope,
-            onChatClick = onChatClick,
+            onLearningUnitClick = onLearningUnitClick,
             onDeleteSubject = onDeleteSubject,
             modifier = Modifier
                 .weight(1f)
@@ -125,18 +125,16 @@ private fun ChatHistoryList(
     chatHistory: ChatHistoryDomain,
     drawerState: DrawerState,
     scope: CoroutineScope,
-    onChatClick: (subjectId: String) -> Unit,
-    onDeleteSubject: (subjectId: String) -> Unit,
+    onLearningUnitClick: (String) -> Unit,
+    onDeleteSubject: (String) -> Unit,
     modifier: Modifier,
 ) {
-    Column(
-        modifier = modifier
-    ) {
+    Column(modifier = modifier) {
         chatHistory.subjects.forEach { subject ->
             SubjectHistoryItem(
                 subject = subject,
-                onClick = { subjectId ->
-                    onChatClick(subjectId)
+                onLearningUnitClick = { title ->
+                    onLearningUnitClick(title)
                     scope.launch { drawerState.close() }
                 },
                 onDeleteSubject = { subjectId ->
@@ -192,12 +190,11 @@ private fun BottomRow(onLogoutClick: () -> Unit) {
     }
 }
 
-
 @Composable
 fun SubjectHistoryItem(
     subject: SubjectHistoryDomain,
-    onClick: (subjectId: String) -> Unit,
-    onDeleteSubject: (subjectId: String) -> Unit,
+    onLearningUnitClick: (String) -> Unit,
+    onDeleteSubject: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -207,7 +204,7 @@ fun SubjectHistoryItem(
         SubjectHeaderRow(
             subject = subject,
             expanded = expanded,
-            onRowClick = { onClick(subject.subjectId) },
+            onRowClick = { expanded = !expanded },
             onToggleExpand = { expanded = !expanded },
             onMoreClick = { menuOpen = true }
         )
@@ -234,8 +231,8 @@ fun SubjectHistoryItem(
         if (expanded) {
             subject.learningUnits.forEach { lu ->
                 LearningUnitRow(
-                    onClick = { onClick(subject.subjectId) },
-                    title = lu.title
+                    title = lu.title,
+                    onClick = { onLearningUnitClick(lu.title) }
                 )
             }
         }

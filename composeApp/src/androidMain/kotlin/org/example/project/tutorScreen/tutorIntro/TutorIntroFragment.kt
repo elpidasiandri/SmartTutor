@@ -92,8 +92,8 @@ class TutorIntroFragment : Fragment() {
                     onUploadPdfClick = {
                         uploadPdfFile()
                     },
-                    selectLearningUnits = {
-//                   viewModel.onEvent(TutorUiEvents.OpenUnit)
+                    selectLearningUnit = { title ->
+                        viewModel.onEvent(TutorUiEvents.SelectLearningUnit(title))
                     },
                     onNextUnitClick = { viewModel.onEvent(TutorUiEvents.NextUnit) },
                     onExercisesClick = { },
@@ -102,11 +102,9 @@ class TutorIntroFragment : Fragment() {
                     },
                     deleteSubject = { subjectId ->
                         viewModel.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
-
                     },
-
                     selectedTab = state.selectedTab,
-                    onChangeTab = {  viewModel.onEvent(TutorUiEvents.ChangeTab(it))},
+                    onChangeTab = { viewModel.onEvent(TutorUiEvents.ChangeTab(it)) },
                     tabInfoMessage = state.tabInfoMessage,
                     currentUnit = state.currentUnit
                 )

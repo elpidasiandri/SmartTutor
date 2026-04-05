@@ -84,11 +84,14 @@ class TutorCommonViewModel(
             units = units,
             activeIndex = index
         )
+
         _state.update {
             it.copy(
                 currentIndex = index,
                 currentUnit = selected,
-                session = newSession
+                session = newSession,
+                selectedTab = TutorTab.Learning,
+                tabInfoMessage = buildLearningTabMessage(selected)
             )
         }
     }
@@ -152,6 +155,7 @@ class TutorCommonViewModel(
                     )
                 }
             } catch (t: Throwable) {
+              t.toUserMessage()
                 _state.update {
                     it.copy(
                         loading = false,
@@ -163,7 +167,20 @@ class TutorCommonViewModel(
             }
         }
     }
+    private fun Throwable.toUserMessage(): String {
+        return when {
+            this.message?.contains("10.0.2.2", ignoreCase = true) == true ->
+                "Cannot connect to local server. Make sure backend is running and emulator can reach it."
 
+            this.message?.contains("timeout", ignoreCase = true) == true ->
+                "Request timed out. Please try again."
+
+            this.cause?.message?.contains("timeout", ignoreCase = true) == true ->
+                "Connection timed out while uploading PDF."
+
+            else -> this.message ?: "Upload failed"
+        }
+    }
     private fun deleteMaterialLocal(materialId: String) {
         //todo elpida add
 
