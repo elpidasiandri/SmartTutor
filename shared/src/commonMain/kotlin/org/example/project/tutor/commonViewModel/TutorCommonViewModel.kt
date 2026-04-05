@@ -11,6 +11,8 @@ import org.example.project.strings.SmartTutorStrings
 import org.example.project.tutor.domainModels.file.PickedFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.mappers.chatHistory.toChatHistoryDomain
+import org.example.project.tutor.mappers.chatHistory.toDomain
 import org.example.project.tutor.mappers.learningUnits.buildChatHistoryFromUnits
 import org.example.project.tutor.mappers.learningUnits.buildChatSessionStart
 import org.example.project.tutor.mappers.learningUnits.buildEmptyChatSessionStart
@@ -19,6 +21,7 @@ import org.example.project.tutor.mappers.learningUnits.buildLearningTabMessage
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.utils.EmptyValues
 
@@ -35,6 +38,8 @@ class TutorCommonViewModel(
     private val scope: CoroutineScope,
     private val platform: TutorPlatform,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
+    private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
+    private val userId: String
 ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -117,7 +122,7 @@ class TutorCommonViewModel(
 
                 val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
                     picked = picked,
-                    userId = "test_user_1"
+                    userId = userId
                 )
 
                 val units = res.prototype.learningUnits
@@ -155,7 +160,7 @@ class TutorCommonViewModel(
                     )
                 }
             } catch (t: Throwable) {
-              t.toUserMessage()
+                t.toUserMessage()
                 _state.update {
                     it.copy(
                         loading = false,
@@ -167,6 +172,7 @@ class TutorCommonViewModel(
             }
         }
     }
+
     private fun Throwable.toUserMessage(): String {
         return when {
             this.message?.contains("10.0.2.2", ignoreCase = true) == true ->
@@ -181,6 +187,7 @@ class TutorCommonViewModel(
             else -> this.message ?: "Upload failed"
         }
     }
+
     private fun deleteMaterialLocal(materialId: String) {
         //todo elpida add
 
@@ -263,9 +270,49 @@ class TutorCommonViewModel(
     private fun initializeData() = scope.launch {
 
         if (_state.value.session.material.fileUploaded) return@launch
-//        refreshTabInfoMessage(TutorTab.Learning)
+
         try {
             _state.update { it.copy(loading = true, error = null) }
+
+            val chats = getAllHistoryChatUseCase(userId )
+
+            if (chats.isNotEmpty()) {
+                val latestChat = chats.first()
+
+                val units = latestChat.result?.learningUnits
+                    ?: latestChat.partialResult?.learningUnits
+                    ?: emptyList()
+
+                val domainUnits = units.map { it.toDomain() }
+                val firstUnit = domainUnits.firstOrNull() ?: LearningUnitContentDomain()
+
+                val session = buildChatSessionStart(
+                    fileName = latestChat.title,
+                    units = domainUnits,
+                    activeIndex = 0
+                )
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        savedChats = chats,
+                        chatHistory = chats.toChatHistoryDomain(),
+                        activeChatId = latestChat.chatId,
+                        activeDocumentId = latestChat.documentId,
+                        subjectTitle = latestChat.title,
+                        allUnits = domainUnits,
+                        currentIndex = 0,
+                        unlockedCount = maxOf(1, domainUnits.size),
+                        currentUnit = firstUnit,
+                        session = session,
+                        selectedTab = TutorTab.Learning,
+                        tabInfoMessage = buildLearningTabMessage(firstUnit),
+                        event = TutorEvents.Loaded
+                    )
+                }
+
+                return@launch
+            }
 
             val prototype = getLearningUnitUseCase()
             val units = prototype.learningUnits
@@ -276,7 +323,7 @@ class TutorCommonViewModel(
             val unlockedCount = 1
 
             val session = buildChatSessionStart(
-                fileName = _state.value.session.material.fileName,
+                fileName = subjectTitle,
                 units = units,
                 activeIndex = currentIndex
             )
@@ -292,7 +339,7 @@ class TutorCommonViewModel(
                     it.copy(
                         loading = false,
                         tabInfoMessage = buildLearningTabMessage(first),
-                        selectedTab =  TutorTab.Learning,
+                        selectedTab = TutorTab.Learning,
                         allUnits = units,
                         session = session,
                         currentIndex = currentIndex,
@@ -310,7 +357,8 @@ class TutorCommonViewModel(
                 it.copy(
                     loading = false,
                     message = t.message ?: "Unknown error",
-                    showCustomMessage = true
+                    showCustomMessage = true,
+                    isError = true
                 )
             }
         }

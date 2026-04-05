@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 import org.example.project.tutor.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
+import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
@@ -136,6 +137,12 @@ class TutorIntroRepoImpl(
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(request)
+        }.body()
+    }
+
+    override suspend fun getChats(userId: String): List<UserChatDto> {
+        return httpClient.get("$baseUrl/v1/chats") {
+            parameter("userId", userId)
         }.body()
     }
 }

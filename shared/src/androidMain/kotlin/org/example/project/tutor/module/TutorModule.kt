@@ -9,11 +9,11 @@ import org.example.project.settings.logout.module.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.network.createAndroidHttpClient
-import org.example.project.tutor.repo.IChatRepository
 import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
 import org.example.project.tutor.repo.ITutorRepo
 import org.example.project.tutor.repo.TutorIntroRepoImpl
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
+import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
@@ -35,7 +35,8 @@ val tutorModule = module {
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
     single { LearningUnitsUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
-    single { LoadTutorFromPdfUseCase(get(), get() )}
+    single { GetAllHistoryChatUseCase(get()) }
+    single { LoadTutorFromPdfUseCase(get(), get()) }
     single {
         GetIdTokenSuspendUseCase(get())
     }
@@ -60,7 +61,7 @@ val tutorModule = module {
     }
 
     viewModel {
-        TutorIntroViewModel(get(), get(), get(), get())
+        TutorIntroViewModel(get(), get(), get(), get(), get(), FirebaseAuth.getInstance())
     }
 
     includes(logoutModule)

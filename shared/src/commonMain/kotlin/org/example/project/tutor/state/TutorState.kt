@@ -5,6 +5,7 @@ import org.example.project.tutor.domainModels.file.PickedFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.utils.EmptyValues
 
 data class TutorState(
@@ -27,6 +28,7 @@ data class TutorState(
     val tabInfoMessage: String = "",
     val activeDocumentId: String = EmptyValues.EMPTY_STRING,
     val activeChatId: String = EmptyValues.EMPTY_STRING,
+    val savedChats: List<UserChatDto> = emptyList(),
 )
 
 sealed class TutorUiEvents {

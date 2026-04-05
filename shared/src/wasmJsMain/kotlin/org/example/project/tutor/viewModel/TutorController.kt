@@ -10,6 +10,7 @@ import org.example.project.tutor.commonViewModel.TutorCommonViewModel
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 
 class TutorController(
@@ -17,6 +18,8 @@ class TutorController(
     private val getLearningUnitUseCase: LearningUnitsUseCase,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
     platform: TutorPlatform,
+    private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
+    private val uuid: String?,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val common = TutorCommonViewModel(
@@ -24,7 +27,9 @@ class TutorController(
         getLearningUnitUseCase = getLearningUnitUseCase,
         scope = scope,
         platform = platform,
-        loadTutorFromPdfUseCase = loadTutorFromPdfUseCase
+        loadTutorFromPdfUseCase = loadTutorFromPdfUseCase,
+        getAllHistoryChatUseCase = getAllHistoryChatUseCase,
+        userId = uuid ?: ""
     )
 
     val state: StateFlow<TutorState> = common.state

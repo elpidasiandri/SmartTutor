@@ -31,7 +31,6 @@ class AuthRepositoryImpl(
                 val profileUpdates = userProfileChangeRequest {
                     displayName = username
                 }
-
                 user.updateProfile(profileUpdates)
                     .addOnCompleteListener { profileTask ->
                         val data = hashMapOf(

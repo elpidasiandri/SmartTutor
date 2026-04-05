@@ -23,7 +23,7 @@ class LoadTutorFromPdfUseCase(
 ) {
     suspend fun loadTemplateForPickedPdf(
         picked: PickedFile,
-        userId: String
+        userId: String,
     ): TutorLoadResult {
         val token = getToken()
 

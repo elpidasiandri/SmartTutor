@@ -3,6 +3,7 @@ package org.example.project.tutor.repo
 import org.example.project.tutor.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
+import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
@@ -18,4 +19,5 @@ interface ITutorRepo {
         request: CreateChatFromDocumentRequest,
         token: String
     ): CreateChatFromDocumentResponse
+    suspend fun getChats(userId: String): List<UserChatDto>
 }

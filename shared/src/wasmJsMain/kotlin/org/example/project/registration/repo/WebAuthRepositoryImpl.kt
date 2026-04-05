@@ -19,7 +19,6 @@ import org.example.project.registration.firestore.setDoc
 import kotlinx.datetime.Clock
 import org.example.project.extensions.JsVoid
 import org.example.project.registration.firebase.createUserData
-import org.example.project.registration.firebase.signOut
 
 class WebAuthRepositoryImpl(
     private val app: FirebaseApp,
@@ -64,33 +63,12 @@ class WebAuthRepositoryImpl(
         CoroutineScope(Dispatchers.Default).launch() {
             try {
                 val credential = signInWithEmailAndPassword(auth, email, password).await()
-
                 onResult(true, credential.user.uid)
             } catch (e: Throwable) {
                 onResult(false, null)
             }
         }
     }
-
-    private fun getIdToken(onResult: (Boolean, String?) -> Unit) {
-        CoroutineScope(Dispatchers.Default).launch {
-            try {
-                val user = auth.currentUser
-                if (user == null) {
-                    onResult(false, "No current user")
-                    return@launch
-                }
-                val tokenJs = user.getIdToken(true).await()
-                val token = tokenJs.toString()
-                onResult(true, token)
-
-            } catch (e: Throwable) {
-                signOut(auth)
-                onResult(false, e.message)
-            }
-        }
-    }
-
 
     override fun sendEmailToResetPassword(
         email: String,

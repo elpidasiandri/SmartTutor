@@ -1,4 +1,5 @@
 @file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+
 package org.example.project.tutor.repo
 
 import io.ktor.client.HttpClient
@@ -9,6 +10,7 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -29,6 +31,7 @@ import org.example.project.registration.firebase.signOut
 import org.example.project.tutor.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
+import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
@@ -139,6 +142,12 @@ class WebTutorRepoImpl(
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(request)
+        }.body()
+    }
+
+    override suspend fun getChats(userId: String): List<UserChatDto> {
+        return httpClient.get("$baseUrl/v1/chats") {
+            parameter("userId", userId)
         }.body()
     }
 }
