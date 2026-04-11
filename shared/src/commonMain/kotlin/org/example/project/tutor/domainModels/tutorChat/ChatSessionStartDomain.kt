@@ -26,7 +26,7 @@ data class LearningUnitDomain(
     val orderIndex: Int = EMPTY_INT,
     val quizAvailable: Boolean = EMPTY_BOOLEAN,
     val analysisCompleted: Boolean = EMPTY_BOOLEAN,
-    val quizCompleted: Boolean = EMPTY_BOOLEAN
+    val quizCompleted: Boolean = EMPTY_BOOLEAN,
 )
 
 enum class LUStatusDomain { ACTIVE, COMPLETED, INACTIVE, NONE }
@@ -49,12 +49,14 @@ data class ChatDomain(
 )
 
 data class ChatMessageDomain(
-    val sender: String = EMPTY_STRING,
-    val content: String = EMPTY_STRING,
-    val timestamp: Long = EMPTY_LONG,
+    val id: String,
+    val sender: String,
+    val content: String,
+    val timestamp: Long = 0L,
     val type: String = EMPTY_STRING,
-    val id: String = EMPTY_STRING, //todo fix
     val imagePath: List<UnitImageDomain> = emptyList(),
+    val unitNumber: Int? = null,
+    val unitTitle: String? = null,
 )
 
 enum class SenderType {

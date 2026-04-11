@@ -12,6 +12,7 @@ import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
@@ -24,6 +25,7 @@ class TutorIntroViewModel(
     private val auth: FirebaseAuth,
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    private val getChatByIdUseCase: GetChatByIdUseCase,
 ) : ViewModel() {
     private val common = TutorCommonViewModel(
         logoutUseCase = logout,
@@ -34,7 +36,8 @@ class TutorIntroViewModel(
         getAllHistoryChatUseCase = getAllHistoryChatUseCase,
         userId = auth.uid?:"",
         askTutorUseCase = askTutorUseCase,
-        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase
+        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
+        getChatByIdUseCase = getChatByIdUseCase,
     )
     val state: StateFlow<TutorState> = common.state
 

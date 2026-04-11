@@ -1,5 +1,6 @@
 package org.example.project.tutor.mappers.chatHistory
 
+import kotlinx.datetime.Clock
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
@@ -7,7 +8,13 @@ import org.example.project.tutor.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.domainModels.learningUnits.QuotationDomain
 import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
+import org.example.project.tutor.domainModels.tutorChat.LUStatusDomain
+import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
+import org.example.project.tutor.domainModels.tutorChat.LearningUnitInstanceDomain
+import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
@@ -16,6 +23,7 @@ import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
 import org.example.project.tutor.networkModel.uploadPdf.UnitImageDto
 import org.example.project.utils.nonNull
+import kotlin.uuid.ExperimentalUuidApi
 
 fun List<UserChatDto>.toChatHistoryDomain(): ChatHistoryDomain {
     return ChatHistoryDomain(
@@ -70,10 +78,150 @@ fun ChatMessageDto.toDomain(): ChatMessageDomain {
         id = messageId,
         sender = normalizedSender,
         content = text,
-        imagePath = emptyList()
+        timestamp = createdAtEpochMillis,
+        imagePath = emptyList(),
+        unitNumber = unitNumber,
+        unitTitle = unitTitle,
     )
 }
 
+
+fun buildChatSessionForSelectedUnit(
+    fileName: String,
+    unit: LearningUnitContentDomain,
+    allStoredMessages: List<ChatMessageDomain>,
+): ChatSessionStartDomain {
+    val ts = Clock.System.now().toEpochMilliseconds()
+
+    val introText = buildString {
+        appendLine(unit.title)
+        appendLine()
+        appendLine(unit.text)
+    }.trim()
+
+    val introMessage = if (introText.isNotBlank()) {
+        listOf(
+            ChatMessageDomain(
+                sender = SenderType.AI.name,
+                content = introText,
+                timestamp = ts,
+                imagePath = unit.images,
+                id = "intro_unit_${unit.numbering}"
+            )
+        )
+    } else emptyList()
+
+    val unitMessages = messagesForUnit(allStoredMessages, unit)
+
+    val allMessages = (introMessage + unitMessages)
+        .distinctBy { it.id }
+
+    return ChatSessionStartDomain(
+        material = MaterialDomain(
+            fileUploaded = true,
+            fileName = fileName,
+            canUpload = true,
+            totalUnits = 0
+        ),
+        learningUnit = LearningUnitDomain(
+            title = unit.title,
+            orderIndex = unit.numbering,
+            quizAvailable = true,
+            analysisCompleted = true,
+            quizCompleted = false,
+        ),
+        instance = LearningUnitInstanceDomain(
+            status = LUStatusDomain.ACTIVE,
+            progressPercent = 0,
+            startedAt = ts,
+            lastUpdatedAt = ts,
+            canContinue = true,
+            canRestart = false,
+            isLocked = false
+        ),
+        chat = ChatDomain(
+            chatSessionId = "session_unit_${unit.numbering}",
+            createNewSession = false,
+            messages = allMessages
+        )
+    )
+}
+private fun messagesForUnit(
+    allMessages: List<ChatMessageDomain>,
+    unit: LearningUnitContentDomain,
+): List<ChatMessageDomain> {
+    return allMessages.filter { msg ->
+        msg.unitNumber == unit.numbering || msg.unitTitle == unit.title
+    }
+}
+@OptIn(ExperimentalUuidApi::class)
+fun buildChatSessionFromStoredChat(
+    chat: UserChatDto,
+    units: List<LearningUnitContentDomain>,
+    activeIndex: Int = 0,
+): ChatSessionStartDomain {
+    val total = units.size.coerceAtLeast(0)
+    val lu = units.getOrNull(activeIndex)
+    val ts = Clock.System.now().toEpochMilliseconds()
+
+    val introText = buildString {
+        appendLine(lu?.title.orEmpty())
+        appendLine()
+        appendLine(lu?.text.orEmpty())
+    }.trim()
+
+    val introMessage = if (introText.isNotBlank()) {
+        listOf(
+            ChatMessageDomain(
+                sender = SenderType.AI.name,
+                content = introText,
+                timestamp = ts,
+                type = "TEXT",
+                imagePath = lu?.images.orEmpty(),
+                id = "intro_${chat.chatId}_${lu?.numbering ?: 0}"
+            )
+        )
+    } else {
+        emptyList()
+    }
+
+    val storedMessages = chat.messages
+        .sortedBy { it.createdAtEpochMillis }
+        .map { it.toDomain() }
+
+    val allMessages = (introMessage + storedMessages)
+        .distinctBy { it.id }
+
+    return ChatSessionStartDomain(
+        material = MaterialDomain(
+            fileUploaded = true,
+            fileName = chat.title,
+            canUpload = true,
+            totalUnits = total
+        ),
+        learningUnit = LearningUnitDomain(
+            title = lu?.title.orEmpty(),
+            orderIndex = lu?.numbering ?: 0,
+            quizAvailable = true,
+            analysisCompleted = true,
+            quizCompleted = false,
+        ),
+        instance = LearningUnitInstanceDomain(
+            status = LUStatusDomain.ACTIVE,
+            progressPercent = 0,
+            startedAt = ts,
+            lastUpdatedAt = ts,
+            canContinue = true,
+            canRestart = false,
+            isLocked = false
+        ),
+        chat = ChatDomain(
+            chatSessionId = chat.chatId,
+            createNewSession = false,
+            messages = allMessages
+        )
+    )
+}
 fun ExerciseDto.toDomain(): ExerciseDomain {
     return ExerciseDomain(
         type = runCatching { ExerciseType.valueOf(type) }.getOrDefault(ExerciseType.NONE),

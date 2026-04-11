@@ -154,6 +154,26 @@ class WebTutorRepoImpl(
         }.body()
     }
 
+    override suspend fun getChat(
+        chatId: String,
+        userId: String,
+    ): UserChatDto {
+        val response = httpClient.get("$baseUrl/v1/chats/$chatId") {
+            parameter("userId", userId)
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Get chat failed: ${response.status} body=$raw")
+        }
+
+        return json.decodeFromString(raw)
+    }
+
+
     override suspend fun askTutor(
         chatId: String,
         userId: String,

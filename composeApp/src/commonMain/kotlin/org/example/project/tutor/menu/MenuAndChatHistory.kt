@@ -65,7 +65,9 @@ fun MenuAndChatHistory(
     onLearningUnitClick: (String) -> Unit = {},
     onChatTitleClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
-) {
+    onExistingChatClick: (String) -> Unit,
+
+    ) {
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -85,7 +87,10 @@ fun MenuAndChatHistory(
             onDeleteSubject = onDeleteSubject,
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
+            onExistingChatClick = { chatId ->
+                onExistingChatClick(chatId)
+            }
         )
 
         Spacer(modifier = Modifier.height(spacing12))
@@ -128,7 +133,9 @@ private fun ChatHistoryList(
     onLearningUnitClick: (String) -> Unit,
     onDeleteSubject: (String) -> Unit,
     modifier: Modifier,
-) {
+    onExistingChatClick: (String) -> Unit,
+
+    ) {
     Column(modifier = modifier) {
         chatHistory.subjects.forEach { subject ->
             SubjectHistoryItem(
@@ -140,6 +147,9 @@ private fun ChatHistoryList(
                 onDeleteSubject = { subjectId ->
                     onDeleteSubject(subjectId)
                     scope.launch { drawerState.close() }
+                },
+                onExistingChatClick = { chatId ->
+                    onExistingChatClick(chatId)
                 }
             )
             Spacer(modifier = Modifier.height(spacing12))
@@ -195,7 +205,9 @@ fun SubjectHistoryItem(
     subject: SubjectHistoryDomain,
     onLearningUnitClick: (String) -> Unit,
     onDeleteSubject: (String) -> Unit,
-) {
+    onExistingChatClick: (String) -> Unit,
+
+    ) {
     var expanded by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -206,7 +218,10 @@ fun SubjectHistoryItem(
             expanded = expanded,
             onRowClick = { expanded = !expanded },
             onToggleExpand = { expanded = !expanded },
-            onMoreClick = { menuOpen = true }
+            onMoreClick = { menuOpen = true },
+            onExistingChatClick = { chatId ->
+                onExistingChatClick(chatId)
+            },
         )
 
         SubjectOverflowMenu(
@@ -246,12 +261,17 @@ private fun SubjectHeaderRow(
     onRowClick: () -> Unit,
     onToggleExpand: () -> Unit,
     onMoreClick: () -> Unit,
-) {
+    onExistingChatClick: (String) -> Unit,
+
+    ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(GrayUltraDark, RoundedCornerShape(spacing12))
-            .noRippleClickable { onRowClick() }
+            .noRippleClickable {
+                onRowClick()
+                onExistingChatClick(subject.subjectId)
+            }
             .padding(spacing12),
         verticalAlignment = Alignment.CenterVertically
     ) {

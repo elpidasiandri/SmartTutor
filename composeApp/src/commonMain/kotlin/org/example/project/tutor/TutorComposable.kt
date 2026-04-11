@@ -1,8 +1,6 @@
 package org.example.project.tutor
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -40,7 +38,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -78,7 +75,6 @@ import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.excercise.ExercisesTab
 import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
-import org.example.project.tutor.utils.normalizeForHeaderCompare
 import org.koin.compose.koinInject
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -108,6 +104,7 @@ fun TutorScreen(
     tabInfoMessage: String,
     currentUnit: LearningUnitContentDomain,
     onSendMessage: (String) -> Unit,
+    openExistingChat: (String) -> Unit,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -149,7 +146,10 @@ fun TutorScreen(
             onSendMessage = { text ->
                 onSendMessage(text)
             },
-            isLoading = isLoading
+            isLoading = isLoading,
+            onExistingChatClick = { chatId ->
+                openExistingChat(chatId)
+            },
         )
     }
 }
@@ -179,6 +179,7 @@ fun TutorChatUI(
     currentUnit: LearningUnitContentDomain,
     onSendMessage: (String) -> Unit,
     isLoading: Boolean,
+    onExistingChatClick: (String) -> Unit,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -200,7 +201,8 @@ fun TutorChatUI(
                     sender = msg.sender,
                     text = msg.content,
                     imagePath = msg.imagePath,
-                    id = msg.id
+                    id = msg.id,
+                    timestamp = msg.timestamp
                 )
             }
         )
@@ -231,7 +233,13 @@ fun TutorChatUI(
                     },
                     onDeleteSubject = { subjectId ->
                         deleteSubject(subjectId)
-                    }
+                    },
+                    onExistingChatClick = { chatId ->
+                        scope.launch {
+                            onExistingChatClick(chatId)
+                            drawerState.close()
+                        }
+                    },
                 )
             }
         ) {
@@ -336,6 +344,7 @@ private fun TutorDrawerContent(
     onLearningUnitClick: (String) -> Unit,
     onNewChatClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
+    onExistingChatClick: (String) -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -351,7 +360,10 @@ private fun TutorDrawerContent(
             onLogoutClick = onLogoutClick,
             onLearningUnitClick = onLearningUnitClick,
             onChatTitleClick = onNewChatClick,
-            onDeleteSubject = onDeleteSubject
+            onDeleteSubject = onDeleteSubject,
+            onExistingChatClick = { chatId ->
+                onExistingChatClick(chatId)
+            }
         )
     }
 }

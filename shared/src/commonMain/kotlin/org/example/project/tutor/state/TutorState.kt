@@ -3,6 +3,7 @@ package org.example.project.tutor.state
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.file.PickedFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
@@ -29,7 +30,9 @@ data class TutorState(
     val activeDocumentId: String = EmptyValues.EMPTY_STRING,
     val activeChatId: String = EmptyValues.EMPTY_STRING,
     val savedChats: List<UserChatDto> = emptyList(),
-)
+    val allChatMessages: List<ChatMessageDomain> = emptyList(),
+
+    )
 
 sealed class TutorUiEvents {
     data object None : TutorUiEvents()
@@ -41,8 +44,9 @@ sealed class TutorUiEvents {
     data object NextUnit : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
     data class SendMessage(val text: String) : TutorUiEvents()
+    data class OpenExistingChat(val chatId: String) : TutorUiEvents()
     data class DeleteMaterial(val subjectId: String) : TutorUiEvents()
-    data class UploadPdf(val file : PickedFile) : TutorUiEvents()
+    data class UploadPdf(val file: PickedFile) : TutorUiEvents()
     data class ChangeTab(val tab: TutorTab) : TutorUiEvents()
 }
 

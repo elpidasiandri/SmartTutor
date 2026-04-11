@@ -15,6 +15,7 @@ import org.example.project.tutor.repo.TutorIntroRepoImpl
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
@@ -37,6 +38,7 @@ val tutorModule = module {
     single { LearningUnitsUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
+    single { GetChatByIdUseCase(get()) }
     single { AskTutorUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
     factory {
@@ -63,7 +65,17 @@ val tutorModule = module {
     }
 
     viewModel {
-        TutorIntroViewModel(get(), get(), get(), get(), get(), FirebaseAuth.getInstance(), get(),get())
+        TutorIntroViewModel(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            FirebaseAuth.getInstance(),
+            get(),
+            get(),
+            get(),
+        )
     }
 
     includes(logoutModule)

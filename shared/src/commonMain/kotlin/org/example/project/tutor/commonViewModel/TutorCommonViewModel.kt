@@ -13,6 +13,8 @@ import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentD
 import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
 import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.mappers.chatHistory.buildChatSessionForSelectedUnit
+import org.example.project.tutor.mappers.chatHistory.buildChatSessionFromStoredChat
 import org.example.project.tutor.mappers.chatHistory.toChatHistoryDomain
 import org.example.project.tutor.mappers.chatHistory.toDomain
 import org.example.project.tutor.mappers.learningUnits.buildChatHistoryFromUnits
@@ -25,6 +27,7 @@ import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.utils.EmptyValues
@@ -49,6 +52,7 @@ class TutorCommonViewModel(
     private val userId: String,
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    private val getChatByIdUseCase: GetChatByIdUseCase,
 ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -61,6 +65,7 @@ class TutorCommonViewModel(
         when (event) {
             TutorUiEvents.Logout -> logOutUser()
             is TutorUiEvents.SendMessage -> sendMessageToTutor(event.text)
+            is TutorUiEvents.OpenExistingChat -> loadExistingChat(event.chatId)
             TutorUiEvents.NewChat -> startNewChat()
             TutorUiEvents.InitializeStateAfterShowingMessage -> initializeStateAfterShowingMessage()
             TutorUiEvents.ClearUiEvent -> clearUiEvent()
@@ -93,12 +98,13 @@ class TutorCommonViewModel(
 
         val selected = units[index]
 
-        val newSession = buildChatSessionStart(
-            fileName = _state.value.session.material.fileName,
-            units = units,
-            activeIndex = index
-        )
+        val allStoredMessages = _state.value.allChatMessages
 
+        val newSession = buildChatSessionForSelectedUnit(
+            fileName = _state.value.session.material.fileName,
+            unit = selected,
+            allStoredMessages = allStoredMessages
+        )
         _state.update {
             it.copy(
                 currentIndex = index,
@@ -109,6 +115,7 @@ class TutorCommonViewModel(
             )
         }
     }
+
 
     @OptIn(ExperimentalUuidApi::class)
     private fun sendMessageToTutor(text: String) {
@@ -128,6 +135,7 @@ class TutorCommonViewModel(
         _state.update { current ->
             current.copy(
                 loading = true,
+                allChatMessages = current.allChatMessages + optimisticUserMessage,
                 session = current.session.copy(
                     chat = current.session.chat.copy(
                         messages = current.session.chat.messages + optimisticUserMessage
@@ -154,6 +162,11 @@ class TutorCommonViewModel(
                 _state.update { current ->
                     current.copy(
                         loading = false,
+                        allChatMessages = if (aiMsg != null) {
+                            current.allChatMessages + aiMsg
+                        } else {
+                            current.allChatMessages
+                        },
                         session = current.session.copy(
                             chat = current.session.chat.copy(
                                 messages = if (aiMsg != null) {
@@ -299,10 +312,12 @@ class TutorCommonViewModel(
 
         val newUnlocked = maxOf(_state.value.unlockedCount, nextIndex + 1)
 
-        val session = buildChatSessionStart(
+        val selectedUnit = units.getOrNull(nextIndex) ?: LearningUnitContentDomain()
+
+        val session = buildChatSessionForSelectedUnit(
             fileName = _state.value.session.material.fileName,
-            units = units,
-            activeIndex = nextIndex
+            unit = selectedUnit,
+            allStoredMessages = _state.value.allChatMessages
         )
 
         val history = buildChatHistoryFromUnits(
@@ -343,8 +358,11 @@ class TutorCommonViewModel(
             val chats = getAllHistoryChatUseCase(userId)
 
             if (chats.isNotEmpty()) {
-                val latestChat = chats.first()
-
+                val latestChatSummary = chats.first()
+                val latestChat = getChatByIdUseCase(
+                    chatId = latestChatSummary.chatId,
+                    userId = userId
+                )
                 val units = latestChat.result?.learningUnits
                     ?: latestChat.partialResult?.learningUnits
                     ?: emptyList()
@@ -352,11 +370,14 @@ class TutorCommonViewModel(
                 val domainUnits = units.map { it.toDomain() }
                 val firstUnit = domainUnits.firstOrNull() ?: LearningUnitContentDomain()
 
-                val session = buildChatSessionStart(
-                    fileName = latestChat.title,
+                val session = buildChatSessionFromStoredChat(
+                    chat = latestChat,
                     units = domainUnits,
                     activeIndex = 0
                 )
+                val fullMessages = latestChat.messages
+                    .sortedBy { it.createdAtEpochMillis }
+                    .map { it.toDomain() }
 
                 _state.update {
                     it.copy(
@@ -371,12 +392,12 @@ class TutorCommonViewModel(
                         unlockedCount = maxOf(1, domainUnits.size),
                         currentUnit = firstUnit,
                         session = session,
+                        allChatMessages = fullMessages,
                         selectedTab = TutorTab.Learning,
                         tabInfoMessage = buildLearningTabMessage(firstUnit),
                         event = TutorEvents.Loaded
                     )
                 }
-
                 return@launch
             }
 
@@ -426,6 +447,63 @@ class TutorCommonViewModel(
                     showCustomMessage = true,
                     isError = true
                 )
+            }
+        }
+    }
+
+    private fun loadExistingChat(chatId: String) {
+        scope.launch {
+            try {
+                _state.update { it.copy(loading = true) }
+
+                val fullChat = getChatByIdUseCase(chatId, userId)
+
+                val units = fullChat.result?.learningUnits
+                    ?: fullChat.partialResult?.learningUnits
+                    ?: emptyList()
+
+                val domainUnits = units.map { it.toDomain() }
+                val firstUnit = domainUnits.firstOrNull() ?: LearningUnitContentDomain()
+
+                val session = buildChatSessionFromStoredChat(
+                    chat = fullChat,
+                    units = domainUnits,
+                    activeIndex = 0
+                )
+
+                val fullMessages = fullChat.messages
+                    .sortedBy { it.createdAtEpochMillis }
+                    .map { it.toDomain() }
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        activeChatId = fullChat.chatId,
+                        activeDocumentId = fullChat.documentId,
+                        subjectTitle = fullChat.title,
+                        allUnits = domainUnits,
+                        currentIndex = 0,
+                        currentUnit = firstUnit,
+                        session = session,
+                        allChatMessages = fullMessages,
+                        selectedTab = if (fullChat.mode.equals("Exercises", true)) {
+                            TutorTab.Exercises
+                        } else {
+                            TutorTab.Learning
+                        },
+                        tabInfoMessage = buildLearningTabMessage(firstUnit)
+                    )
+                }
+
+            } catch (t: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = t.message ?: "Failed to load chat"
+                    )
+                }
             }
         }
     }

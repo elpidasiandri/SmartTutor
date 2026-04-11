@@ -13,6 +13,7 @@ import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
@@ -35,6 +36,7 @@ val tutorModule = module {
     single { PdfUploadServiceUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
     single { AskTutorUseCase(get()) }
+    single { GetChatByIdUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
 
     single<TutorPlatform> {
@@ -58,6 +60,7 @@ val tutorModule = module {
     }
     single {
         TutorController(
+            get(),
             get(),
             get(),
             get(),

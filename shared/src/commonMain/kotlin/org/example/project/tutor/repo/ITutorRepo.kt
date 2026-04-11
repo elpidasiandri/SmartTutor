@@ -24,6 +24,11 @@ interface ITutorRepo {
 
     suspend fun getChats(userId: String): List<UserChatDto>
 
+    suspend fun getChat(
+        chatId: String,
+        userId: String,
+    ): UserChatDto
+
     suspend fun askTutor(
         chatId: String,
         userId: String,

@@ -13,6 +13,7 @@ import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
@@ -24,6 +25,7 @@ class TutorController(
     private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+    private val getChatByIdUseCase: GetChatByIdUseCase,
 
     ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -37,6 +39,7 @@ class TutorController(
         userId = AuthUserHolder.currentUser?.uid ?: "",
         askTutorUseCase = askTutorUseCase,
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
+        getChatByIdUseCase = getChatByIdUseCase
     )
 
     val state: StateFlow<TutorState> = common.state

@@ -109,6 +109,9 @@ class TutorIntroFragment : Fragment() {
                     onSendMessage = { message ->
                         viewModel.onEvent(TutorUiEvents.SendMessage(message))
                     },
+                    openExistingChat = { chatId ->
+                        viewModel.onEvent(TutorUiEvents.OpenExistingChat(chatId))
+                    },
                 )
             }
         }

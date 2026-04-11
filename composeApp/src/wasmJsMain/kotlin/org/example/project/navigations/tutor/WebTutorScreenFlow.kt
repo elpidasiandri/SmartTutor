@@ -91,5 +91,9 @@ fun WebTutorScreenFlow(navController: NavController) {
         onSendMessage = { message ->
             controller.onEvent(TutorUiEvents.SendMessage(message))
         },
+
+        openExistingChat = { chatId ->
+            controller.onEvent(TutorUiEvents.OpenExistingChat(chatId))
+        },
     )
 }
