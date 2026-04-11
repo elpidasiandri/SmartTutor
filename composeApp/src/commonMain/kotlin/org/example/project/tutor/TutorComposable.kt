@@ -1,6 +1,8 @@
 package org.example.project.tutor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,9 +44,12 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -61,6 +66,7 @@ import org.example.project.strings.SmartTutorStrings.material_title
 import org.example.project.strings.SmartTutorStrings.type_your_message
 import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
 import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
+import org.example.project.strings.SmartTutorStrings.waiting_for_answer
 import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
@@ -101,6 +107,7 @@ fun TutorScreen(
     selectedTab: TutorTab,
     tabInfoMessage: String,
     currentUnit: LearningUnitContentDomain,
+    onSendMessage: (String) -> Unit,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -138,19 +145,12 @@ fun TutorScreen(
             selectedTab = selectedTab,
             onChangeTab = { onChangeTab(it) },
             tabInfoMessage = tabInfoMessage,
-            currentUnit = currentUnit
+            currentUnit = currentUnit,
+            onSendMessage = { text ->
+                onSendMessage(text)
+            },
+            isLoading = isLoading
         )
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
     }
 }
 
@@ -177,11 +177,13 @@ fun TutorChatUI(
     selectedTab: TutorTab,
     tabInfoMessage: String,
     currentUnit: LearningUnitContentDomain,
+    onSendMessage: (String) -> Unit,
+    isLoading: Boolean,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
-    val chatMessages = remember { mutableStateListOf<ChatUiMessage>() }
+    val chatMessages = remember() { mutableStateListOf<ChatUiMessage>() }
     var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
 
     LaunchedEffect(
@@ -203,13 +205,6 @@ fun TutorChatUI(
             }
         )
     }
-
-    TutorToastHost(
-        showErrorMessage = showErrorMessage,
-        errorMessage = errorMessage,
-        isError = isError,
-        onMessageDismiss = onMessageDismiss
-    )
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -248,6 +243,14 @@ fun TutorChatUI(
                     }
                 },
                 content = { padding ->
+                    TutorToastHost(
+                        showErrorMessage = showErrorMessage,
+                        errorMessage = errorMessage,
+                        isError = isError,
+                        onMessageDismiss = onMessageDismiss
+                    )
+
+
                     TutorChatContent(
                         padding = padding,
                         chatData = chatData,
@@ -258,17 +261,41 @@ fun TutorChatUI(
                         onNextUnitClick = onNextUnitClick,
                         onUploadPdfClick = onUploadPdfClick,
                         onSendClick = {
-                            TutorHandleSend(
-                                userMessageState = userMessageState,
-                                onClearUserMessage = { userMessageState = "" },
-                                chatMessages = chatMessages.toMutableStateList(),
-                            )
+                            val text = userMessageState.trim()
+                            if (text.isNotBlank()) {
+                                onSendMessage(text)
+                                userMessageState = ""
+                            }
                         },
                         selectedTab = selectedTab,
                         onChangeTab = { onChangeTab(it) },
                         tabInfoMessage = tabInfoMessage,
-                        currentUnit = currentUnit
+                        currentUnit = currentUnit,
+                        isLoading = isLoading
                     )
+
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .zIndex(999f)
+                                .background(Color.Black.copy(alpha = 0.4f))
+                                .pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent()
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text("Περιμένω απάντηση...", color = Color.White)
+                            }
+                        }
+                    }
                 }
             )
         }
@@ -362,6 +389,7 @@ private fun TutorChatContent(
     selectedTab: TutorTab,
     tabInfoMessage: String,
     currentUnit: LearningUnitContentDomain,
+    isLoading: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -372,23 +400,14 @@ private fun TutorChatContent(
             fileUploaded = chatData.material.fileUploaded,
             selectedTab = selectedTab,
             onTabChange = { onChangeTab(it) },
-            onNextUnitClick = onNextUnitClick
+            onNextUnitClick = onNextUnitClick,
+            isLoading = isLoading
         )
 
         Spacer(modifier = Modifier.height(spacing8))
 
         when (selectedTab) {
             TutorTab.Learning -> {
-
-                val filteredMessages =
-                    if (tabInfoMessage.isBlank()) chatMessages
-                    else {
-                        val headerNorm = normalizeForHeaderCompare(tabInfoMessage)
-                        chatMessages.filterNot { msg ->
-                            msg.sender == SenderType.AI.name &&
-                                    normalizeForHeaderCompare(msg.text) == headerNorm
-                        }
-                    }
 
                 val config = koinInject<AppConfig>()
 
@@ -419,7 +438,8 @@ private fun TutorChatContent(
                 userMessageState = userMessageState,
                 onUserMessageChangeLocal = onUserMessageChangeLocal,
                 onSendClick = onSendClick,
-                onUploadPdfClick = onUploadPdfClick
+                onUploadPdfClick = onUploadPdfClick,
+                isLoading = isLoading
             )
         }
     }
@@ -431,6 +451,7 @@ private fun TutorTopActionsRow(
     selectedTab: TutorTab,
     onTabChange: (TutorTab) -> Unit,
     onNextUnitClick: () -> Unit,
+    isLoading: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -439,21 +460,24 @@ private fun TutorTopActionsRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         TutorActionButton(
-            text = if (selectedTab == TutorTab.Learning) "Learning ✓" else "Learning",
-            enabled = fileUploaded,
-            onClick = { onTabChange(TutorTab.Learning) }
+            text = "Learning",
+            enabled = fileUploaded && !isLoading,
+            onClick = { onTabChange(TutorTab.Learning) },
+            selectedTab = selectedTab == TutorTab.Learning,
         )
 
         TutorActionButton(
-            text = if (selectedTab == TutorTab.Exercises) "Exercises ✓" else "Exercises",
-            enabled = fileUploaded,
-            onClick = { onTabChange(TutorTab.Exercises) }
+            text = "Exercises",
+            enabled = fileUploaded && !isLoading,
+            onClick = { onTabChange(TutorTab.Exercises) },
+            selectedTab = selectedTab == TutorTab.Exercises,
         )
 
         TutorActionButton(
-            text = "Next ➜",
-            enabled = fileUploaded,
-            onClick = onNextUnitClick
+            text = "Next ",
+            enabled = fileUploaded && !isLoading,
+            onClick = onNextUnitClick,
+            selectedTab = false,
         )
     }
 }
@@ -463,6 +487,7 @@ private fun TutorActionButton(
     text: String,
     enabled: Boolean,
     onClick: () -> Unit,
+    selectedTab: Boolean,
 ) {
     TextButton(
         onClick = onClick,
@@ -472,7 +497,10 @@ private fun TutorActionButton(
             disabledContentColor = AppColors.GrayDark
         )
     ) {
-        Text(text)
+        Text(
+            text = text,
+            fontWeight = if (selectedTab) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }
 
@@ -483,6 +511,7 @@ private fun TutorInputSection(
     onUserMessageChangeLocal: (String) -> Unit,
     onSendClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
+    isLoading: Boolean,
 ) {
     ChatInputField(
         fileUploaded = fileUploaded,
@@ -490,6 +519,7 @@ private fun TutorInputSection(
         onMessageChange = onUserMessageChangeLocal,
         onSendClick = onSendClick,
         onUploadPdfClick = onUploadPdfClick,
+        isLoading = isLoading,
     )
 }
 
@@ -504,7 +534,7 @@ private fun TutorHandleSend(
             ChatUiMessage(
                 sender = SenderType.USER.name,
                 text = userMessageState,
-                id = Uuid.random().toString() //todo fix
+                id = Uuid.random().toString()
             )
         )
         chatMessages.add(
@@ -512,7 +542,7 @@ private fun TutorHandleSend(
                 sender = SenderType.AI.name,
                 text = "This is a fake AI reply",
                 imagePath = emptyList(),
-                id = Uuid.random().toString() //todo fix
+                id = Uuid.random().toString()
             )
         )
         onClearUserMessage()
@@ -578,6 +608,7 @@ fun ChatInputField(
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
+    isLoading: Boolean,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(spacing8),
@@ -587,7 +618,7 @@ fun ChatInputField(
             TextField(
                 value = userMessage,
                 onValueChange = onMessageChange,
-                placeholder = { Text(type_your_message) },
+                placeholder = { Text(if (isLoading) waiting_for_answer else type_your_message) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -595,11 +626,14 @@ fun ChatInputField(
         if (!fileUploaded) {
             IconButton(
                 onClick = onUploadPdfClick,
-                enabled = !fileUploaded
+                enabled = !fileUploaded && !isLoading
             ) { Icon(Icons.Default.UploadFile, contentDescription = "Upload PDF") }
         }
         // Send
-        IconButton(onClick = onSendClick) {
+        IconButton(
+            onClick = onSendClick,
+            enabled = !isLoading && userMessage.isNotBlank()
+        ) {
             Icon(
                 Icons.AutoMirrored.Filled.Send,
                 contentDescription = "Send"

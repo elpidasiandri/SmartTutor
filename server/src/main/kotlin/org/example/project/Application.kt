@@ -80,6 +80,6 @@ fun Application.module() {
 
         staticFiles("/uploads", File("uploads"))
         pdfRoutes(pdfRepo)
-        chatRoutes(chatRepo)
+        chatRoutes(chatRepo,llm)
     }
 }

@@ -3,7 +3,6 @@ package org.example.project.tutor.di
 import io.ktor.client.HttpClient
 import org.example.project.AppConfig
 import org.example.project.network.createWebHttpClient
-import org.example.project.registration.AuthUserHolder
 import org.example.project.registration.firebase.initFirebase
 import org.example.project.settings.logOut.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
@@ -12,6 +11,7 @@ import org.example.project.tutor.repo.ITutorRepo
 import org.example.project.tutor.repo.WebTutorRepoImpl
 import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
+import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
@@ -31,9 +31,10 @@ val tutorModule = module {
         )
     }
     single { LearningUnitsUseCase(get()) }
-    single { GetIdTokenSuspendUseCase(get()) }
+    factory { GetIdTokenSuspendUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
+    single { AskTutorUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
 
     single<TutorPlatform> {
@@ -62,7 +63,8 @@ val tutorModule = module {
             get(),
             get(),
             get(),
-            initFirebase().auth.currentUser?.uid
+            get(),
+            get(),
         )
     }
     includes(logoutModule)

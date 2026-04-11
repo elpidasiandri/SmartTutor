@@ -10,6 +10,8 @@ import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.tutor.domainModels.file.PickedFile
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
+import org.example.project.tutor.domainModels.tutorChat.SenderType
 import org.example.project.tutor.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.mappers.chatHistory.toChatHistoryDomain
 import org.example.project.tutor.mappers.chatHistory.toDomain
@@ -21,9 +23,14 @@ import org.example.project.tutor.mappers.learningUnits.buildLearningTabMessage
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.utils.EmptyValues
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
 
 interface TutorPlatform {
     fun speak(text: String)
@@ -39,7 +46,9 @@ class TutorCommonViewModel(
     private val platform: TutorPlatform,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
     private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
-    private val userId: String
+    private val userId: String,
+    private val askTutorUseCase: AskTutorUseCase,
+    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
 ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -51,6 +60,7 @@ class TutorCommonViewModel(
     fun onEvent(event: TutorUiEvents) {
         when (event) {
             TutorUiEvents.Logout -> logOutUser()
+            is TutorUiEvents.SendMessage -> sendMessageToTutor(event.text)
             TutorUiEvents.NewChat -> startNewChat()
             TutorUiEvents.InitializeStateAfterShowingMessage -> initializeStateAfterShowingMessage()
             TutorUiEvents.ClearUiEvent -> clearUiEvent()
@@ -58,7 +68,6 @@ class TutorCommonViewModel(
             is TutorUiEvents.DeleteMaterial -> deleteMaterialLocal(event.subjectId)
             is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title)
             TutorUiEvents.NextUnit -> goNext()
-            TutorUiEvents.OpenUnit -> openUnit()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
             is TutorUiEvents.ChangeTab -> {
                 refreshTabInfoMessage(event.tab)
@@ -101,6 +110,83 @@ class TutorCommonViewModel(
         }
     }
 
+    @OptIn(ExperimentalUuidApi::class)
+    private fun sendMessageToTutor(text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isBlank()) return
+
+        val chatId = _state.value.activeChatId
+        val unitIndex = _state.value.currentIndex
+
+        val optimisticUserMessage = ChatMessageDomain(
+            id = "local_${Uuid.random().toString()}",
+            sender = SenderType.USER.name,
+            content = trimmed,
+            imagePath = emptyList()
+        )
+
+        _state.update { current ->
+            current.copy(
+                loading = true,
+                session = current.session.copy(
+                    chat = current.session.chat.copy(
+                        messages = current.session.chat.messages + optimisticUserMessage
+                    )
+                )
+            )
+        }
+
+        scope.launch {
+            try {
+                val token = getIdTokenSuspendUseCase()
+
+                val response = askTutorUseCase(
+                    chatId = chatId,
+                    userId = userId,
+                    unitIndex = unitIndex,
+                    message = trimmed,
+                    token = token,
+                    chatMode = state.value.selectedTab.name
+                )
+
+                val aiMsg = response.aiMessage?.toDomain()
+
+                _state.update { current ->
+                    current.copy(
+                        loading = false,
+                        session = current.session.copy(
+                            chat = current.session.chat.copy(
+                                messages = if (aiMsg != null) {
+                                    current.session.chat.messages + aiMsg
+                                } else {
+                                    current.session.chat.messages
+                                }
+                            )
+                        )
+                    )
+                }
+
+            } catch (t: Throwable) {
+                val msg = when {
+                    t.message?.contains("timeout", ignoreCase = true) == true ->
+                        "Ο server άργησε να απαντήσει. Δοκίμασε ξανά σε λίγο."
+
+                    else ->
+                        t.message ?: "Failed to send message"
+                }
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = msg
+                    )
+                }
+            }
+        }
+    }
+
     private fun refreshTabInfoMessage(tab: TutorTab) {
         val unit = _state.value.currentUnit
         val msg = when (tab) {
@@ -122,7 +208,8 @@ class TutorCommonViewModel(
 
                 val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
                     picked = picked,
-                    userId = userId
+                    userId = userId,
+                    mode = state.value.selectedTab.name
                 )
 
                 val units = res.prototype.learningUnits
@@ -236,27 +323,6 @@ class TutorCommonViewModel(
         }
     }
 
-    private fun openUnit() {
-//        val units = _state.value.allUnits
-//        if (index !in units.indices) return
-//
-//        val selected = units[index]
-//
-//        val newSession = buildChatSessionStart(
-//            fileName = _state.value.session.material.fileName,
-//            units = units,
-//            activeIndex = index
-//        )
-//
-//        _state.update {
-//            it.copy(
-//                currentIndex = index,
-//                currentUnit = selected,
-//                session = newSession
-//            )
-//        }
-    }
-
     private fun startNewChat() {
         _state.update {
             it.copy(
@@ -274,7 +340,7 @@ class TutorCommonViewModel(
         try {
             _state.update { it.copy(loading = true, error = null) }
 
-            val chats = getAllHistoryChatUseCase(userId )
+            val chats = getAllHistoryChatUseCase(userId)
 
             if (chats.isNotEmpty()) {
                 val latestChat = chats.first()

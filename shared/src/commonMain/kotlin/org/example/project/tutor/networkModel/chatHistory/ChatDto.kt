@@ -14,6 +14,7 @@ enum class ChatSender(val value: String) {
 data class CreateChatFromDocumentRequest(
     @SerialName("userId") val userId: String,
     @SerialName("documentId") val documentId: String,
+    @SerialName("mode") val mode: String,
 )
 
 @Serializable
@@ -24,15 +25,17 @@ data class UserChatDto(
     @SerialName("title") val title: String,
     @SerialName("language") val language: String? = null,
     @SerialName("status") val status: String,
+    @SerialName("mode") val mode: String,
     @SerialName("partialResult") val partialResult: LearningUnitsPrototypeDto? = null,
     @SerialName("result") val result: LearningUnitsPrototypeDto? = null,
+    @SerialName("messages") val messages: List<ChatMessageDto> = emptyList(),
     @SerialName("createdAtEpochMillis") val createdAtEpochMillis: Long,
     @SerialName("updatedAtEpochMillis") val updatedAtEpochMillis: Long,
 )
 
 @Serializable
 data class CreateChatFromDocumentResponse(
-    @SerialName("chat") val chat: UserChatDto
+    @SerialName("chat") val chat: UserChatDto,
 )
 
 @Serializable
@@ -47,15 +50,16 @@ data class ChatMessageDto(
 )
 
 @Serializable
-data class SendChatMessageRequest(
-    @SerialName("userId") val userId: String,
-    @SerialName("text") val text: String,
-    @SerialName("unitNumber") val unitNumber: Int? = null,
-    @SerialName("unitTitle") val unitTitle: String? = null,
+data class AskTutorRequest(
+    @SerialName("unitIndex") val unitIndex: Int?,
+    @SerialName("message") val message: String?,
+    @SerialName("tab") val tab: String,              // "learning" | "exercises"
+    @SerialName("contextText") val contextText: String? = null,
 )
 
 @Serializable
-data class ChatDetailsResponse(
-    @SerialName("chat") val chat: UserChatDto,
-    @SerialName("messages") val messages: List<ChatMessageDto> = emptyList(),
+data class AskTutorResponse(
+    @SerialName("userMessage") val userMessage: ChatMessageDto?,
+    @SerialName("aiMessage") val aiMessage: ChatMessageDto?,
 )
+

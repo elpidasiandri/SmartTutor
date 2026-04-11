@@ -7,6 +7,9 @@ import org.example.project.tutor.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.domainModels.learningUnits.QuotationDomain
 import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
+import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
+import org.example.project.tutor.domainModels.tutorChat.SenderType
+import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
@@ -53,6 +56,21 @@ fun QuotationDto.toDomain(): QuotationDomain {
     return QuotationDomain(
         text = text.nonNull,
         numbering = numbering.nonNull
+    )
+}
+fun ChatMessageDto.toDomain(): ChatMessageDomain {
+    val normalizedSender = when (sender.lowercase()) {
+        "user" -> SenderType.USER.name
+        "ai" -> SenderType.AI.name
+        "system" -> SenderType.AI.name
+        else -> SenderType.AI.name
+    }
+
+    return ChatMessageDomain(
+        id = messageId,
+        sender = normalizedSender,
+        content = text,
+        imagePath = emptyList()
     )
 }
 

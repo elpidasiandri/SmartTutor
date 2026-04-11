@@ -4,14 +4,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
+import org.example.project.registration.AuthUserHolder
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.tutor.commonViewModel.TutorCommonViewModel
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 class TutorController(
     private val logoutUseCase: LogoutUseCase,
@@ -19,8 +22,10 @@ class TutorController(
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
     platform: TutorPlatform,
     private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
-    private val uuid: String?,
-) {
+    private val askTutorUseCase: AskTutorUseCase,
+    private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
+
+    ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val common = TutorCommonViewModel(
         logoutUseCase = logoutUseCase,
@@ -29,7 +34,9 @@ class TutorController(
         platform = platform,
         loadTutorFromPdfUseCase = loadTutorFromPdfUseCase,
         getAllHistoryChatUseCase = getAllHistoryChatUseCase,
-        userId = uuid ?: ""
+        userId = AuthUserHolder.currentUser?.uid ?: "",
+        askTutorUseCase = askTutorUseCase,
+        getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
     )
 
     val state: StateFlow<TutorState> = common.state

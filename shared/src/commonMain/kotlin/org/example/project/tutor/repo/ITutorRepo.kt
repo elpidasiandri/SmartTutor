@@ -1,6 +1,8 @@
 package org.example.project.tutor.repo
 
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
+import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
@@ -17,7 +19,15 @@ interface ITutorRepo {
 
     suspend fun createChatFromDocument(
         request: CreateChatFromDocumentRequest,
-        token: String
+        token: String,
     ): CreateChatFromDocumentResponse
+
     suspend fun getChats(userId: String): List<UserChatDto>
+
+    suspend fun askTutor(
+        chatId: String,
+        userId: String,
+        request: AskTutorRequest,
+        token: String,
+    ): AskTutorResponse
 }

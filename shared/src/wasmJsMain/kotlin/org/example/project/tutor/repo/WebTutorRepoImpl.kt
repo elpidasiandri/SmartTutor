@@ -5,6 +5,7 @@ package org.example.project.tutor.repo
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.accept
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
@@ -29,6 +30,8 @@ import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.signOut
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
+import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
@@ -150,4 +153,35 @@ class WebTutorRepoImpl(
             parameter("userId", userId)
         }.body()
     }
+
+    override suspend fun askTutor(
+        chatId: String,
+        userId: String,
+        request: AskTutorRequest,
+        token: String,
+
+    ): AskTutorResponse {
+        return httpClient.post("$baseUrl/v1/chats/$chatId/messages") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            parameter("userId", userId)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+            setBody(request)
+            timeout {
+                requestTimeoutMillis = 300_000
+                socketTimeoutMillis = 300_000
+                connectTimeoutMillis = 30_000
+            }
+        }.let { response ->
+            val raw = response.bodyAsText()
+
+            if (!response.status.isSuccess()) {
+                error("Ask tutor failed: ${response.status} body=$raw")
+            }
+
+            json.decodeFromString(raw)
+        }
+    }
+
 }

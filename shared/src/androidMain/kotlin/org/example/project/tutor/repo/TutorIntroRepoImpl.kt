@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.bodyAsText
@@ -11,6 +12,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
+import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
@@ -145,4 +148,35 @@ class TutorIntroRepoImpl(
             parameter("userId", userId)
         }.body()
     }
+
+    override suspend fun askTutor(
+        chatId: String,
+        userId: String,
+        request: AskTutorRequest,
+        token: String,
+    ): AskTutorResponse {
+        return httpClient.post("$baseUrl/v1/chats/$chatId/messages") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            parameter("userId", userId)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+            setBody(request)
+
+            timeout {
+                requestTimeoutMillis = 300_000
+                socketTimeoutMillis = 300_000
+                connectTimeoutMillis = 30_000
+            }
+        }.let { response ->
+            val raw = response.bodyAsText()
+
+            if (!response.status.isSuccess()) {
+                error("Ask tutor failed: ${response.status} body=$raw")
+            }
+
+            json.decodeFromString(raw)
+        }
+    }
+
 }

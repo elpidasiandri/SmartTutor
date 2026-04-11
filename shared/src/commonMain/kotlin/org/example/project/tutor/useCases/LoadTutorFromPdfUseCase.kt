@@ -24,6 +24,7 @@ class LoadTutorFromPdfUseCase(
     suspend fun loadTemplateForPickedPdf(
         picked: PickedFile,
         userId: String,
+        mode :String
     ): TutorLoadResult {
         val token = getToken()
 
@@ -33,7 +34,8 @@ class LoadTutorFromPdfUseCase(
         val chatResponse = pdfUpload.createChatFromDocument(
             request = CreateChatFromDocumentRequest(
                 userId = userId,
-                documentId = templateDocId
+                documentId = templateDocId,
+                mode = mode
             ),
             token = token
         )

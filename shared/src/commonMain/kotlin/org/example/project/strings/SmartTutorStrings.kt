@@ -32,6 +32,7 @@ object SmartTutorStrings {
 
     //tutor intro screen
     const val type_your_message = "Ask something about this Unit"
+    const val waiting_for_answer = "Waiting for an answer"
 
 
     //settings

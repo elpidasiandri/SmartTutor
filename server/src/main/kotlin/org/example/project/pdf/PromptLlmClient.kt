@@ -11,11 +11,11 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
 import io.ktor.serialization.kotlinx.json.*
-import io.ktor.utils.io.errors.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
+import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.ImageGenRequest
 import org.example.project.tutor.networkModel.uploadPdf.ImageGenResponse
@@ -24,7 +24,6 @@ import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
 import org.example.project.tutor.networkModel.uploadPdf.UnitWithCarryDto
 import kotlin.random.Random
 import java.io.File
-import java.net.SocketTimeoutException
 import java.util.Base64
 
 class PromptLlmClient(
@@ -931,13 +930,16 @@ class PromptLlmClient(
 
     private fun ensureCompleted(respText: String): Boolean {
         val root =
-            runCatching { json.parseToJsonElement(respText).jsonObject }.getOrNull() ?: return false
+            runCatching { json.parseToJsonElement(respText).jsonObject }.getOrNull()
+                ?: return false
 
         val status = root["status"]?.jsonPrimitive?.content
+        println("RESP status = $status")
+
         if (status == "incomplete") {
             val reason = (root["incomplete_details"] as? JsonObject)
                 ?.get("reason")?.jsonPrimitive?.content
-            onRawHook?.invoke("responses_incomplete", reason ?: "unknown")
+            println("RESP incomplete reason = $reason")
             return false
         }
 
@@ -945,7 +947,7 @@ class PromptLlmClient(
             ?.get("message")?.jsonPrimitive?.content
 
         if (!errMsg.isNullOrBlank()) {
-            onRawHook?.invoke("responses_error", errMsg)
+            println("RESP error = $errMsg")
             return false
         }
 
@@ -1123,4 +1125,151 @@ class PromptLlmClient(
           }
         }
     """.trimIndent()
+
+    suspend fun answerQuestionForUnit(
+        language: String,
+        fileName: String,
+        unitTitle: String,
+        contextText: String,
+        tab: String,
+        recentMessages: List<ChatMessageDto>,
+        userQuestion: String,
+    ): String {
+        val answerLanguage = if (language.lowercase().startsWith("el")) {
+            "Απάντησε στα Ελληνικά."
+        } else {
+            "Answer in English."
+        }
+
+
+        val recentHistory = recentMessages.takeLast(10).joinToString("\n") { msg ->
+            "${msg.sender}: ${msg.text}"
+        }
+
+        val system = """
+        You are a helpful tutor.
+        
+        HARD RULES:
+        - Answer ONLY based on the provided CURRENT_CONTEXT.
+        - The CURRENT_CONTEXT comes from the currently open tab of the student.
+        - If tab=learning, explain the theory clearly.
+        - If tab=exercises, help the student understand the exercise and guide them without losing context.
+        - Stay focused on what the student is currently viewing.
+        - Do not answer from unrelated chapters.
+        - Keep the answer clear and useful.
+        - $answerLanguage
+    """.trimIndent()
+
+        val user = """
+        FILE NAME:
+        $fileName
+
+        UNIT TITLE:
+        $unitTitle
+
+        CURRENT TAB:
+        $tab
+
+        CURRENT_CONTEXT:
+        $contextText
+
+        RECENT CHAT HISTORY:
+        $recentHistory
+
+        STUDENT QUESTION:
+        $userQuestion
+    """.trimIndent()
+
+        val req = buildTextResponsesRequest(
+            model = "gpt-4o-mini",
+            system = system,
+            user = user,
+            maxOutputTokens = 500
+        )
+
+        onRawHook?.invoke("tutor_answer_request", req)
+
+        val resp = callOpenAIResponsesWithRetry(req)
+        onRawHook?.invoke("tutor_answer_response", resp)
+
+        if (!ensureCompleted(resp)) {
+            return if (language.lowercase().startsWith("el")) {
+                "Δεν μπόρεσα να δημιουργήσω απάντηση αυτή τη στιγμή."
+            } else {
+                "I could not generate an answer at this time."
+            }
+        }
+
+        return extractOutputText(resp).trim().ifBlank {
+            if (language.lowercase().startsWith("el")) {
+                "Δεν βρέθηκε απάντηση."
+            } else {
+                "No answer was generated."
+            }
+        }
+    }
+
+    private fun buildTextResponsesRequest(
+        model: String,
+        system: String,
+        user: String,
+        maxOutputTokens: Int,
+    ): String = """
+        {
+          "model": ${json.encodeToString(model)},
+          "input": [
+            {
+              "role": "system",
+              "content": [
+                {
+                  "type": "input_text",
+                  "text": ${json.encodeToString(system)}
+                }
+              ]
+            },
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "input_text",
+                  "text": ${json.encodeToString(user)}
+                }
+              ]
+            }
+          ],
+          "max_output_tokens": $maxOutputTokens
+        }
+        """.trim()
+
+    private fun extractOutputText(responsesJson: String): String {
+        val root = json.parseToJsonElement(responsesJson).jsonObject
+
+        root["output_text"]?.jsonPrimitive?.contentOrNull?.let {
+            if (it.isNotBlank()) return it.trim()
+        }
+
+        val output = root["output"]?.jsonArray ?: return ""
+
+        val parts = mutableListOf<String>()
+
+        for (item in output) {
+            val obj = item.jsonObject
+            val contentArr = obj["content"]?.jsonArray ?: continue
+
+            for (c in contentArr) {
+                val co = c.jsonObject
+                val type = co["type"]?.jsonPrimitive?.content ?: continue
+
+                if (type == "output_text" || type == "text") {
+                    val text = co["text"]?.jsonPrimitive?.contentOrNull
+                    if (!text.isNullOrBlank()) {
+                        parts += text
+                    }
+                }
+            }
+        }
+
+        return parts.joinToString("\n").trim()
+    }
+
 }

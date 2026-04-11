@@ -6,7 +6,8 @@ import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 interface IChatRepository {
     fun createOrGetChatFromDocument(
         userId: String,
-        documentId: String
+        documentId: String,
+        mode: String,
     ): UserChatDto
 
     fun getChats(userId: String): List<UserChatDto>

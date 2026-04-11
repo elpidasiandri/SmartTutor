@@ -40,8 +40,8 @@ sealed class TutorUiEvents {
     data object ClearUiEvent : TutorUiEvents()
     data object NextUnit : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
+    data class SendMessage(val text: String) : TutorUiEvents()
     data class DeleteMaterial(val subjectId: String) : TutorUiEvents()
-    data object OpenUnit : TutorUiEvents()
     data class UploadPdf(val file : PickedFile) : TutorUiEvents()
     data class ChangeTab(val tab: TutorTab) : TutorUiEvents()
 }

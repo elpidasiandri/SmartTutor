@@ -4,12 +4,12 @@ import com.google.cloud.firestore.DocumentSnapshot
 import com.google.cloud.firestore.Firestore
 import kotlinx.serialization.json.Json
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
+import org.example.project.tutor.networkModel.chatHistory.ChatSender
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.repo.IChatRepository
 import java.util.UUID
-
 
 class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
 
@@ -24,12 +24,14 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
 
     override fun createOrGetChatFromDocument(
         userId: String,
-        documentId: String
+        documentId: String,
+        mode: String,
     ): UserChatDto {
         val chatsCol = usersCol.document(userId).collection("chats")
 
         val existingSnap = chatsCol
             .whereEqualTo("documentId", documentId)
+            .whereEqualTo("mode", mode)
             .limit(1)
             .get()
             .get()
@@ -65,6 +67,7 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             title = fileName.removeSuffix(".pdf"),
             language = language,
             status = status,
+            mode = mode,
             partialResult = partial,
             result = result,
             createdAtEpochMillis = now,
@@ -100,14 +103,29 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             .get()
 
         if (!doc.exists()) return null
-        return doc.toUserChatDto()
+
+        val chat = doc.toUserChatDto()
+        val messages = getMessages(userId, chatId)
+
+        return chat.copy(messages = messages)
     }
 
     override fun getMessages(
         userId: String,
         chatId: String,
     ): List<ChatMessageDto> {
-        TODO("Not yet implemented")
+        val snap = usersCol
+            .document(userId)
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .orderBy("createdAtEpochMillis")
+            .get()
+            .get()
+
+        return snap.documents.mapNotNull { doc ->
+            runCatching { doc.toChatMessageDto() }.getOrNull()
+        }
     }
 
     override fun addMessage(
@@ -115,7 +133,20 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
         chatId: String,
         message: ChatMessageDto,
     ) {
-        TODO("Not yet implemented")
+        val chatRef = usersCol
+            .document(userId)
+            .collection("chats")
+            .document(chatId)
+
+        chatRef
+            .collection("messages")
+            .document(message.messageId)
+            .set(chatMessageToMap(message))
+            .get()
+
+        chatRef.update(
+            mapOf("updatedAtEpochMillis" to System.currentTimeMillis())
+        ).get()
     }
 
     override fun deleteChat(userId: String, chatId: String) {
@@ -124,7 +155,7 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
 
     private fun parsePrototype(
         partialJson: String?,
-        resultJson: String?
+        resultJson: String?,
     ): Pair<LearningUnitsPrototypeDto?, LearningUnitsPrototypeDto?> {
         val partial = if (!partialJson.isNullOrBlank()) {
             runCatching {
@@ -149,6 +180,7 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             "title" to chat.title,
             "language" to chat.language,
             "status" to chat.status,
+            "mode" to chat.mode,
             "partialResultJson" to chat.partialResult?.let {
                 json.encodeToString(LearningUnitsPrototypeDto.serializer(), it)
             },
@@ -157,6 +189,30 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             },
             "createdAtEpochMillis" to chat.createdAtEpochMillis,
             "updatedAtEpochMillis" to chat.updatedAtEpochMillis,
+        )
+    }
+
+    private fun DocumentSnapshot.toChatMessageDto(): ChatMessageDto {
+        return ChatMessageDto(
+            messageId = getString("messageId") ?: id,
+            chatId = getString("chatId") ?: "",
+            sender = getString("sender") ?: ChatSender.System.value,
+            text = getString("text") ?: "",
+            unitNumber = getLong("unitNumber")?.toInt(),
+            unitTitle = getString("unitTitle"),
+            createdAtEpochMillis = getLong("createdAtEpochMillis") ?: 0L
+        )
+    }
+
+    private fun chatMessageToMap(message: ChatMessageDto): Map<String, Any?> {
+        return mapOf(
+            "messageId" to message.messageId,
+            "chatId" to message.chatId,
+            "sender" to message.sender,
+            "text" to message.text,
+            "unitNumber" to message.unitNumber,
+            "unitTitle" to message.unitTitle,
+            "createdAtEpochMillis" to message.createdAtEpochMillis
         )
     }
 
@@ -183,11 +239,13 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             title = getString("title") ?: "Untitled",
             language = getString("language"),
             status = getString("status") ?: JobStatus.Done.value,
+            mode = getString("mode") ?: "LEARNING",
             partialResult = partial,
             result = result,
             createdAtEpochMillis = getLong("createdAtEpochMillis") ?: 0L,
             updatedAtEpochMillis = getLong("updatedAtEpochMillis") ?: 0L
         )
     }
+
 }
 
