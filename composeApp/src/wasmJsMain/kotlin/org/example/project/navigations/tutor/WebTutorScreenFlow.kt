@@ -82,7 +82,7 @@ fun WebTutorScreenFlow(navController: NavController) {
             controller.onEvent(TutorUiEvents.NewChat)
         },
         deleteSubject = { subjectId ->
-            controller.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
+            controller.onEvent(TutorUiEvents.DeleteChat(subjectId))
         },
         selectedTab = state.selectedTab,
         onChangeTab = { controller.onEvent(TutorUiEvents.ChangeTab(it)) },

@@ -35,4 +35,9 @@ interface ITutorRepo {
         request: AskTutorRequest,
         token: String,
     ): AskTutorResponse
-}
+
+    suspend fun deleteChat(
+        chatId: String,
+        userId: String,
+        token: String,
+    ) }

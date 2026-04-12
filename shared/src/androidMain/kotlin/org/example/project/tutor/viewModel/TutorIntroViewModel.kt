@@ -11,6 +11,7 @@ import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
+import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
@@ -26,6 +27,7 @@ class TutorIntroViewModel(
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
+    private val deleteChatUseCase: DeleteChatUseCase,
 ) : ViewModel() {
     private val common = TutorCommonViewModel(
         logoutUseCase = logout,
@@ -38,6 +40,7 @@ class TutorIntroViewModel(
         askTutorUseCase = askTutorUseCase,
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
         getChatByIdUseCase = getChatByIdUseCase,
+        deleteChatUseCase = deleteChatUseCase,
     )
     val state: StateFlow<TutorState> = common.state
 

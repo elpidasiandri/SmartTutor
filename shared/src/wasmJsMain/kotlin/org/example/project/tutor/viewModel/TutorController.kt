@@ -12,6 +12,7 @@ import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
+import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
@@ -26,6 +27,7 @@ class TutorController(
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
+    private val deleteChatUseCase: DeleteChatUseCase,
 
     ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -39,7 +41,8 @@ class TutorController(
         userId = AuthUserHolder.currentUser?.uid ?: "",
         askTutorUseCase = askTutorUseCase,
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
-        getChatByIdUseCase = getChatByIdUseCase
+        getChatByIdUseCase = getChatByIdUseCase,
+        deleteChatUseCase = deleteChatUseCase,
     )
 
     val state: StateFlow<TutorState> = common.state

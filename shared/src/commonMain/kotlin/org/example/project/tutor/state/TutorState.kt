@@ -45,7 +45,7 @@ sealed class TutorUiEvents {
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
     data class SendMessage(val text: String) : TutorUiEvents()
     data class OpenExistingChat(val chatId: String) : TutorUiEvents()
-    data class DeleteMaterial(val subjectId: String) : TutorUiEvents()
+    data class DeleteChat(val subjectId: String) : TutorUiEvents()
     data class UploadPdf(val file: PickedFile) : TutorUiEvents()
     data class ChangeTab(val tab: TutorTab) : TutorUiEvents()
 }

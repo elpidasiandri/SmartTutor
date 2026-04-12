@@ -150,7 +150,21 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
     }
 
     override fun deleteChat(userId: String, chatId: String) {
-        TODO("Not yet implemented")
+        val chatRef = usersCol
+            .document(userId)
+            .collection("chats")
+            .document(chatId)
+
+        val messagesSnap = chatRef
+            .collection("messages")
+            .get()
+            .get()
+
+        messagesSnap.documents.forEach { doc ->
+            doc.reference.delete().get()
+        }
+
+        chatRef.delete().get()
     }
 
     private fun parsePrototype(

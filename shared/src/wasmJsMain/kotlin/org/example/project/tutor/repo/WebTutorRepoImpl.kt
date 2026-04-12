@@ -7,6 +7,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.accept
+import io.ktor.client.request.delete
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
@@ -180,7 +181,7 @@ class WebTutorRepoImpl(
         request: AskTutorRequest,
         token: String,
 
-    ): AskTutorResponse {
+        ): AskTutorResponse {
         return httpClient.post("$baseUrl/v1/chats/$chatId/messages") {
             header(HttpHeaders.Authorization, "Bearer $token")
             parameter("userId", userId)
@@ -204,4 +205,22 @@ class WebTutorRepoImpl(
         }
     }
 
+    override suspend fun deleteChat(
+        chatId: String,
+        userId: String,
+        token: String,
+    ) {
+        val response = httpClient.delete("$baseUrl/v1/chats/$chatId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            parameter("userId", userId)
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Delete chat failed: ${response.status} body=$raw")
+        }
+    }
 }

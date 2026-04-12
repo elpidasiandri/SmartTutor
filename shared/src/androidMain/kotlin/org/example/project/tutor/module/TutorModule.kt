@@ -14,6 +14,7 @@ import org.example.project.tutor.repo.ITutorRepo
 import org.example.project.tutor.repo.TutorIntroRepoImpl
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
 import org.example.project.tutor.useCases.AskTutorUseCase
+import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
@@ -40,6 +41,7 @@ val tutorModule = module {
     single { GetAllHistoryChatUseCase(get()) }
     single { GetChatByIdUseCase(get()) }
     single { AskTutorUseCase(get()) }
+    single { DeleteChatUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
     factory {
         GetIdTokenSuspendUseCase(get())
@@ -72,6 +74,7 @@ val tutorModule = module {
             get(),
             get(),
             FirebaseAuth.getInstance(),
+            get(),
             get(),
             get(),
             get(),

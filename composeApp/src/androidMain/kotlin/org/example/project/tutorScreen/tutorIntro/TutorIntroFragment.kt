@@ -100,7 +100,7 @@ class TutorIntroFragment : Fragment() {
                         viewModel.onEvent(TutorUiEvents.NewChat)
                     },
                     deleteSubject = { subjectId ->
-                        viewModel.onEvent(TutorUiEvents.DeleteMaterial(subjectId))
+                        viewModel.onEvent(TutorUiEvents.DeleteChat(subjectId))
                     },
                     selectedTab = state.selectedTab,
                     onChangeTab = { viewModel.onEvent(TutorUiEvents.ChangeTab(it)) },

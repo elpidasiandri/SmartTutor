@@ -151,6 +151,25 @@ class TutorIntroRepoImpl(
         return json.decodeFromString(raw)
     }
 
+    override suspend fun deleteChat(
+        chatId: String,
+        userId: String,
+        token: String,
+    ) {
+        val response = httpClient.delete("$baseUrl/v1/chats/$chatId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            parameter("userId", userId)
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error("Delete chat failed: ${response.status} body=$raw")
+        }
+    }
+
     override suspend fun createChatFromDocument(
         request: CreateChatFromDocumentRequest,
         token: String,

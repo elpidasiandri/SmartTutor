@@ -26,6 +26,7 @@ import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
+import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
@@ -53,7 +54,9 @@ class TutorCommonViewModel(
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
-) {
+    private val deleteChatUseCase: DeleteChatUseCase,
+
+    ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
 
@@ -70,7 +73,9 @@ class TutorCommonViewModel(
             TutorUiEvents.InitializeStateAfterShowingMessage -> initializeStateAfterShowingMessage()
             TutorUiEvents.ClearUiEvent -> clearUiEvent()
             is TutorUiEvents.ShowErrorMessage -> stateForErrorMessage(event.message)
-            is TutorUiEvents.DeleteMaterial -> deleteMaterialLocal(event.subjectId)
+            is TutorUiEvents.DeleteChat -> {
+                deleteChat(event.subjectId)
+            }
             is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title)
             TutorUiEvents.NextUnit -> goNext()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
@@ -288,21 +293,58 @@ class TutorCommonViewModel(
         }
     }
 
-    private fun deleteMaterialLocal(materialId: String) {
-        //todo elpida add
+    private fun deleteChat(chatId: String) {
+        scope.launch {
+            try {
+                _state.update { it.copy(loading = true) }
 
-        val newSubjects = _state.value.chatHistory.subjects
-            .filterNot { it.subjectId == materialId }
+                val token = getIdTokenSuspendUseCase()
+                deleteChatUseCase(
+                    chatId = chatId,
+                    userId = userId,
+                    token = token
+                )
 
-        val newHistory = _state.value.chatHistory.copy(subjects = newSubjects)
+                val remainingChats = _state.value.savedChats.filterNot { it.chatId == chatId }
 
-        _state.update {
-            it.copy(
-                chatHistory = newHistory
-            )
+                val deletedWasActive = _state.value.activeChatId == chatId
+
+                _state.update { current ->
+                    current.copy(
+                        loading = false,
+                        savedChats = remainingChats,
+                        chatHistory = remainingChats.toChatHistoryDomain(),
+                        showCustomMessage = true,
+                        isError = false,
+                        message = "The chat was deleted",
+                        activeChatId = if (deletedWasActive) "" else current.activeChatId,
+                        activeDocumentId = if (deletedWasActive) "" else current.activeDocumentId,
+                        subjectTitle = if (deletedWasActive) "" else current.subjectTitle,
+                        allUnits = if (deletedWasActive) emptyList() else current.allUnits,
+                        currentIndex = if (deletedWasActive) 0 else current.currentIndex,
+                        unlockedCount = if (deletedWasActive) 0 else current.unlockedCount,
+                        currentUnit = if (deletedWasActive) LearningUnitContentDomain() else current.currentUnit,
+                        allChatMessages = if (deletedWasActive) emptyList() else current.allChatMessages,
+                        session = if (deletedWasActive) buildEmptyChatSessionStart() else current.session,
+                    )
+                }
+
+                if (deletedWasActive && remainingChats.isNotEmpty()) {
+                    loadExistingChat(remainingChats.first().chatId)
+                }
+
+            } catch (t: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = t.message ?: "Failed to delete chat"
+                    )
+                }
+            }
         }
     }
-
     private fun goNext() {
         val units = _state.value.allUnits
         val subjectTitle = _state.value.subjectTitle
