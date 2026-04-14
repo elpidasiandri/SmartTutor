@@ -5,7 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.example.project.tutor.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.repo.IPdfPicker
 import kotlin.coroutines.resume
 

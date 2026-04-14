@@ -1,11 +1,11 @@
 package org.example.project.tutor.state
 
-import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
-import org.example.project.tutor.domainModels.file.PickedFile
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
-import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.models.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.models.domainModels.tutorChat.ChatMessageDomain
+import org.example.project.tutor.models.domainModels.tutorChat.ChatSessionStartDomain
+import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.utils.EmptyValues
 
@@ -42,6 +42,7 @@ sealed class TutorUiEvents {
     data object InitializeStateAfterShowingMessage : TutorUiEvents()
     data object ClearUiEvent : TutorUiEvents()
     data object NextUnit : TutorUiEvents()
+    data object OpenMyProgress : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
     data class SendMessage(val text: String) : TutorUiEvents()
     data class OpenExistingChat(val chatId: String) : TutorUiEvents()
@@ -54,4 +55,5 @@ sealed class TutorEvents {
     data object None : TutorEvents()
     data object Loaded : TutorEvents()
     data object NavigateToLogOut : TutorEvents()
+    data object NavigateToMyProgress : TutorEvents()
 }

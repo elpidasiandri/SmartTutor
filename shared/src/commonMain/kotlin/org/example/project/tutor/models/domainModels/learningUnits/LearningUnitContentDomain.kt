@@ -1,4 +1,4 @@
-package org.example.project.tutor.domainModels.learningUnits
+package org.example.project.tutor.models.domainModels.learningUnits
 
 import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum
 

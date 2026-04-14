@@ -1,6 +1,6 @@
 package org.example.project.tutor.repo.loadResource
 
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitsPrototypeDomain
 
 interface ILoadResourceRepo {
 

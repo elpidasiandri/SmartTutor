@@ -1,6 +1,6 @@
 package org.example.project.tutor.repo
 
-import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest

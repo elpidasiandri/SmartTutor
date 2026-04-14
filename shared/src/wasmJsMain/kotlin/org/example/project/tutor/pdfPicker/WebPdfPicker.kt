@@ -2,7 +2,7 @@ package org.example.project.tutor.pdfPicker
 
 import kotlinx.browser.document
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.example.project.tutor.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.repo.IPdfPicker
 import org.w3c.dom.HTMLInputElement
 import org.w3c.files.File

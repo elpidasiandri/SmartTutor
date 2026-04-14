@@ -1,5 +1,6 @@
 package org.example.project.tutor.module
 
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
@@ -9,6 +10,8 @@ import org.example.project.settings.logout.module.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.network.createAndroidHttpClient
+import org.example.project.tutor.repo.AnalyticsTrackerImpl
+import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
 import org.example.project.tutor.repo.ITutorRepo
 import org.example.project.tutor.repo.TutorIntroRepoImpl
@@ -21,6 +24,7 @@ import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.tutor.viewModel.TutorIntroViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -36,6 +40,10 @@ val tutorModule = module {
     }
     single { AppConfig(baseUrl = "http://10.0.2.2:8081") }
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
+
+    single { provideFirebaseAnalytics(androidContext()) }
+    single<IAnalyticsTracker> { AnalyticsTrackerImpl(get()) }
+
     single { LearningUnitsUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
@@ -78,8 +86,14 @@ val tutorModule = module {
             get(),
             get(),
             get(),
+            get(),
         )
     }
 
     includes(logoutModule)
+}
+
+@Suppress("MissingPermission")
+fun provideFirebaseAnalytics(context: android.content.Context): FirebaseAnalytics {
+    return FirebaseAnalytics.getInstance(context)
 }

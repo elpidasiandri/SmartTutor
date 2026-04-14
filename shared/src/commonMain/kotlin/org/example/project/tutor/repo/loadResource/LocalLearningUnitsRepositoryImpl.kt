@@ -1,7 +1,9 @@
 package org.example.project.tutor.repo.loadResource
 
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitsPrototypeDomain
+
 class LocalLearningUnitsRepositoryImpl() : ILoadResourceRepo {
-    override suspend fun loadPrototype(): org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain {
-        return org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain()
+    override suspend fun loadPrototype(): LearningUnitsPrototypeDomain {
+        return LearningUnitsPrototypeDomain()
     }
 }

@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
+import org.example.project.myProgress.MyProgressActivity
 import org.example.project.registrationScreen.RegistrationActivity
 import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
@@ -112,6 +113,10 @@ class TutorIntroFragment : Fragment() {
                     openExistingChat = { chatId ->
                         viewModel.onEvent(TutorUiEvents.OpenExistingChat(chatId))
                     },
+                    navigateToMyProgress = {
+                        viewModel.onEvent(TutorUiEvents.OpenMyProgress)
+
+                    }
                 )
             }
         }
@@ -201,6 +206,18 @@ class TutorIntroFragment : Fragment() {
                                     )
                                 )
                                 requireActivity().finish()
+                            }
+                        }
+
+                        TutorEvents.NavigateToMyProgress -> {
+                            if (isAdded) {
+                                startActivity(
+                                    Intent(
+                                        requireContext(),
+                                        MyProgressActivity::class.java
+                                    )
+                                )
+                                viewModel.common.setEventNone()
                             }
                         }
 

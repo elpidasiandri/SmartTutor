@@ -3,6 +3,7 @@ package org.example.project.navigations
 import androidx.compose.runtime.Composable
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
+import org.example.project.navigations.myprogress.MyProgressFlow
 import org.example.project.navigations.registration.RegistrationScreenFlow
 import org.example.project.navigations.settings.changePassword.ChangePasswordFlow
 import org.example.project.navigations.settings.SettingsScreenFlow
@@ -32,6 +33,9 @@ fun NavigateToScreen(
 
         WebScreen.DeleteAccountSettings -> {
             DeleteAccountFlow(navController)
+        }
+        WebScreen.MyProgress -> {
+            MyProgressFlow(navController)
         }
     }
 }

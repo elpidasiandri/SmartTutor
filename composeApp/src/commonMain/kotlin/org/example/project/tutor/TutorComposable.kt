@@ -64,14 +64,14 @@ import org.example.project.strings.SmartTutorStrings.type_your_message
 import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
 import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
 import org.example.project.strings.SmartTutorStrings.waiting_for_answer
-import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatSessionStartDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatUiMessage
-import org.example.project.tutor.domainModels.tutorChat.LearningUnitDomain
-import org.example.project.tutor.domainModels.tutorChat.MaterialDomain
-import org.example.project.tutor.domainModels.tutorChat.SenderType
-import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.models.domainModels.tutorChat.ChatSessionStartDomain
+import org.example.project.tutor.models.domainModels.tutorChat.ChatUiMessage
+import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitDomain
+import org.example.project.tutor.models.domainModels.tutorChat.MaterialDomain
+import org.example.project.tutor.models.domainModels.tutorChat.SenderType
+import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.excercise.ExercisesTab
 import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
@@ -105,7 +105,9 @@ fun TutorScreen(
     currentUnit: LearningUnitContentDomain,
     onSendMessage: (String) -> Unit,
     openExistingChat: (String) -> Unit,
-) {
+    navigateToMyProgress: () -> Unit,
+
+    ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
@@ -150,6 +152,9 @@ fun TutorScreen(
             onExistingChatClick = { chatId ->
                 openExistingChat(chatId)
             },
+            navigateToMyProgress = {
+                navigateToMyProgress()
+            }
         )
     }
 }
@@ -180,7 +185,9 @@ fun TutorChatUI(
     onSendMessage: (String) -> Unit,
     isLoading: Boolean,
     onExistingChatClick: (String) -> Unit,
-) {
+    navigateToMyProgress: () -> Unit,
+
+    ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -240,6 +247,9 @@ fun TutorChatUI(
                             drawerState.close()
                         }
                     },
+                    navigateToMyProgress = {
+                        navigateToMyProgress()
+                    }
                 )
             }
         ) {
@@ -345,7 +355,9 @@ private fun TutorDrawerContent(
     onNewChatClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
-) {
+    navigateToMyProgress: () -> Unit,
+
+    ) {
     Box(
         modifier = Modifier
             .fillMaxHeight()
@@ -363,6 +375,9 @@ private fun TutorDrawerContent(
             onDeleteSubject = onDeleteSubject,
             onExistingChatClick = { chatId ->
                 onExistingChatClick(chatId)
+            },
+            navigateToMyProgress = {
+                navigateToMyProgress()
             }
         )
     }
@@ -602,10 +617,9 @@ fun ChatUiHeader(
             if (material.fileUploaded) uploaded_file_success_title else uploaded_file_failure_title
         val learningText =
             if (material.fileUploaded) "\n$learning_unit_title : ${learningUnit.title}" else ""
-        val titleToShow = material.fileName
 
         Text(
-            text = "$material_title : $titleToShow - $statusFileText \n$learningText",
+            text = "$material_title : $statusFileText \n$learningText",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             modifier = Modifier.padding(bottom = spacing4).align(Alignment.CenterHorizontally)

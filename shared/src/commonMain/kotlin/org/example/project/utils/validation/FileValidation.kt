@@ -1,6 +1,6 @@
 package org.example.project.utils.validation
 
-import org.example.project.tutor.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.file.PickedFile
 
 private const val MAX_PDF_SIZE = 50L * 1024 * 1024 // 50MB
 

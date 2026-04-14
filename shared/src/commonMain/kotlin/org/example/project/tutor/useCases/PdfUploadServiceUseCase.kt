@@ -1,6 +1,6 @@
 package org.example.project.tutor.useCases
 
-import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse

@@ -194,6 +194,7 @@ kotlin {
 android {
     namespace = "org.example.project.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

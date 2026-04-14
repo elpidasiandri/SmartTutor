@@ -8,11 +8,11 @@ import kotlinx.coroutines.launch
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
-import org.example.project.tutor.domainModels.file.PickedFile
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
-import org.example.project.tutor.domainModels.tutorChat.ChatMessageDomain
-import org.example.project.tutor.domainModels.tutorChat.SenderType
-import org.example.project.tutor.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.models.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.models.domainModels.tutorChat.ChatMessageDomain
+import org.example.project.tutor.models.domainModels.tutorChat.SenderType
+import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.mappers.chatHistory.buildChatSessionForSelectedUnit
 import org.example.project.tutor.mappers.chatHistory.buildChatSessionFromStoredChat
 import org.example.project.tutor.mappers.chatHistory.toChatHistoryDomain
@@ -22,6 +22,23 @@ import org.example.project.tutor.mappers.learningUnits.buildChatSessionStart
 import org.example.project.tutor.mappers.learningUnits.buildEmptyChatSessionStart
 import org.example.project.tutor.mappers.learningUnits.buildExercisesTabMessage
 import org.example.project.tutor.mappers.learningUnits.buildLearningTabMessage
+import org.example.project.tutor.models.AnalyticsEvents.AI_REPLY_RECEIVED
+import org.example.project.tutor.models.AnalyticsEvents.CHAT_DELETED
+import org.example.project.tutor.models.AnalyticsEvents.CHAT_DELETE_FAILED
+import org.example.project.tutor.models.AnalyticsEvents.EXISTING_CHAT_OPENED
+import org.example.project.tutor.models.AnalyticsEvents.EXISTING_CHAT_OPEN_FAILED
+import org.example.project.tutor.models.AnalyticsEvents.LATEST_CHAT_AUTO_LOADED
+import org.example.project.tutor.models.AnalyticsEvents.LEARNING_UNIT_SELECTED
+import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SEND_FAILED
+import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SENT
+import org.example.project.tutor.models.AnalyticsEvents.MY_PROGRESS_OPENED
+import org.example.project.tutor.models.AnalyticsEvents.NEW_CHAT_STARTED
+import org.example.project.tutor.models.AnalyticsEvents.NEXT_UNIT_CLICKED
+import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOADED
+import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOAD_FAILED
+import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
+import org.example.project.tutor.models.AnalyticsEvents.TUTOR_SCREEN_OPENED
+import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
@@ -55,6 +72,7 @@ class TutorCommonViewModel(
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
     private val deleteChatUseCase: DeleteChatUseCase,
+    private val analyticsTracker: IAnalyticsTracker,
 
     ) {
     private val _state = MutableStateFlow(TutorState())
@@ -76,14 +94,30 @@ class TutorCommonViewModel(
             is TutorUiEvents.DeleteChat -> {
                 deleteChat(event.subjectId)
             }
+
             is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title)
             TutorUiEvents.NextUnit -> goNext()
+            TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
             is TutorUiEvents.ChangeTab -> {
                 refreshTabInfoMessage(event.tab)
             }
 
             else -> {}
+        }
+    }
+
+    private fun track(
+        name: String,
+        params: Map<String, String> = emptyMap(),
+    ) {
+        runCatching {
+            analyticsTracker.sendEvent(
+                name = name,
+                params = params + mapOf("userId" to userId)
+            )
+        }.onFailure {
+            platform.log("Analytics", "Failed to log event: $name", it)
         }
     }
 
@@ -94,6 +128,11 @@ class TutorCommonViewModel(
     fun startVoiceInput(onResult: (String) -> Unit) = platform.startVoice(onResult)
     fun stopVoiceInput() = platform.stopVoice()
 
+    fun setEventNone() {
+        _state.update { it.copy(event = TutorEvents.None) }
+
+    }
+
     private fun selectLearningUnitByTitle(title: String) {
         val units = _state.value.allUnits
         if (units.isEmpty()) return
@@ -102,7 +141,15 @@ class TutorCommonViewModel(
         if (index == -1) return
 
         val selected = units[index]
-
+        track(
+            name = LEARNING_UNIT_SELECTED,
+            params = mapOf(
+                "chatId" to _state.value.activeChatId,
+                "unitIndex" to index.toString(),
+                "unitTitle" to selected.title,
+                "userId" to userId
+            )
+        )
         val allStoredMessages = _state.value.allChatMessages
 
         val newSession = buildChatSessionForSelectedUnit(
@@ -137,6 +184,17 @@ class TutorCommonViewModel(
             imagePath = emptyList()
         )
 
+        track(
+            name = MESSAGE_SENT,
+            params = mapOf(
+                "chatId" to chatId,
+                "unitIndex" to unitIndex.toString(),
+                "tab" to state.value.selectedTab.name,
+                "messageLength" to trimmed.length.toString(),
+                "userId" to userId
+            )
+        )
+
         _state.update { current ->
             current.copy(
                 loading = true,
@@ -164,6 +222,17 @@ class TutorCommonViewModel(
 
                 val aiMsg = response.aiMessage?.toDomain()
 
+                track(
+                    name = AI_REPLY_RECEIVED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "unitIndex" to unitIndex.toString(),
+                        "tab" to state.value.selectedTab.name,
+                        "hasAiMessage" to (aiMsg != null).toString(),
+                        "userId" to userId
+                    )
+                )
+
                 _state.update { current ->
                     current.copy(
                         loading = false,
@@ -185,6 +254,15 @@ class TutorCommonViewModel(
                 }
 
             } catch (t: Throwable) {
+                track(
+                    name = MESSAGE_SEND_FAILED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "reason" to (t.message ?: "unknown"),
+                        "userId" to userId
+                    )
+                )
+
                 val msg = when {
                     t.message?.contains("timeout", ignoreCase = true) == true ->
                         "Ο server άργησε να απαντήσει. Δοκίμασε ξανά σε λίγο."
@@ -207,6 +285,17 @@ class TutorCommonViewModel(
 
     private fun refreshTabInfoMessage(tab: TutorTab) {
         val unit = _state.value.currentUnit
+
+        track(
+            name = TAB_CHANGED,
+            params = mapOf(
+                "chatId" to _state.value.activeChatId,
+                "tab" to tab.name,
+                "unitTitle" to unit.title,
+                "userId" to userId
+            )
+        )
+
         val msg = when (tab) {
             TutorTab.Learning -> buildLearningTabMessage(unit)
             TutorTab.Exercises -> buildExercisesTabMessage(unit)
@@ -244,7 +333,17 @@ class TutorCommonViewModel(
                     unlockedCount = 1,
                     subjectTitle = subjectTitle
                 )
-
+                track(
+                    name = PDF_UPLOADED,
+                    params = mapOf(
+                        "chatId" to res.chatId,
+                        "documentTitle" to subjectTitle,
+                        "unitsCount" to units.size.toString(),
+                        "language" to res.languageEnum.value,
+                        "mode" to state.value.selectedTab.name,
+                        "userId" to userId
+                    )
+                )
                 _state.update {
                     it.copy(
                         loading = false,
@@ -265,7 +364,14 @@ class TutorCommonViewModel(
                     )
                 }
             } catch (t: Throwable) {
-                t.toUserMessage()
+                track(
+                    name = PDF_UPLOAD_FAILED,
+                    params = mapOf(
+                        "reason" to (t.toUserMessage()),
+                        "userId" to userId
+                    )
+                )
+
                 _state.update {
                     it.copy(
                         loading = false,
@@ -309,6 +415,14 @@ class TutorCommonViewModel(
 
                 val deletedWasActive = _state.value.activeChatId == chatId
 
+                track(
+                    name = CHAT_DELETED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "userId" to userId
+                    )
+                )
+
                 _state.update { current ->
                     current.copy(
                         loading = false,
@@ -334,6 +448,15 @@ class TutorCommonViewModel(
                 }
 
             } catch (t: Throwable) {
+                track(
+                    name = CHAT_DELETE_FAILED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "reason" to (t.message ?: "unknown"),
+                        "userId" to userId
+                    )
+                )
+
                 _state.update {
                     it.copy(
                         loading = false,
@@ -345,6 +468,18 @@ class TutorCommonViewModel(
             }
         }
     }
+
+    private fun openMyProgress() {
+        _state.update { it.copy(event = TutorEvents.NavigateToMyProgress) }
+
+        track(
+            name = MY_PROGRESS_OPENED,
+            params = mapOf(
+                "userId" to userId
+            )
+        )
+    }
+
     private fun goNext() {
         val units = _state.value.allUnits
         val subjectTitle = _state.value.subjectTitle
@@ -353,6 +488,17 @@ class TutorCommonViewModel(
         if (nextIndex == _state.value.currentIndex) return
 
         val newUnlocked = maxOf(_state.value.unlockedCount, nextIndex + 1)
+
+        track(
+            name = NEXT_UNIT_CLICKED,
+            params = mapOf(
+                "chatId" to _state.value.activeChatId,
+                "fromIndex" to _state.value.currentIndex.toString(),
+                "toIndex" to nextIndex.toString(),
+                "subjectTitle" to subjectTitle,
+                "userId" to userId
+            )
+        )
 
         val selectedUnit = units.getOrNull(nextIndex) ?: LearningUnitContentDomain()
 
@@ -381,6 +527,13 @@ class TutorCommonViewModel(
     }
 
     private fun startNewChat() {
+        track(
+            name = NEW_CHAT_STARTED,
+            params = mapOf(
+                "userId" to userId
+            )
+        )
+
         _state.update {
             it.copy(
                 session = buildEmptyChatSessionStart(),
@@ -398,13 +551,29 @@ class TutorCommonViewModel(
             _state.update { it.copy(loading = true, error = null) }
 
             val chats = getAllHistoryChatUseCase(userId)
-
+            track(
+                name = TUTOR_SCREEN_OPENED,
+                params = mapOf(
+                    "savedChatsCount" to chats.size.toString(),
+                    "userId" to userId
+                )
+            )
             if (chats.isNotEmpty()) {
                 val latestChatSummary = chats.first()
                 val latestChat = getChatByIdUseCase(
                     chatId = latestChatSummary.chatId,
                     userId = userId
                 )
+
+                track(
+                    name = LATEST_CHAT_AUTO_LOADED,
+                    params = mapOf(
+                        "chatId" to latestChat.chatId,
+                        "documentId" to latestChat.documentId,
+                        "userId" to userId
+                    )
+                )
+
                 val units = latestChat.result?.learningUnits
                     ?: latestChat.partialResult?.learningUnits
                     ?: emptyList()
@@ -498,6 +667,14 @@ class TutorCommonViewModel(
             try {
                 _state.update { it.copy(loading = true) }
 
+                track(
+                    name = EXISTING_CHAT_OPENED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "userId" to userId
+                    )
+                )
+
                 val fullChat = getChatByIdUseCase(chatId, userId)
 
                 val units = fullChat.result?.learningUnits
@@ -538,6 +715,16 @@ class TutorCommonViewModel(
                 }
 
             } catch (t: Throwable) {
+
+                track(
+                    name = EXISTING_CHAT_OPEN_FAILED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "reason" to (t.message ?: "unknown"),
+                        "userId" to userId
+                    )
+                )
+
                 _state.update {
                     it.copy(
                         loading = false,

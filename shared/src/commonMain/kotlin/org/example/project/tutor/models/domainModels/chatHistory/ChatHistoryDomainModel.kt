@@ -1,6 +1,6 @@
-package org.example.project.tutor.domainModels.chatHistory
+package org.example.project.tutor.models.domainModels.chatHistory
 
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.utils.EmptyValues
 
 data class ChatHistoryDomain(

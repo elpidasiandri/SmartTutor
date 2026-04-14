@@ -1,6 +1,6 @@
-package org.example.project.tutor.domainModels.tutorChat
+package org.example.project.tutor.models.domainModels.tutorChat
 
-import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
+import org.example.project.tutor.models.domainModels.learningUnits.UnitImageDomain
 import org.example.project.utils.EmptyValues.EMPTY_BOOLEAN
 import org.example.project.utils.EmptyValues.EMPTY_INT
 import org.example.project.utils.EmptyValues.EMPTY_LONG

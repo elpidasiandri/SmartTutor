@@ -1,4 +1,4 @@
-package org.example.project.tutor.domainModels.file
+package org.example.project.tutor.models.domainModels.file
 
 data class UploadFile(
     val bytes: ByteArray,

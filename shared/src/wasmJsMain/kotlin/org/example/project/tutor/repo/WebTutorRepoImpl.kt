@@ -30,7 +30,7 @@ import org.example.project.registration.firebase.FirebaseApp
 import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.signOut
-import org.example.project.tutor.domainModels.file.UploadFile
+import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest

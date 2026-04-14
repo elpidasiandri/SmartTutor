@@ -95,5 +95,8 @@ fun WebTutorScreenFlow(navController: NavController) {
         openExistingChat = { chatId ->
             controller.onEvent(TutorUiEvents.OpenExistingChat(chatId))
         },
+        navigateToMyProgress = {
+            navController.navigate(WebScreen.MyProgress)
+        },
     )
 }

@@ -7,8 +7,10 @@ import org.example.project.registration.firebase.initFirebase
 import org.example.project.settings.logOut.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
+import org.example.project.tutor.repo.WebAnalyticsTrackerImpl
 import org.example.project.tutor.repo.ITutorRepo
 import org.example.project.tutor.repo.WebTutorRepoImpl
+import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
 import org.example.project.tutor.useCases.AskTutorUseCase
@@ -35,13 +37,14 @@ val tutorModule = module {
     single { LearningUnitsUseCase(get()) }
     factory { GetIdTokenSuspendUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
-    single { GetAllHistoryChatUseCase(get()) }
+    factory { GetAllHistoryChatUseCase(get()) }
     single { AskTutorUseCase(get()) }
-    single { GetChatByIdUseCase(get()) }
+    factory { GetChatByIdUseCase(get()) }
     single { DeleteChatUseCase(get()) }
+    factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     single { LoadTutorFromPdfUseCase(get(), get()) }
 
-    single<TutorPlatform> {
+    factory<TutorPlatform> {
         object : TutorPlatform {
             override fun speak(text: String) {
 
@@ -62,6 +65,7 @@ val tutorModule = module {
     }
     single {
         TutorController(
+            get(),
             get(),
             get(),
             get(),

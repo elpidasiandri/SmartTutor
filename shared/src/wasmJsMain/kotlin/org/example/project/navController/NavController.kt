@@ -14,6 +14,7 @@ class NavController {
 }
 sealed class WebScreen {
     object Registration : WebScreen()
+    object MyProgress : WebScreen()
     object DeleteAccountSettings : WebScreen()
     object ChangePasswordSettings : WebScreen()
     object Tutor : WebScreen()

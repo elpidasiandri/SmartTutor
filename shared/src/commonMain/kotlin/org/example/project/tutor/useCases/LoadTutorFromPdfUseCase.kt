@@ -1,7 +1,7 @@
 package org.example.project.tutor.useCases
 
-import org.example.project.tutor.domainModels.file.PickedFile
-import org.example.project.tutor.domainModels.learningUnits.LearningUnitsPrototypeDomain
+import org.example.project.tutor.models.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitsPrototypeDomain
 import org.example.project.tutor.mappers.learningUnits.toDomain
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum

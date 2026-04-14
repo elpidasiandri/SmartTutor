@@ -9,6 +9,7 @@ import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.tutor.commonViewModel.TutorCommonViewModel
 import org.example.project.tutor.commonViewModel.TutorPlatform
+import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.useCases.AskTutorUseCase
@@ -28,6 +29,7 @@ class TutorController(
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
     private val deleteChatUseCase: DeleteChatUseCase,
+    private val analyticsTracker: IAnalyticsTracker,
 
     ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -43,6 +45,8 @@ class TutorController(
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
         getChatByIdUseCase = getChatByIdUseCase,
         deleteChatUseCase = deleteChatUseCase,
+        analyticsTracker = analyticsTracker,
+
     )
 
     val state: StateFlow<TutorState> = common.state

@@ -51,8 +51,8 @@ import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.chat_history_title
 import org.example.project.strings.SmartTutorStrings.new_chat
-import org.example.project.tutor.domainModels.chatHistory.ChatHistoryDomain
-import org.example.project.tutor.domainModels.chatHistory.SubjectHistoryDomain
+import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
+import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
@@ -66,6 +66,7 @@ fun MenuAndChatHistory(
     onChatTitleClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
+    navigateToMyProgress: () -> Unit,
 
     ) {
     Column(
@@ -90,14 +91,18 @@ fun MenuAndChatHistory(
                 .verticalScroll(rememberScrollState()),
             onExistingChatClick = { chatId ->
                 onExistingChatClick(chatId)
-            }
+            },
         )
 
         Spacer(modifier = Modifier.height(spacing12))
 
         SettingsRow(onSettingsClick = onSettingsClick)
 
-        BottomRow(onLogoutClick = onLogoutClick)
+        BottomRow(
+            onLogoutClick = onLogoutClick,
+            navigateToMyProgress = {
+                navigateToMyProgress()
+            })
     }
 }
 
@@ -177,14 +182,24 @@ private fun SettingsRow(onSettingsClick: () -> Unit) {
 }
 
 @Composable
-private fun BottomRow(onLogoutClick: () -> Unit) {
+private fun BottomRow(
+    onLogoutClick: () -> Unit,
+    navigateToMyProgress: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = spacing8, vertical = spacing12),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("My Progress", fontWeight = FontWeight.Medium, fontSize = 12.sp)
+        Text(
+            "My Progress",
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            modifier = Modifier.noRippleClickable {
+                navigateToMyProgress()
+            },
+        )
         Spacer(modifier = Modifier.width(spacing4))
         Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Progress")
 

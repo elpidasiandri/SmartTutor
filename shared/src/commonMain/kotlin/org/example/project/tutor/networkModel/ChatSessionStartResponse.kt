@@ -1,6 +1,6 @@
 package org.example.project.tutor.networkModel
 
-import org.example.project.tutor.domainModels.learningUnits.UnitImageDomain
+import org.example.project.tutor.models.domainModels.learningUnits.UnitImageDomain
 
 
 data class MaterialState(

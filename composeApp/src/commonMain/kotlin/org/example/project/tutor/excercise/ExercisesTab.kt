@@ -32,8 +32,8 @@ import org.example.project.colors.AppColors
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
-import org.example.project.tutor.domainModels.learningUnits.ExerciseDomain
-import org.example.project.tutor.domainModels.learningUnits.ExerciseType
+import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
+import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
