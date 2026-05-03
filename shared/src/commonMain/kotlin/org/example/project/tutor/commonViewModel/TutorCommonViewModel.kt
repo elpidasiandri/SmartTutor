@@ -170,7 +170,8 @@ class TutorCommonViewModel(
                 currentUnit = selected,
                 session = newSession,
                 selectedTab = TutorTab.Learning,
-                tabInfoMessage = buildLearningTabMessage(selected)
+                tabInfoMessage = buildLearningTabMessage(selected),
+                canGoNext = index < units.lastIndex
             )
         }
         saveProgress()
@@ -337,11 +338,8 @@ class TutorCommonViewModel(
                     activeIndex = 0
                 )
 
-                val history = buildChatHistoryFromUnits(
-                    units = units,
-                    unlockedCount = 1,
-                    subjectTitle = subjectTitle
-                )
+                val refreshedChats = getAllHistoryChatUseCase(userId)
+
                 track(
                     name = PDF_UPLOADED,
                     params = mapOf(
@@ -353,6 +351,7 @@ class TutorCommonViewModel(
                         "userId" to userId
                     )
                 )
+
                 _state.update {
                     it.copy(
                         loading = false,
@@ -363,16 +362,20 @@ class TutorCommonViewModel(
                         unlockedCount = 1,
                         currentUnit = units.firstOrNull() ?: LearningUnitContentDomain(),
                         session = session,
-                        chatHistory = history,
+                        savedChats = refreshedChats,
+                        chatHistory = refreshedChats.toChatHistoryDomain(),
                         showCustomMessage = true,
                         message = "Chat loaded (${res.languageEnum.value})",
                         isError = false,
                         tabInfoMessage = buildLearningTabMessage(
                             units.firstOrNull() ?: LearningUnitContentDomain()
-                        )
+                        ),
+                        canGoNext = units.size > 1
                     )
                 }
+
                 saveProgress()
+
             } catch (t: Throwable) {
                 track(
                     name = PDF_UPLOAD_FAILED,
@@ -534,7 +537,8 @@ class TutorCommonViewModel(
                 currentUnit = units.getOrNull(nextIndex) ?: LearningUnitContentDomain(),
                 session = session,
                 chatHistory = history,
-                selectedTab = TutorTab.Learning
+                selectedTab = TutorTab.Learning,
+                canGoNext = nextIndex < units.lastIndex
             )
         }
         saveProgress()
@@ -763,7 +767,8 @@ class TutorCommonViewModel(
                         } else {
                             TutorTab.Learning
                         },
-                        tabInfoMessage = buildLearningTabMessage(firstUnit)
+                        tabInfoMessage = buildLearningTabMessage(firstUnit),
+                        canGoNext = domainUnits.size > 1
                     )
                 }
 

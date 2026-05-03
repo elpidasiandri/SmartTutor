@@ -115,8 +115,8 @@ class TutorIntroFragment : Fragment() {
                     },
                     navigateToMyProgress = {
                         viewModel.onEvent(TutorUiEvents.OpenMyProgress)
-
-                    }
+                    },
+                    canGoNext = state.canGoNext,
                 )
             }
         }

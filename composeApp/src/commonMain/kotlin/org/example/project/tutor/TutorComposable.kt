@@ -32,6 +32,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -106,8 +107,8 @@ fun TutorScreen(
     onSendMessage: (String) -> Unit,
     openExistingChat: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
-
-    ) {
+    canGoNext: Boolean,
+) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
@@ -154,7 +155,8 @@ fun TutorScreen(
             },
             navigateToMyProgress = {
                 navigateToMyProgress()
-            }
+            },
+            canGoNext = canGoNext
         )
     }
 }
@@ -186,8 +188,8 @@ fun TutorChatUI(
     isLoading: Boolean,
     onExistingChatClick: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
-
-    ) {
+    canGoNext: Boolean,
+) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -289,7 +291,8 @@ fun TutorChatUI(
                         onChangeTab = { onChangeTab(it) },
                         tabInfoMessage = tabInfoMessage,
                         currentUnit = currentUnit,
-                        isLoading = isLoading
+                        isLoading = isLoading,
+                        canGoNext = canGoNext
                     )
 
                     if (isLoading) {
@@ -417,6 +420,7 @@ private fun TutorChatContent(
     tabInfoMessage: String,
     currentUnit: LearningUnitContentDomain,
     isLoading: Boolean,
+    canGoNext: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -428,7 +432,8 @@ private fun TutorChatContent(
             selectedTab = selectedTab,
             onTabChange = { onChangeTab(it) },
             onNextUnitClick = onNextUnitClick,
-            isLoading = isLoading
+            isLoading = isLoading,
+            canGoNext = canGoNext,
         )
 
         Spacer(modifier = Modifier.height(spacing8))
@@ -479,6 +484,7 @@ private fun TutorTopActionsRow(
     onTabChange: (TutorTab) -> Unit,
     onNextUnitClick: () -> Unit,
     isLoading: Boolean,
+    canGoNext: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -502,7 +508,7 @@ private fun TutorTopActionsRow(
 
         TutorActionButton(
             text = "Next ",
-            enabled = fileUploaded && !isLoading,
+            enabled = fileUploaded && !isLoading && canGoNext,
             onClick = onNextUnitClick,
             selectedTab = false,
         )
@@ -526,7 +532,8 @@ private fun TutorActionButton(
     ) {
         Text(
             text = text,
-            fontWeight = if (selectedTab) FontWeight.Bold else FontWeight.Normal
+            fontWeight = if (selectedTab) FontWeight.Bold else FontWeight.Normal,
+            color = if (enabled) AppColors.Purple else AppColors.GrayDark
         )
     }
 }

@@ -98,5 +98,6 @@ fun WebTutorScreenFlow(navController: NavController) {
         navigateToMyProgress = {
             navController.navigate(WebScreen.MyProgress)
         },
+        canGoNext = state.canGoNext,
     )
 }

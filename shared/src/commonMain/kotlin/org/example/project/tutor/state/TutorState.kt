@@ -17,6 +17,7 @@ data class TutorState(
     val isError: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val showCustomMessage: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val loading: Boolean = true,
+    val canGoNext : Boolean = true,
     val error: String? = null,
     val session: ChatSessionStartDomain = ChatSessionStartDomain(),
     val currentUnit: LearningUnitContentDomain = LearningUnitContentDomain(),
