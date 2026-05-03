@@ -93,7 +93,7 @@ fun TutorScreen(
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    selectLearningUnit: (String) -> Unit,
+    selectLearningUnit: (String, String) -> Unit,
     onNextUnitClick: () -> Unit,
     onExercisesClick: () -> Unit,
     startNewChat: () -> Unit,
@@ -127,8 +127,8 @@ fun TutorScreen(
             onUploadPdfClick = {
                 onUploadPdfClick()
             },
-            selectLearningUnit = { title ->
-                selectLearningUnit(title)
+            selectLearningUnit = { title,subjectId ->
+                selectLearningUnit(title,subjectId)
             },
             onNextUnitClick = {
                 onNextUnitClick()
@@ -174,7 +174,7 @@ fun TutorChatUI(
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    selectLearningUnit: (String) -> Unit,
+    selectLearningUnit: (String,String) -> Unit,
     onNextUnitClick: () -> Unit,
     onExercisesClick: () -> Unit,
     startNewChat: () -> Unit,
@@ -233,7 +233,7 @@ fun TutorChatUI(
                     scope = scope,
                     onSettingsClick = onSettingsClick,
                     onLogoutClick = onLogoutClick,
-                    onLearningUnitClick = { title -> selectLearningUnit(title) },
+                    onLearningUnitClick = { title , subjectId-> selectLearningUnit(title,subjectId) },
                     onNewChatClick = {
                         scope.launch {
                             startNewChat()
@@ -354,7 +354,7 @@ private fun TutorDrawerContent(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onLearningUnitClick: (String) -> Unit,
+    onLearningUnitClick: (String,String) -> Unit,
     onNewChatClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,

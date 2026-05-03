@@ -102,7 +102,7 @@ class TutorCommonViewModel(
                 deleteChat(event.subjectId)
             }
 
-            is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title)
+            is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title,event.subjectId)
             TutorUiEvents.NextUnit -> goNext()
             TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
@@ -138,43 +138,6 @@ class TutorCommonViewModel(
     fun setEventNone() {
         _state.update { it.copy(event = TutorEvents.None) }
 
-    }
-
-    private fun selectLearningUnitByTitle(title: String) {
-        val units = _state.value.allUnits
-        if (units.isEmpty()) return
-
-        val index = units.indexOfFirst { it.title.trim() == title.trim() }
-        if (index == -1) return
-
-        val selected = units[index]
-        track(
-            name = LEARNING_UNIT_SELECTED,
-            params = mapOf(
-                "chatId" to _state.value.activeChatId,
-                "unitIndex" to index.toString(),
-                "unitTitle" to selected.title,
-                "userId" to userId
-            )
-        )
-        val allStoredMessages = _state.value.allChatMessages
-
-        val newSession = buildChatSessionForSelectedUnit(
-            fileName = _state.value.session.material.fileName,
-            unit = selected,
-            allStoredMessages = allStoredMessages
-        )
-        _state.update {
-            it.copy(
-                currentIndex = index,
-                currentUnit = selected,
-                session = newSession,
-                selectedTab = TutorTab.Learning,
-                tabInfoMessage = buildLearningTabMessage(selected),
-                canGoNext = index < units.lastIndex
-            )
-        }
-        saveProgress()
     }
 
 
@@ -286,6 +249,108 @@ class TutorCommonViewModel(
                         showCustomMessage = true,
                         isError = true,
                         message = msg
+                    )
+                }
+            }
+        }
+    }
+
+    private fun selectLearningUnitByTitle(title: String, subjectId: String) {
+        if (_state.value.activeChatId != subjectId) {
+            loadExistingChatAtUnit(
+                chatId = subjectId,
+                unitTitle = title
+            )
+            return
+        }
+
+        selectCurrentChatUnitByTitle(title)
+    }
+
+    private fun selectCurrentChatUnitByTitle(title: String) {
+        val units = _state.value.allUnits
+        if (units.isEmpty()) return
+
+        val index = units.indexOfFirst { it.title.trim() == title.trim() }
+        if (index == -1) return
+
+        val selected = units[index]
+
+        val newSession = buildChatSessionForSelectedUnit(
+            fileName = _state.value.session.material.fileName,
+            unit = selected,
+            allStoredMessages = _state.value.allChatMessages
+        )
+
+        _state.update {
+            it.copy(
+                currentIndex = index,
+                currentUnit = selected,
+                session = newSession,
+                selectedTab = TutorTab.Learning,
+                tabInfoMessage = buildLearningTabMessage(selected),
+                canGoNext = index < units.lastIndex
+            )
+        }
+
+        saveProgress()
+    }
+
+    private fun loadExistingChatAtUnit(chatId: String, unitTitle: String) {
+        scope.launch {
+            try {
+                _state.update { it.copy(loading = true) }
+
+                val fullChat = getChatByIdUseCase(chatId, userId)
+
+                val units = fullChat.result?.learningUnits
+                    ?: fullChat.partialResult?.learningUnits
+                    ?: emptyList()
+
+                val domainUnits = units.map { it.toDomain() }
+
+                val index = domainUnits.indexOfFirst {
+                    it.title.trim() == unitTitle.trim()
+                }.takeIf { it != -1 } ?: 0
+
+                val selected = domainUnits.getOrNull(index) ?: LearningUnitContentDomain()
+
+                val fullMessages = fullChat.messages
+                    .sortedBy { it.createdAtEpochMillis }
+                    .map { it.toDomain() }
+
+                val session = buildChatSessionForSelectedUnit(
+                    fileName = fullChat.title,
+                    unit = selected,
+                    allStoredMessages = fullMessages
+                )
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        activeChatId = fullChat.chatId,
+                        activeDocumentId = fullChat.documentId,
+                        subjectTitle = fullChat.title,
+                        allUnits = domainUnits,
+                        currentIndex = index,
+                        currentUnit = selected,
+                        session = session,
+                        allChatMessages = fullMessages,
+                        selectedTab = TutorTab.Learning,
+                        tabInfoMessage = buildLearningTabMessage(selected),
+                        canGoNext = index < domainUnits.lastIndex
+                    )
+                }
+
+                saveProgress()
+
+            } catch (t: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = t.message ?: "Failed to load chat unit"
                     )
                 }
             }

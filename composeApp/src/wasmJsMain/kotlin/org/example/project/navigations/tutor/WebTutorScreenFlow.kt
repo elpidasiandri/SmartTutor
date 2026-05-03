@@ -66,6 +66,7 @@ fun WebTutorScreenFlow(navController: NavController) {
                         is PdfValidationResult.Error -> {
                             controller.onEvent(TutorUiEvents.ShowErrorMessage(result.message))
                         }
+
                         is PdfValidationResult.Success -> {
                             controller.onEvent(TutorUiEvents.UploadPdf(result.file))
                         }
@@ -73,8 +74,8 @@ fun WebTutorScreenFlow(navController: NavController) {
                 }
             }
         },
-        selectLearningUnit = { title ->
-            controller.onEvent(TutorUiEvents.SelectLearningUnit(title))
+        selectLearningUnit = { title, subjectId ->
+            controller.onEvent(TutorUiEvents.SelectLearningUnit(title,subjectId))
         },
         onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
         onExercisesClick = { },

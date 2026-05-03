@@ -92,8 +92,8 @@ class TutorIntroFragment : Fragment() {
                     onUploadPdfClick = {
                         uploadPdfFile()
                     },
-                    selectLearningUnit = { title ->
-                        viewModel.onEvent(TutorUiEvents.SelectLearningUnit(title))
+                    selectLearningUnit = { title,subjectId ->
+                        viewModel.onEvent(TutorUiEvents.SelectLearningUnit(title,subjectId))
                     },
                     onNextUnitClick = { viewModel.onEvent(TutorUiEvents.NextUnit) },
                     onExercisesClick = { },

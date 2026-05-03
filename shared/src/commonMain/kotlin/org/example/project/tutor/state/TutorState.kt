@@ -39,7 +39,7 @@ sealed class TutorUiEvents {
     data object None : TutorUiEvents()
     data object NewChat : TutorUiEvents()
     data object Logout : TutorUiEvents()
-    data class SelectLearningUnit(val title: String) : TutorUiEvents()
+    data class SelectLearningUnit(val title: String, val subjectId: String) : TutorUiEvents()
     data object InitializeStateAfterShowingMessage : TutorUiEvents()
     data object ClearUiEvent : TutorUiEvents()
     data object NextUnit : TutorUiEvents()

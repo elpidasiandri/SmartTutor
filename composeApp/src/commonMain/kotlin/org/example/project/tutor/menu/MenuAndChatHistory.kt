@@ -62,10 +62,10 @@ fun MenuAndChatHistory(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onLearningUnitClick: (String) -> Unit = {},
+    onLearningUnitClick: (String,String) -> Unit,
     onChatTitleClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
-    onExistingChatClick: (String) -> Unit,
+    onExistingChatClick: (String ) -> Unit,
     navigateToMyProgress: () -> Unit,
 
     ) {
@@ -135,7 +135,7 @@ private fun ChatHistoryList(
     chatHistory: ChatHistoryDomain,
     drawerState: DrawerState,
     scope: CoroutineScope,
-    onLearningUnitClick: (String) -> Unit,
+    onLearningUnitClick: (String, String) -> Unit,
     onDeleteSubject: (String) -> Unit,
     modifier: Modifier,
     onExistingChatClick: (String) -> Unit,
@@ -145,8 +145,8 @@ private fun ChatHistoryList(
         chatHistory.subjects.forEach { subject ->
             SubjectHistoryItem(
                 subject = subject,
-                onLearningUnitClick = { title ->
-                    onLearningUnitClick(title)
+                onLearningUnitClick = { title, subjectId ->
+                    onLearningUnitClick(title, subjectId)
                     scope.launch { drawerState.close() }
                 },
                 onDeleteSubject = { subjectId ->
@@ -218,7 +218,7 @@ private fun BottomRow(
 @Composable
 fun SubjectHistoryItem(
     subject: SubjectHistoryDomain,
-    onLearningUnitClick: (String) -> Unit,
+    onLearningUnitClick: (String, String) -> Unit,
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
 
@@ -262,7 +262,7 @@ fun SubjectHistoryItem(
             subject.learningUnits.forEach { lu ->
                 LearningUnitRow(
                     title = lu.title,
-                    onClick = { onLearningUnitClick(lu.title) }
+                    onClick = { onLearningUnitClick(lu.title, subject.subjectId) }
                 )
             }
         }
