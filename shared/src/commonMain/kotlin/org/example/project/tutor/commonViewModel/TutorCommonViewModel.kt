@@ -5,6 +5,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import org.example.project.myProgress.mappers.toDto
+import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
@@ -38,6 +42,7 @@ import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOADED
 import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOAD_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
 import org.example.project.tutor.models.AnalyticsEvents.TUTOR_SCREEN_OPENED
+import org.example.project.tutor.models.domainModels.myProgress.ChatProgressUpsertDomain
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
@@ -73,6 +78,8 @@ class TutorCommonViewModel(
     private val getChatByIdUseCase: GetChatByIdUseCase,
     private val deleteChatUseCase: DeleteChatUseCase,
     private val analyticsTracker: IAnalyticsTracker,
+    private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
+    private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
 
     ) {
     private val _state = MutableStateFlow(TutorState())
@@ -166,6 +173,7 @@ class TutorCommonViewModel(
                 tabInfoMessage = buildLearningTabMessage(selected)
             )
         }
+        saveProgress()
     }
 
 
@@ -252,7 +260,7 @@ class TutorCommonViewModel(
                         )
                     )
                 }
-
+                saveProgress()
             } catch (t: Throwable) {
                 track(
                     name = MESSAGE_SEND_FAILED,
@@ -306,6 +314,7 @@ class TutorCommonViewModel(
                 selectedTab = tab
             )
         }
+        saveProgress()
     }
 
     private fun uploadPdf(picked: PickedFile) {
@@ -363,6 +372,7 @@ class TutorCommonViewModel(
                         )
                     )
                 }
+                saveProgress()
             } catch (t: Throwable) {
                 track(
                     name = PDF_UPLOAD_FAILED,
@@ -410,7 +420,11 @@ class TutorCommonViewModel(
                     userId = userId,
                     token = token
                 )
-
+                deleteChatProgressUseCase(
+                    chatId = chatId,
+                    userId = userId,
+                    token = token
+                )
                 val remainingChats = _state.value.savedChats.filterNot { it.chatId == chatId }
 
                 val deletedWasActive = _state.value.activeChatId == chatId
@@ -446,7 +460,6 @@ class TutorCommonViewModel(
                 if (deletedWasActive && remainingChats.isNotEmpty()) {
                     loadExistingChat(remainingChats.first().chatId)
                 }
-
             } catch (t: Throwable) {
                 track(
                     name = CHAT_DELETE_FAILED,
@@ -524,6 +537,46 @@ class TutorCommonViewModel(
                 selectedTab = TutorTab.Learning
             )
         }
+        saveProgress()
+    }
+
+    private fun saveProgress() {
+        scope.launch {
+            runCatching {
+                val token = getIdTokenSuspendUseCase()
+
+                val progress = buildCurrentProgress()
+
+                upsertChatProgressUseCase(
+                    userId = userId,
+                    token = token,
+                    progress = progress.toDto()
+                )
+            }.onFailure {
+                platform.log("Progress", "Failed to save progress", it)
+            }
+        }
+    }
+
+    private fun buildCurrentProgress(): ChatProgressUpsertDomain {
+        val totalUnits = _state.value.allUnits.size
+        val currentIndex = _state.value.currentIndex
+        val progressPercent =
+            if (totalUnits > 0) ((currentIndex + 1) * 100) / totalUnits else 0
+
+        return ChatProgressUpsertDomain(
+            chatId = _state.value.activeChatId,
+            userId = userId,
+            documentId = _state.value.activeDocumentId,
+            title = _state.value.subjectTitle,
+            totalUnits = totalUnits,
+            currentUnitIndex = currentIndex,
+            selectedTab = _state.value.selectedTab.name,
+            messagesSentCount = _state.value.allChatMessages.count { it.sender == SenderType.USER.name },
+            availableExercisesCount = _state.value.allUnits.sumOf { it.exercises.size },
+            lastActivityEpochMillis = Clock.System.now().toEpochMilliseconds(),
+            progressPercent = progressPercent
+        )
     }
 
     private fun startNewChat() {

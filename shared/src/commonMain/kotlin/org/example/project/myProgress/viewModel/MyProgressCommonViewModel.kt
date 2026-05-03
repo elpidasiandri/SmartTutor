@@ -5,23 +5,27 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.project.myProgress.MyProgressChatItem
-import org.example.project.myProgress.MyProgressEvents
-import org.example.project.myProgress.MyProgressState
-import org.example.project.myProgress.MyProgressUiEvents
-import org.example.project.settings.SettingsUiEvents
+import kotlinx.datetime.Clock
+import org.example.project.myProgress.state.MyProgressChatItem
+import org.example.project.myProgress.state.MyProgressEvents
+import org.example.project.myProgress.state.MyProgressState
+import org.example.project.myProgress.state.MyProgressUiEvents
+import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.GetChatProgressListUseCase
+import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
+import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 
 class MyProgressCommonViewModel(
-    private val ioDispatcher: CoroutineScope,
-    private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
-    private val getChatByIdUseCase: GetChatByIdUseCase,
+    private val scope: CoroutineScope,
     private val analyticsTracker: IAnalyticsTracker,
     private val userId: String,
     private val platform: TutorPlatform,
+    private val getProgressOverviewUseCase: GetProgressOverviewUseCase,
+    private val getChatProgressListUseCase: GetChatProgressListUseCase,
 ) {
     private val _state = MutableStateFlow(MyProgressState())
     val state: StateFlow<MyProgressState> = _state
@@ -81,56 +85,44 @@ class MyProgressCommonViewModel(
     }
 
     private fun loadProgress() {
-        ioDispatcher.launch {
+        scope.launch {
             try {
                 _state.update { it.copy(loading = true, error = null) }
 
                 track("my_progress_opened")
 
-                val chats = getAllHistoryChatUseCase(userId)
-                val latestChat = chats.firstOrNull()?.let {
-                    getChatByIdUseCase(it.chatId, userId)
-                }
+                val overview = getProgressOverviewUseCase(userId)
+                val chatProgressList = getChatProgressListUseCase(userId)
 
-                val units = latestChat?.result?.learningUnits
-                    ?: latestChat?.partialResult?.learningUnits
-                    ?: emptyList()
-
-                val totalUnits = units.size
-                val currentUnitIndex = if (units.isNotEmpty()) 0 else 0
-                val progressPercent =
-                    if (totalUnits > 0) ((currentUnitIndex + 1) * 100) / totalUnits else 0
-
-                val totalQuestionsAsked = latestChat?.messages
-                    ?.count { it.sender.equals("USER", ignoreCase = true) }
-                    ?: 0
-
-                val totalExercisesCount = units.sumOf { it.exercises.size }
+                val latestChat = chatProgressList.maxByOrNull { it.lastActivityEpochMillis }
 
                 _state.update {
                     it.copy(
                         loading = false,
-                        totalChats = chats.size,
-                        totalUploadedPdfs = chats.map { chat -> chat.documentId }.distinct().size,
-                        totalQuestionsAsked = totalQuestionsAsked,
-                        totalExercisesCount = totalExercisesCount,
+                        totalChats = overview.totalChats,
+                        totalUploadedPdfs = overview.totalDocuments,
+                        totalQuestionsAsked = overview.totalMessagesSent,
+                        totalExercisesCount = latestChat?.availableExercisesCount ?: 0,
                         currentSubjectTitle = latestChat?.title.orEmpty(),
-                        currentUnitIndex = currentUnitIndex,
-                        totalUnits = totalUnits,
-                        selectedTab = latestChat?.mode.orEmpty(),
-                        progressPercent = progressPercent,
-                        lastActivityLabel = "Today",
-                        streakDays = 1,
-                        recentChats = chats.take(5).map { chat ->
+                        currentUnitIndex = latestChat?.currentUnitIndex ?: 0,
+                        totalUnits = latestChat?.totalUnits ?: 0,
+                        selectedTab = latestChat?.selectedTab.orEmpty(),
+                        progressPercent = latestChat?.progressPercent ?: 0,
+                        lastActivityEpochMillis = overview.lastActivityEpochMillis,
+                        lastActivityLabel = formatLastActivity(overview.lastActivityEpochMillis),
+                        streakDays = overview.streakDays,
+                        recentChats = chatProgressList.take(5).map { chat ->
                             MyProgressChatItem(
                                 chatId = chat.chatId,
                                 title = chat.title,
-                                progressPercent = if (chat.chatId == latestChat?.chatId) progressPercent else 0
+                                progressPercent = chat.progressPercent,
+                                lastActivityEpochMillis = chat.lastActivityEpochMillis
                             )
                         },
                         event = MyProgressEvents.Loaded
                     )
                 }
+
             } catch (t: Throwable) {
                 platform.log("MyProgressViewModel", "loadProgress failed", t)
                 _state.update {
@@ -145,4 +137,24 @@ class MyProgressCommonViewModel(
             }
         }
     }
+
+    private fun formatLastActivity(epochMillis: Long): String {
+        if (epochMillis <= 0L) return "No activity yet"
+
+        val now = Clock.System.now().toEpochMilliseconds()
+        val diff = now - epochMillis
+        val minutes = diff / 60_000
+        val hours = diff / 3_600_000
+        val days = diff / 86_400_000
+
+        return when {
+            minutes < 1 -> "Just now"
+            minutes < 60 -> "$minutes min ago"
+            hours < 24 -> "$hours h ago"
+            days == 1L -> "Yesterday"
+            else -> "$days days ago"
+        }
+    }
+
+
 }

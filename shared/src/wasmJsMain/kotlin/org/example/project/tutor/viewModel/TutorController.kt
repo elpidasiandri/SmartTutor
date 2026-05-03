@@ -4,6 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
+import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.registration.AuthUserHolder
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
@@ -30,6 +32,8 @@ class TutorController(
     private val getChatByIdUseCase: GetChatByIdUseCase,
     private val deleteChatUseCase: DeleteChatUseCase,
     private val analyticsTracker: IAnalyticsTracker,
+    private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
+    private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
 
     ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -46,7 +50,8 @@ class TutorController(
         getChatByIdUseCase = getChatByIdUseCase,
         deleteChatUseCase = deleteChatUseCase,
         analyticsTracker = analyticsTracker,
-
+        upsertChatProgressUseCase = upsertChatProgressUseCase,
+        deleteChatProgressUseCase = deleteChatProgressUseCase
     )
 
     val state: StateFlow<TutorState> = common.state

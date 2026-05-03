@@ -6,6 +6,10 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import org.example.project.AppConfig
+import org.example.project.myProgress.repo.IProgressRepo
+import org.example.project.myProgress.repo.ProgressRepoImpl
+import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.module.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
@@ -38,12 +42,20 @@ val tutorModule = module {
             FirebaseAuth.getInstance()
         )
     }
+    factory <IProgressRepo> {
+        ProgressRepoImpl(
+            httpClient = get(),
+            baseUrl = "http://10.0.2.2:8081",
+        )
+    }
+
     single { AppConfig(baseUrl = "http://10.0.2.2:8081") }
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
 
     single { provideFirebaseAnalytics(androidContext()) }
     single<IAnalyticsTracker> { AnalyticsTrackerImpl(get()) }
-
+    single { UpsertChatProgressUseCase(get()) }
+    single { DeleteChatProgressUseCase(get()) }
     single { LearningUnitsUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
@@ -51,9 +63,11 @@ val tutorModule = module {
     single { AskTutorUseCase(get()) }
     single { DeleteChatUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
+
     factory {
         GetIdTokenSuspendUseCase(get())
     }
+
     single<TutorPlatform> {
         object : TutorPlatform {
             override fun speak(text: String) {
@@ -82,6 +96,8 @@ val tutorModule = module {
             get(),
             get(),
             FirebaseAuth.getInstance(),
+            get(),
+            get(),
             get(),
             get(),
             get(),

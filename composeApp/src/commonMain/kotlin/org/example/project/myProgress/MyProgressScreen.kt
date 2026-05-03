@@ -25,6 +25,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.example.project.myProgress.state.MyProgressChatItem
+import org.example.project.myProgress.state.MyProgressState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

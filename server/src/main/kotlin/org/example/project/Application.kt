@@ -17,10 +17,13 @@ import org.example.project.jobs.PdfJobWorker
 import org.example.project.pdf.PromptLlmClient
 import org.example.project.repo.FirestoreChatRepository
 import org.example.project.repo.FirestorePdfJobRepository
+import org.example.project.repo.FirestoreProgressRepository
 import org.example.project.repo.PdfJobRepository
 import org.example.project.routes.chatRoutes
 import org.example.project.routes.pdfRoutes
+import org.example.project.routes.progressRoutes
 import org.example.project.tutor.repo.IChatRepository
+import org.example.project.myProgress.repo.IProgressRepository
 import java.io.File
 import java.util.Properties
 
@@ -71,7 +74,7 @@ fun Application.module() {
     val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore)
     val chatRepo: IChatRepository = FirestoreChatRepository(firestore)
     val llm = PromptLlmClient(apiKey = apiKey)
-
+    val progressRepo: IProgressRepository = FirestoreProgressRepository(firestore)
     val worker = PdfJobWorker(repo = pdfRepo, llm = llm)
     worker.start(this)
 
@@ -80,6 +83,8 @@ fun Application.module() {
 
         staticFiles("/uploads", File("uploads"))
         pdfRoutes(pdfRepo)
-        chatRoutes(chatRepo,llm)
+        chatRoutes(chatRepo, llm)
+        progressRoutes(progressRepo)
+
     }
 }

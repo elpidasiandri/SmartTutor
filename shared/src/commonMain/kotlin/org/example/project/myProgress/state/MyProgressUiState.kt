@@ -1,8 +1,4 @@
-package org.example.project.myProgress
-
-import org.example.project.tutor.models.domainModels.tutorChat.SenderType
-import org.example.project.tutor.networkModel.chatHistory.UserChatDto
-import org.example.project.tutor.state.TutorState
+package org.example.project.myProgress.state
 
 data class MyProgressState(
     val loading: Boolean = false,
@@ -22,8 +18,9 @@ data class MyProgressState(
     val selectedTab: String = "",
     val progressPercent: Int = 0,
 
-    val lastActivityLabel: String = "Today",
-    val streakDays: Int = 1,
+    val lastActivityEpochMillis: Long = 0L,
+    val lastActivityLabel: String = "",
+    val streakDays: Int = 0,
 
     val recentChats: List<MyProgressChatItem> = emptyList(),
 
@@ -34,7 +31,8 @@ data class MyProgressState(
 data class MyProgressChatItem(
     val chatId: String,
     val title: String,
-    val progressPercent: Int
+    val progressPercent: Int,
+    val lastActivityEpochMillis: Long = 0L
 )
 
 sealed class MyProgressEvents {

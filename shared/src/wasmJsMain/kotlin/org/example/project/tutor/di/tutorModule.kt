@@ -2,6 +2,10 @@ package org.example.project.tutor.di
 
 import io.ktor.client.HttpClient
 import org.example.project.AppConfig
+import org.example.project.myProgress.repo.IProgressRepo
+import org.example.project.myProgress.repo.WebProgressRepoImpl
+import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.network.createWebHttpClient
 import org.example.project.registration.firebase.initFirebase
 import org.example.project.settings.logOut.logoutModule
@@ -34,16 +38,27 @@ val tutorModule = module {
             baseUrl = "http://localhost:8081"
         )
     }
-    single { LearningUnitsUseCase(get()) }
-    factory { GetIdTokenSuspendUseCase(get()) }
-    single { PdfUploadServiceUseCase(get()) }
-    factory { GetAllHistoryChatUseCase(get()) }
-    single { AskTutorUseCase(get()) }
-    factory { GetChatByIdUseCase(get()) }
-    single { DeleteChatUseCase(get()) }
-    factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
-    single { LoadTutorFromPdfUseCase(get(), get()) }
 
+
+    factory<IProgressRepo> {
+        WebProgressRepoImpl(
+            httpClient = get(),
+            baseUrl = "http://localhost:8081"
+        )
+    }
+
+
+    single { LearningUnitsUseCase(get()) }
+    single { PdfUploadServiceUseCase(get()) }
+    single { GetAllHistoryChatUseCase(get()) }
+    single { AskTutorUseCase(get()) }
+    single { GetChatByIdUseCase(get()) }
+    single { DeleteChatUseCase(get()) }
+    single { LoadTutorFromPdfUseCase(get(), get()) }
+    single { UpsertChatProgressUseCase(get()) }
+    single { DeleteChatProgressUseCase(get()) }
+
+    factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     factory<TutorPlatform> {
         object : TutorPlatform {
             override fun speak(text: String) {
@@ -63,8 +78,12 @@ val tutorModule = module {
             }
         }
     }
+    factory { GetIdTokenSuspendUseCase(get()) }
+
     single {
         TutorController(
+            get(),
+            get(),
             get(),
             get(),
             get(),
