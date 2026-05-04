@@ -32,14 +32,15 @@ private const val SERVER_PORT = 8081
 fun main() {
     FirebaseAdminInit.init()
 
+    val port = System.getenv("PORT")?.toIntOrNull() ?: SERVER_PORT
+
     embeddedServer(
         Netty,
-        port = SERVER_PORT,
+        port = port,
         host = "0.0.0.0",
         module = Application::module
     ).start(wait = true)
 }
-
 fun Application.module() {
 
     install(ContentNegotiation) {

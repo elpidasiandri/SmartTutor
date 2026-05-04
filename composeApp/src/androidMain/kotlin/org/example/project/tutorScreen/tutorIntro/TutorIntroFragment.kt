@@ -117,6 +117,7 @@ class TutorIntroFragment : Fragment() {
                         viewModel.onEvent(TutorUiEvents.OpenMyProgress)
                     },
                     canGoNext = state.canGoNext,
+                    askTutor = state.askTutor,
                 )
             }
         }

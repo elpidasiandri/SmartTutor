@@ -170,6 +170,7 @@ class TutorCommonViewModel(
         _state.update { current ->
             current.copy(
                 loading = true,
+                askTutor = true,
                 allChatMessages = current.allChatMessages + optimisticUserMessage,
                 session = current.session.copy(
                     chat = current.session.chat.copy(
@@ -208,6 +209,7 @@ class TutorCommonViewModel(
                 _state.update { current ->
                     current.copy(
                         loading = false,
+                        askTutor = false,
                         allChatMessages = if (aiMsg != null) {
                             current.allChatMessages + aiMsg
                         } else {
@@ -248,6 +250,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
+                        askTutor = false,
                         message = msg
                     )
                 }

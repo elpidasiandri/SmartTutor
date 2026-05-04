@@ -17,7 +17,8 @@ data class TutorState(
     val isError: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val showCustomMessage: Boolean = EmptyValues.EMPTY_BOOLEAN,
     val loading: Boolean = true,
-    val canGoNext : Boolean = true,
+    val canGoNext: Boolean = true,
+    val askTutor: Boolean = false,
     val error: String? = null,
     val session: ChatSessionStartDomain = ChatSessionStartDomain(),
     val currentUnit: LearningUnitContentDomain = LearningUnitContentDomain(),
@@ -32,8 +33,7 @@ data class TutorState(
     val activeChatId: String = EmptyValues.EMPTY_STRING,
     val savedChats: List<UserChatDto> = emptyList(),
     val allChatMessages: List<ChatMessageDomain> = emptyList(),
-
-    )
+)
 
 sealed class TutorUiEvents {
     data object None : TutorUiEvents()

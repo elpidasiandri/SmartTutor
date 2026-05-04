@@ -108,6 +108,7 @@ fun TutorScreen(
     openExistingChat: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
+    askTutor: Boolean,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -156,7 +157,8 @@ fun TutorScreen(
             navigateToMyProgress = {
                 navigateToMyProgress()
             },
-            canGoNext = canGoNext
+            canGoNext = canGoNext,
+            askTutor = askTutor,
         )
     }
 }
@@ -189,6 +191,7 @@ fun TutorChatUI(
     onExistingChatClick: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
+    askTutor: Boolean,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -292,10 +295,10 @@ fun TutorChatUI(
                         tabInfoMessage = tabInfoMessage,
                         currentUnit = currentUnit,
                         isLoading = isLoading,
-                        canGoNext = canGoNext
+                        canGoNext = canGoNext,
                     )
 
-                    if (isLoading) {
+                    if (isLoading || askTutor) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -313,7 +316,7 @@ fun TutorChatUI(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 CircularProgressIndicator()
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Text("Περιμένω απάντηση...", color = Color.White)
+                                Text("Waiting for a response...", color = Color.White)
                             }
                         }
                     }
