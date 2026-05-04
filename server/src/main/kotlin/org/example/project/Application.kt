@@ -72,6 +72,7 @@ fun Application.module() {
         ?: props.getProperty("OPENAI_PROMPTING_API_KEY")
         ?: error("Missing OPENAI_PROMPTING_API_KEY")
 
+
     val firestore = FirebaseAdminInit.firestore()
     val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore)
     val chatRepo: IChatRepository = FirestoreChatRepository(firestore)
