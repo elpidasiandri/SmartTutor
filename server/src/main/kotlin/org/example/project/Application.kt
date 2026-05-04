@@ -68,8 +68,9 @@ fun Application.module() {
         if (f.exists()) load(f.inputStream())
     }
 
-    val apiKey = props.getProperty("OPENAI_PROMPTING_API_KEY")
-        ?: error("Missing OPENAI_PROMPTING_API_KEY in local.properties")
+    val apiKey = System.getenv("OPENAI_PROMPTING_API_KEY")
+        ?: props.getProperty("OPENAI_PROMPTING_API_KEY")
+        ?: error("Missing OPENAI_PROMPTING_API_KEY")
 
     val firestore = FirebaseAdminInit.firestore()
     val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore)
