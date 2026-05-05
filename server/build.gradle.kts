@@ -43,3 +43,6 @@ dependencies {
     implementation(libs.ktor.client.contentNegotiation)
     implementation("org.apache.pdfbox:pdfbox:2.0.30")
 }
+tasks.named<Sync>("installDist") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
