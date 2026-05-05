@@ -14,6 +14,9 @@ object FirebaseAdminInit {
 
         val stream = try {
             val json = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+
+            println("ENV JSON EXISTS: ${json != null}")
+            println("ENV JSON LENGTH: ${json?.length}")
             if (json != null) {
                 ByteArrayInputStream(json.toByteArray())
             } else {
