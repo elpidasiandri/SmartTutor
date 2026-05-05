@@ -29,13 +29,13 @@ import org.koin.dsl.module
 
 val tutorModule = module {
     single<HttpClient> { createWebHttpClient() }
-    single { AppConfig(baseUrl = "http://localhost:8081") }
+    single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
     single<ITutorRepo> {
         WebTutorRepoImpl(
             firebase = initFirebase().app,
             httpClient = get(),
-            baseUrl = "http://localhost:8081"
+            baseUrl = "https://smarttutor-production-5d4d.up.railway.app"
         )
     }
 
@@ -43,7 +43,7 @@ val tutorModule = module {
     factory<IProgressRepo> {
         WebProgressRepoImpl(
             httpClient = get(),
-            baseUrl = "http://localhost:8081"
+            baseUrl = "https://smarttutor-production-5d4d.up.railway.app"
         )
     }
 

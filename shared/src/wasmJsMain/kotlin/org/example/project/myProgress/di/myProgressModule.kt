@@ -15,12 +15,12 @@ val myProgressModule = module {
     factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     single { GetProgressOverviewUseCase(get()) }
     single { GetChatProgressListUseCase(get()) }
-    single { AppConfig(baseUrl = "http://localhost:8081") }
+    single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
 
     factory<IProgressRepo> {
         WebProgressRepoImpl(
             httpClient = get(),
-            baseUrl = "http://localhost:8081"
+            baseUrl = "https://smarttutor-production-5d4d.up.railway.app"
         )
     }
 
