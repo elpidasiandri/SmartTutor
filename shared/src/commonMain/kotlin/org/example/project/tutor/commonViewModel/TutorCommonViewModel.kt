@@ -669,11 +669,11 @@ class TutorCommonViewModel(
     }
 
     private fun initializeData() = scope.launch {
-
+        val uid = userId()
         if (_state.value.session.material.fileUploaded) return@launch
         println("initializeData userId = ${userId()}")
 
-        if (userId().isBlank()) {
+        if (uid.isBlank()) {
             platform.log("TutorStore", "UserId not ready yet", null)
             return@launch
         }
@@ -681,7 +681,7 @@ class TutorCommonViewModel(
         try {
             _state.update { it.copy(loading = true, error = null) }
 
-            val chats = getAllHistoryChatUseCase(userId())
+            val chats = getAllHistoryChatUseCase(uid)
             track(
                 name = TUTOR_SCREEN_OPENED,
                 params = mapOf(
