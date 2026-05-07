@@ -80,7 +80,7 @@ val tutorModule = module {
     }
     factory { GetIdTokenSuspendUseCase(get()) }
 
-    single {
+    factory  {
         TutorController(
             get(),
             get(),

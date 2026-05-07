@@ -672,7 +672,7 @@ class TutorCommonViewModel(
     private fun initializeData() = scope.launch {
 
         if (_state.value.session.material.fileUploaded) return@launch
-
+        println("initializeData userId = $userId")
         if (userId.isBlank()) {
             platform.log("TutorStore", "UserId not ready yet", null)
             return@launch
