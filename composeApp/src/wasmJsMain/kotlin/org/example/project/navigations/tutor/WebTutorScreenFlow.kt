@@ -23,8 +23,6 @@ import org.example.project.tutor.viewModel.TutorController
 import org.example.project.utils.validation.PdfValidationResult
 import org.example.project.utils.validation.validatePdf
 import org.koin.compose.getKoin
-import org.koin.core.context.loadKoinModules
-import org.koin.core.context.unloadKoinModules
 import org.koin.core.parameter.parametersOf
 
 @Composable
@@ -44,6 +42,9 @@ fun WebTutorScreenFlow(navController: NavController) {
         koin.get<TutorController> {
             parametersOf(user.uid)
         }
+    }
+    LaunchedEffect(user.uid) {
+        controller.start()
     }
     val state by controller.state.collectAsState()
     val pdfPicker = WebPdfPicker()

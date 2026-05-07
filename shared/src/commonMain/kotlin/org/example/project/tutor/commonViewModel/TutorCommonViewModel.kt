@@ -84,8 +84,10 @@ class TutorCommonViewModel(
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
     private fun userId(): String = userIdProvider()
+
     init {
-        initializeData()
+        //todo elpida android
+//        initializeData()
 
     }
 
@@ -102,7 +104,11 @@ class TutorCommonViewModel(
                 deleteChat(event.subjectId)
             }
 
-            is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(event.title,event.subjectId)
+            is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(
+                event.title,
+                event.subjectId
+            )
+
             TutorUiEvents.NextUnit -> goNext()
             TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
@@ -668,7 +674,7 @@ class TutorCommonViewModel(
         }
     }
 
-    private fun initializeData() = scope.launch {
+    fun initializeData() = scope.launch {
         val uid = userId()
         if (_state.value.session.material.fileUploaded) return@launch
         println("initializeData userId = ${userId()}")

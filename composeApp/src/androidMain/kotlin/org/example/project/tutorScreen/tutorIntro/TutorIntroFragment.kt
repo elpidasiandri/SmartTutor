@@ -12,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,7 +75,6 @@ class TutorIntroFragment : Fragment() {
                 val state by viewModel.state.collectAsStateWithLifecycle()
 
                 var userMessage by remember { mutableStateOf("") }
-
                 TutorScreen(
                     chatData = state.session,
                     chatHistory = state.chatHistory,

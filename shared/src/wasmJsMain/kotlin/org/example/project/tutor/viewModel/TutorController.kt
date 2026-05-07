@@ -61,4 +61,8 @@ class TutorController(
     fun playAIMessage(text: String) = common.playAIMessage(text)
     fun startVoiceInput(onResult: (String) -> Unit) = common.startVoiceInput(onResult)
     fun stopVoiceInput() = common.stopVoiceInput()
+
+    fun start() {
+        common.initializeData()
+    }
 }
