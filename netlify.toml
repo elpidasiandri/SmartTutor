@@ -1,0 +1,7 @@
+[build]
+command = "sdk install java 17.0.12-tem || true && sdk use java 17.0.12-tem && chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
+publish = "composeApp/build/dist/wasmJs/productionExecutable"
+
+[build.environment]
+JAVA_VERSION = "17"
+JDK_VERSION = "17"

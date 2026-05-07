@@ -1,6 +1,0 @@
-{
-  "buildCommand": "chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution",
-  "outputDirectory": "composeApp/build/dist/wasmJs/productionExecutable",
-  "installCommand": "echo Using custom build",
-  "framework": null
-}
