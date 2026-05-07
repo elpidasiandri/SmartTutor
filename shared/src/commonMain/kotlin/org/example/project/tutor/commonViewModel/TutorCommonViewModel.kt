@@ -83,8 +83,7 @@ class TutorCommonViewModel(
     ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
-    private val userId = userIdProvider()
-
+    private fun userId(): String = userIdProvider()
     init {
         initializeData()
 
@@ -122,7 +121,7 @@ class TutorCommonViewModel(
         runCatching {
             analyticsTracker.sendEvent(
                 name = name,
-                params = params + mapOf("userId" to userId)
+                params = params + mapOf("userId" to userId())
             )
         }.onFailure {
             platform.log("Analytics", "Failed to log event: $name", it)
@@ -164,7 +163,7 @@ class TutorCommonViewModel(
                 "unitIndex" to unitIndex.toString(),
                 "tab" to state.value.selectedTab.name,
                 "messageLength" to trimmed.length.toString(),
-                "userId" to userId
+                "userId" to userId()
             )
         )
 
@@ -187,7 +186,7 @@ class TutorCommonViewModel(
 
                 val response = askTutorUseCase(
                     chatId = chatId,
-                    userId = userId,
+                    userId = userId(),
                     unitIndex = unitIndex,
                     message = trimmed,
                     token = token,
@@ -203,7 +202,7 @@ class TutorCommonViewModel(
                         "unitIndex" to unitIndex.toString(),
                         "tab" to state.value.selectedTab.name,
                         "hasAiMessage" to (aiMsg != null).toString(),
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -234,7 +233,7 @@ class TutorCommonViewModel(
                     params = mapOf(
                         "chatId" to chatId,
                         "reason" to (t.message ?: "unknown"),
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -305,7 +304,7 @@ class TutorCommonViewModel(
             try {
                 _state.update { it.copy(loading = true) }
 
-                val fullChat = getChatByIdUseCase(chatId, userId)
+                val fullChat = getChatByIdUseCase(chatId, userId())
 
                 val units = fullChat.result?.learningUnits
                     ?: fullChat.partialResult?.learningUnits
@@ -370,7 +369,7 @@ class TutorCommonViewModel(
                 "chatId" to _state.value.activeChatId,
                 "tab" to tab.name,
                 "unitTitle" to unit.title,
-                "userId" to userId
+                "userId" to userId()
             )
         )
 
@@ -394,7 +393,7 @@ class TutorCommonViewModel(
 
                 val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
                     picked = picked,
-                    userId = userId,
+                    userId = userId(),
                     mode = state.value.selectedTab.name
                 )
 
@@ -407,7 +406,7 @@ class TutorCommonViewModel(
                     activeIndex = 0
                 )
 
-                val refreshedChats = getAllHistoryChatUseCase(userId)
+                val refreshedChats = getAllHistoryChatUseCase(userId())
 
                 track(
                     name = PDF_UPLOADED,
@@ -417,7 +416,7 @@ class TutorCommonViewModel(
                         "unitsCount" to units.size.toString(),
                         "language" to res.languageEnum.value,
                         "mode" to state.value.selectedTab.name,
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -450,7 +449,7 @@ class TutorCommonViewModel(
                     name = PDF_UPLOAD_FAILED,
                     params = mapOf(
                         "reason" to (t.toUserMessage()),
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -489,12 +488,12 @@ class TutorCommonViewModel(
                 val token = getIdTokenSuspendUseCase()
                 deleteChatUseCase(
                     chatId = chatId,
-                    userId = userId,
+                    userId = userId(),
                     token = token
                 )
                 deleteChatProgressUseCase(
                     chatId = chatId,
-                    userId = userId,
+                    userId = userId(),
                     token = token
                 )
                 val remainingChats = _state.value.savedChats.filterNot { it.chatId == chatId }
@@ -505,7 +504,7 @@ class TutorCommonViewModel(
                     name = CHAT_DELETED,
                     params = mapOf(
                         "chatId" to chatId,
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -538,7 +537,7 @@ class TutorCommonViewModel(
                     params = mapOf(
                         "chatId" to chatId,
                         "reason" to (t.message ?: "unknown"),
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -560,7 +559,7 @@ class TutorCommonViewModel(
         track(
             name = MY_PROGRESS_OPENED,
             params = mapOf(
-                "userId" to userId
+                "userId" to userId()
             )
         )
     }
@@ -581,7 +580,7 @@ class TutorCommonViewModel(
                 "fromIndex" to _state.value.currentIndex.toString(),
                 "toIndex" to nextIndex.toString(),
                 "subjectTitle" to subjectTitle,
-                "userId" to userId
+                "userId" to userId()
             )
         )
 
@@ -621,7 +620,7 @@ class TutorCommonViewModel(
                 val progress = buildCurrentProgress()
 
                 upsertChatProgressUseCase(
-                    userId = userId,
+                    userId = userId(),
                     token = token,
                     progress = progress.toDto()
                 )
@@ -639,7 +638,7 @@ class TutorCommonViewModel(
 
         return ChatProgressUpsertDomain(
             chatId = _state.value.activeChatId,
-            userId = userId,
+            userId = userId(),
             documentId = _state.value.activeDocumentId,
             title = _state.value.subjectTitle,
             totalUnits = totalUnits,
@@ -656,7 +655,7 @@ class TutorCommonViewModel(
         track(
             name = NEW_CHAT_STARTED,
             params = mapOf(
-                "userId" to userId
+                "userId" to userId()
             )
         )
 
@@ -672,8 +671,9 @@ class TutorCommonViewModel(
     private fun initializeData() = scope.launch {
 
         if (_state.value.session.material.fileUploaded) return@launch
-        println("initializeData userId = $userId")
-        if (userId.isBlank()) {
+        println("initializeData userId = ${userId()}")
+
+        if (userId().isBlank()) {
             platform.log("TutorStore", "UserId not ready yet", null)
             return@launch
         }
@@ -681,19 +681,19 @@ class TutorCommonViewModel(
         try {
             _state.update { it.copy(loading = true, error = null) }
 
-            val chats = getAllHistoryChatUseCase(userId)
+            val chats = getAllHistoryChatUseCase(userId())
             track(
                 name = TUTOR_SCREEN_OPENED,
                 params = mapOf(
                     "savedChatsCount" to chats.size.toString(),
-                    "userId" to userId
+                    "userId" to userId()
                 )
             )
             if (chats.isNotEmpty()) {
                 val latestChatSummary = chats.first()
                 val latestChat = getChatByIdUseCase(
                     chatId = latestChatSummary.chatId,
-                    userId = userId
+                    userId = userId()
                 )
 
                 track(
@@ -701,7 +701,7 @@ class TutorCommonViewModel(
                     params = mapOf(
                         "chatId" to latestChat.chatId,
                         "documentId" to latestChat.documentId,
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
@@ -802,11 +802,11 @@ class TutorCommonViewModel(
                     name = EXISTING_CHAT_OPENED,
                     params = mapOf(
                         "chatId" to chatId,
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
-                val fullChat = getChatByIdUseCase(chatId, userId)
+                val fullChat = getChatByIdUseCase(chatId, userId())
 
                 val units = fullChat.result?.learningUnits
                     ?: fullChat.partialResult?.learningUnits
@@ -853,7 +853,7 @@ class TutorCommonViewModel(
                     params = mapOf(
                         "chatId" to chatId,
                         "reason" to (t.message ?: "unknown"),
-                        "userId" to userId
+                        "userId" to userId()
                     )
                 )
 
