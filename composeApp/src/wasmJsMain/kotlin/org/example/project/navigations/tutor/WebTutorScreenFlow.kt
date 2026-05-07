@@ -1,5 +1,6 @@
 package org.example.project.navigations.tutor
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
+import org.example.project.registration.AuthUserHolder
 import org.example.project.tutor.TutorScreen
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
@@ -28,11 +30,16 @@ import org.koin.core.context.unloadKoinModules
 fun WebTutorScreenFlow(navController: NavController) {
     loadKoinModules(tutorModule)
 
+    val user = AuthUserHolder.currentUser
     val controller = koinInject<TutorController>()
     val state by controller.state.collectAsState()
     val pdfPicker = WebPdfPicker()
     var userMessage by remember { mutableStateOf("") }
 
+    if (user == null) {
+        Text("Loading user...")
+        return
+    }
     LaunchedEffect(state.event) {
         when (state.event) {
             TutorEvents.NavigateToLogOut -> {
