@@ -32,7 +32,6 @@ import org.example.project.tutor.models.AnalyticsEvents.CHAT_DELETE_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.EXISTING_CHAT_OPENED
 import org.example.project.tutor.models.AnalyticsEvents.EXISTING_CHAT_OPEN_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.LATEST_CHAT_AUTO_LOADED
-import org.example.project.tutor.models.AnalyticsEvents.LEARNING_UNIT_SELECTED
 import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SEND_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SENT
 import org.example.project.tutor.models.AnalyticsEvents.MY_PROGRESS_OPENED
@@ -72,7 +71,7 @@ class TutorCommonViewModel(
     private val platform: TutorPlatform,
     private val loadTutorFromPdfUseCase: LoadTutorFromPdfUseCase,
     private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
-    private val userId: String,
+    private val userIdProvider: () -> String,
     private val askTutorUseCase: AskTutorUseCase,
     private val getIdTokenSuspendUseCase: GetIdTokenSuspendUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
@@ -84,9 +83,11 @@ class TutorCommonViewModel(
     ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
+    private val userId = userIdProvider()
 
     init {
         initializeData()
+
     }
 
     fun onEvent(event: TutorUiEvents) {
@@ -671,6 +672,11 @@ class TutorCommonViewModel(
     private fun initializeData() = scope.launch {
 
         if (_state.value.session.material.fileUploaded) return@launch
+
+        if (userId.isBlank()) {
+            platform.log("TutorStore", "UserId not ready yet", null)
+            return@launch
+        }
 
         try {
             _state.update { it.copy(loading = true, error = null) }

@@ -17,6 +17,7 @@ fun initFirebase(): FirebaseContext {
     val app = initializeApp(firebaseConfig)
     val auth = getAuth(app)
     onAuthStateChanged(auth) { user ->
+
         AuthUserHolder.currentUser = user
     }
     return FirebaseContext(app, auth)

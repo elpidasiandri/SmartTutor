@@ -13,7 +13,6 @@ import org.example.project.navigations.NavigateToScreen
 import org.example.project.registration.AuthUserHolder
 import org.example.project.registration.firebase.initFirebase
 import org.example.project.registration.firebase.onAuthStateChanged
-import org.example.project.storage.WebStorageHelper
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin

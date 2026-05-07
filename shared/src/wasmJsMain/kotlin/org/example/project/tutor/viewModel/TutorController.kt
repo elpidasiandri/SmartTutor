@@ -44,7 +44,9 @@ class TutorController(
         platform = platform,
         loadTutorFromPdfUseCase = loadTutorFromPdfUseCase,
         getAllHistoryChatUseCase = getAllHistoryChatUseCase,
-        userId = AuthUserHolder.currentUser?.uid ?: "",
+        userIdProvider = {
+            AuthUserHolder.currentUser?.uid ?: ""
+        },
         askTutorUseCase = askTutorUseCase,
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
         getChatByIdUseCase = getChatByIdUseCase,
