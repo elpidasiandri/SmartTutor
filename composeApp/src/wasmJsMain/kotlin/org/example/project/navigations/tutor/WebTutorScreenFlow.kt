@@ -36,7 +36,7 @@ fun WebTutorScreenFlow(navController: NavController) {
         return
     }
 
-    loadKoinModules(tutorModule)
+//    loadKoinModules(tutorModule)
 
     val koin = getKoin()
 
@@ -59,7 +59,7 @@ fun WebTutorScreenFlow(navController: NavController) {
         when (state.event) {
             TutorEvents.NavigateToLogOut -> {
                 controller.onEvent(TutorUiEvents.ClearUiEvent)
-                unloadKoinModules(tutorModule)
+//                unloadKoinModules(tutorModule)
                 navController.navigate(WebScreen.Registration)
             }
 

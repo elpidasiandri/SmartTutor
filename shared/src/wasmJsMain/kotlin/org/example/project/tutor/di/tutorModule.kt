@@ -80,7 +80,8 @@ val tutorModule = module {
     }
     factory { GetIdTokenSuspendUseCase(get()) }
 
-    factory  {
+    factory  { params ->
+        val uid: String = params.get()
         TutorController(
             get(),
             get(),
@@ -94,6 +95,7 @@ val tutorModule = module {
             get(),
             get(),
             get(),
+            userIdProvider = { uid },
         )
     }
     includes(logoutModule)
