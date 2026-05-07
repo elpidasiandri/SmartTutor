@@ -28,8 +28,11 @@ object WebApp : KoinComponent {
         val auth = initFirebase().auth
 
         onAuthStateChanged(auth) { user ->
+
+            AuthUserHolder.currentUser = user
+            println("Firebase user restored = ${user?.uid}")
+
             if (user != null) {
-                AuthUserHolder.currentUser = user
                 navController.navigate(WebScreen.Tutor)
             } else {
                 navController.navigate(WebScreen.Registration)
