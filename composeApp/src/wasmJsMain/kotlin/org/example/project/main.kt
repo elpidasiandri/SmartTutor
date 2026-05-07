@@ -10,6 +10,9 @@ import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.navController.di.navigationModule
 import org.example.project.navigations.NavigateToScreen
+import org.example.project.registration.AuthUserHolder
+import org.example.project.registration.firebase.initFirebase
+import org.example.project.registration.firebase.onAuthStateChanged
 import org.example.project.storage.WebStorageHelper
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,11 +26,15 @@ object WebApp : KoinComponent {
         }
 
         val navController: NavController by inject()
+        val auth = initFirebase().auth
 
-        if (WebStorageHelper.isTokenValid()) {
-            navController.navigate(WebScreen.Tutor)
-        } else {
-            navController.navigate(WebScreen.Registration)
+        onAuthStateChanged(auth) { user ->
+            if (user != null) {
+                AuthUserHolder.currentUser = user
+                navController.navigate(WebScreen.Tutor)
+            } else {
+                navController.navigate(WebScreen.Registration)
+            }
         }
         ComposeViewport("tutorApp") {
             val screen by navController.screen.collectAsState()

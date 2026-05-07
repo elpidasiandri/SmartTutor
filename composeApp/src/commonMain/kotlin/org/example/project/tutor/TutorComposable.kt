@@ -58,6 +58,7 @@ import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
+import org.example.project.dimens.Dimens.spacing48
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.learning_unit_title
 import org.example.project.strings.SmartTutorStrings.material_title
@@ -128,8 +129,8 @@ fun TutorScreen(
             onUploadPdfClick = {
                 onUploadPdfClick()
             },
-            selectLearningUnit = { title,subjectId ->
-                selectLearningUnit(title,subjectId)
+            selectLearningUnit = { title, subjectId ->
+                selectLearningUnit(title, subjectId)
             },
             onNextUnitClick = {
                 onNextUnitClick()
@@ -176,7 +177,7 @@ fun TutorChatUI(
     onLogoutClick: () -> Unit,
     onMessageDismiss: () -> Unit,
     onUploadPdfClick: () -> Unit,
-    selectLearningUnit: (String,String) -> Unit,
+    selectLearningUnit: (String, String) -> Unit,
     onNextUnitClick: () -> Unit,
     onExercisesClick: () -> Unit,
     startNewChat: () -> Unit,
@@ -236,7 +237,12 @@ fun TutorChatUI(
                     scope = scope,
                     onSettingsClick = onSettingsClick,
                     onLogoutClick = onLogoutClick,
-                    onLearningUnitClick = { title , subjectId-> selectLearningUnit(title,subjectId) },
+                    onLearningUnitClick = { title, subjectId ->
+                        selectLearningUnit(
+                            title,
+                            subjectId
+                        )
+                    },
                     onNewChatClick = {
                         scope.launch {
                             startNewChat()
@@ -334,7 +340,14 @@ private fun TutorToastHost(
     onMessageDismiss: () -> Unit,
 ) {
     if (showErrorMessage && errorMessage.isNotEmpty()) {
-        Box(modifier = Modifier.padding(spacing24)) {
+        Box(
+            modifier = Modifier.padding(
+                start = spacing24,
+                bottom = spacing48,
+                end = spacing24
+            )
+        ) {
+
             CustomToastComposable(
                 isError = isError,
                 message = errorMessage,
@@ -357,7 +370,7 @@ private fun TutorDrawerContent(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onLearningUnitClick: (String,String) -> Unit,
+    onLearningUnitClick: (String, String) -> Unit,
     onNewChatClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
