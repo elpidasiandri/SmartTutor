@@ -17,7 +17,6 @@ import org.example.project.registration.AuthUserHolder
 import org.example.project.tutor.TutorScreen
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
-import org.example.project.tutor.di.tutorModule
 import org.example.project.tutor.pdfPicker.WebPdfPicker
 import org.example.project.tutor.viewModel.TutorController
 import org.example.project.utils.validation.PdfValidationResult

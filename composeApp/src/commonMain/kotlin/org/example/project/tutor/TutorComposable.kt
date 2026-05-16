@@ -272,37 +272,40 @@ fun TutorChatUI(
                     }
                 },
                 content = { padding ->
-                    TutorToastHost(
-                        showErrorMessage = showErrorMessage,
-                        errorMessage = errorMessage,
-                        isError = isError,
-                        onMessageDismiss = onMessageDismiss
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
 
+                        TutorChatContent(
+                            padding = padding,
+                            chatData = chatData,
+                            chatMessages = chatMessages,
+                            userMessageState = userMessageState,
+                            onUserMessageChangeLocal = { userMessageState = it },
+                            onExercisesClick = onExercisesClick,
+                            onNextUnitClick = onNextUnitClick,
+                            onUploadPdfClick = onUploadPdfClick,
+                            onSendClick = {
+                                val text = userMessageState.trim()
+                                if (text.isNotBlank()) {
+                                    onSendMessage(text)
+                                    userMessageState = ""
+                                }
+                            },
+                            selectedTab = selectedTab,
+                            onChangeTab = { onChangeTab(it) },
+                            tabInfoMessage = tabInfoMessage,
+                            currentUnit = currentUnit,
+                            isLoading = isLoading,
+                            canGoNext = canGoNext,
+                        )
 
-                    TutorChatContent(
-                        padding = padding,
-                        chatData = chatData,
-                        chatMessages = chatMessages,
-                        userMessageState = userMessageState,
-                        onUserMessageChangeLocal = { userMessageState = it },
-                        onExercisesClick = onExercisesClick,
-                        onNextUnitClick = onNextUnitClick,
-                        onUploadPdfClick = onUploadPdfClick,
-                        onSendClick = {
-                            val text = userMessageState.trim()
-                            if (text.isNotBlank()) {
-                                onSendMessage(text)
-                                userMessageState = ""
-                            }
-                        },
-                        selectedTab = selectedTab,
-                        onChangeTab = { onChangeTab(it) },
-                        tabInfoMessage = tabInfoMessage,
-                        currentUnit = currentUnit,
-                        isLoading = isLoading,
-                        canGoNext = canGoNext,
-                    )
+                        TutorToastHost(
+                            showErrorMessage = showErrorMessage,
+                            errorMessage = errorMessage,
+                            isError = isError,
+                            onMessageDismiss = onMessageDismiss
+                        )
+
+                    }
 
                     if (isLoading || askTutor) {
                         Box(

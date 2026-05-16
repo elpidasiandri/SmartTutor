@@ -38,18 +38,18 @@ val tutorModule = module {
     single<ITutorRepo> {
         TutorIntroRepoImpl(
             httpClient = get(),
-            baseUrl = "http://10.0.2.2:8081",
+            baseUrl = "https://smarttutor-production-5d4d.up.railway.app",
             FirebaseAuth.getInstance()
         )
     }
     factory <IProgressRepo> {
         ProgressRepoImpl(
             httpClient = get(),
-            baseUrl = "http://10.0.2.2:8081",
+            baseUrl = "https://smarttutor-production-5d4d.up.railway.app",
         )
     }
 
-    single { AppConfig(baseUrl = "http://10.0.2.2:8081") }
+    single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
 
     single { provideFirebaseAnalytics(androidContext()) }

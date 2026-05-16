@@ -35,9 +35,9 @@ class TutorIntroViewModel(
     private val deleteChatUseCase: DeleteChatUseCase,
     private val analyticsTracker: IAnalyticsTracker,
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
-    private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
-
+    private val deleteChatProgressUseCase: DeleteChatProgressUseCase
     ) : ViewModel() {
+
     val common = TutorCommonViewModel(
         logoutUseCase = logout,
         getLearningUnitUseCase = getLearningUnitUseCase,
@@ -45,7 +45,7 @@ class TutorIntroViewModel(
         platform = platform,
         loadTutorFromPdfUseCase = loadTutorFromPdfUseCase,
         getAllHistoryChatUseCase = getAllHistoryChatUseCase,
-        userId = auth.uid?:"",
+        userIdProvider = { auth.uid ?: "" },
         askTutorUseCase = askTutorUseCase,
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,
         getChatByIdUseCase = getChatByIdUseCase,
@@ -54,6 +54,9 @@ class TutorIntroViewModel(
         upsertChatProgressUseCase = upsertChatProgressUseCase,
         deleteChatProgressUseCase = deleteChatProgressUseCase,
     )
+    init {
+        common.initializeData()
+    }
     val state: StateFlow<TutorState> = common.state
 
     fun onEvent(event: TutorUiEvents) = common.onEvent(event)
@@ -61,4 +64,5 @@ class TutorIntroViewModel(
     fun playAIMessage(text: String) = common.playAIMessage(text)
     fun startVoiceInput(onResult: (String) -> Unit) = common.startVoiceInput(onResult)
     fun stopVoiceInput() = common.stopVoiceInput()
+
 }
