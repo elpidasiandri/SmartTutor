@@ -1,5 +1,5 @@
 [build]
-command = "chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
+command = "./gradlew :composeApp:wasmJsBrowserDistribution"
 publish = "composeApp/build/dist/wasmJs/productionExecutable"
 
 [build.environment]
