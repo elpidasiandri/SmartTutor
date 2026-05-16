@@ -151,8 +151,6 @@ fun buildExercisesTabMessage(unit: LearningUnitContentDomain): String {
 
 fun buildChatHistoryFromUnits(
     units: List<LearningUnitContentDomain>,
-//    materialId: String,
-    unlockedCount: Int,
     subjectTitle: String,
 ): ChatHistoryDomain {
     return ChatHistoryDomain(

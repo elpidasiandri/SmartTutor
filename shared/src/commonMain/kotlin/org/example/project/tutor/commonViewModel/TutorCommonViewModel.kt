@@ -85,12 +85,6 @@ class TutorCommonViewModel(
     val state: StateFlow<TutorState> = _state
     private fun userId(): String = userIdProvider()
 
-    init {
-        //todo elpida android
-//        initializeData()
-
-    }
-
     fun onEvent(event: TutorUiEvents) {
         when (event) {
             TutorUiEvents.Logout -> logOutUser()
@@ -600,7 +594,6 @@ class TutorCommonViewModel(
 
         val history = buildChatHistoryFromUnits(
             units = units,
-            unlockedCount = newUnlocked,
             subjectTitle = subjectTitle
         )
 
@@ -676,8 +669,8 @@ class TutorCommonViewModel(
 
     fun initializeData() = scope.launch {
         val uid = userId()
+
         if (_state.value.session.material.fileUploaded) return@launch
-        println("initializeData userId = ${userId()}")
 
         if (uid.isBlank()) {
             platform.log("TutorStore", "UserId not ready yet", null)
@@ -688,6 +681,7 @@ class TutorCommonViewModel(
             _state.update { it.copy(loading = true, error = null) }
 
             val chats = getAllHistoryChatUseCase(uid)
+
             track(
                 name = TUTOR_SCREEN_OPENED,
                 params = mapOf(
@@ -695,8 +689,11 @@ class TutorCommonViewModel(
                     "userId" to userId()
                 )
             )
+
             if (chats.isNotEmpty()) {
+
                 val latestChatSummary = chats.first()
+
                 val latestChat = getChatByIdUseCase(
                     chatId = latestChatSummary.chatId,
                     userId = userId()
@@ -716,13 +713,18 @@ class TutorCommonViewModel(
                     ?: emptyList()
 
                 val domainUnits = units.map { it.toDomain() }
-                val firstUnit = domainUnits.firstOrNull() ?: LearningUnitContentDomain()
+
+                val activeIndex = 0
+
+                val activeUnit = domainUnits.firstOrNull()
+                    ?: LearningUnitContentDomain()
 
                 val session = buildChatSessionFromStoredChat(
                     chat = latestChat,
                     units = domainUnits,
-                    activeIndex = 0
+                    activeIndex = activeIndex
                 )
+
                 val fullMessages = latestChat.messages
                     .sortedBy { it.createdAtEpochMillis }
                     .map { it.toDomain() }
@@ -732,26 +734,38 @@ class TutorCommonViewModel(
                         loading = false,
                         savedChats = chats,
                         chatHistory = chats.toChatHistoryDomain(),
+
                         activeChatId = latestChat.chatId,
                         activeDocumentId = latestChat.documentId,
                         subjectTitle = latestChat.title,
+
                         allUnits = domainUnits,
-                        currentIndex = 0,
+
+                        currentIndex = activeIndex,
                         unlockedCount = maxOf(1, domainUnits.size),
-                        currentUnit = firstUnit,
+                        currentUnit = activeUnit,
+
                         session = session,
+
                         allChatMessages = fullMessages,
+
                         selectedTab = TutorTab.Learning,
-                        tabInfoMessage = buildLearningTabMessage(firstUnit),
+                        tabInfoMessage = buildLearningTabMessage(activeUnit),
+
+                        canGoNext = activeIndex < domainUnits.lastIndex,
+
                         event = TutorEvents.Loaded
                     )
                 }
+
                 return@launch
             }
 
             val prototype = getLearningUnitUseCase()
+
             val units = prototype.learningUnits
             val subjectTitle = prototype.title
+
             val first = units.firstOrNull()
 
             val currentIndex = 0
@@ -765,7 +779,6 @@ class TutorCommonViewModel(
 
             val chatHistory = buildChatHistoryFromUnits(
                 units = units,
-                unlockedCount = unlockedCount,
                 subjectTitle = subjectTitle
             )
 
@@ -773,21 +786,29 @@ class TutorCommonViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
+
                         tabInfoMessage = buildLearningTabMessage(first),
                         selectedTab = TutorTab.Learning,
+
                         allUnits = units,
+
                         session = session,
+
                         currentIndex = currentIndex,
                         unlockedCount = unlockedCount,
                         currentUnit = first,
+
                         chatHistory = chatHistory,
                         subjectTitle = subjectTitle,
+
                         event = TutorEvents.Loaded
                     )
                 }
             }
+
         } catch (t: Throwable) {
             platform.log("TutorStore", "initializeData failed", t)
+
             _state.update {
                 it.copy(
                     loading = false,
@@ -798,7 +819,6 @@ class TutorCommonViewModel(
             }
         }
     }
-
     private fun loadExistingChat(chatId: String) {
         scope.launch {
             try {

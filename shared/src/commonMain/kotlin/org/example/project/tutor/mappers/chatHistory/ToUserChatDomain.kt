@@ -160,7 +160,7 @@ fun buildChatSessionFromStoredChat(
     units: List<LearningUnitContentDomain>,
     activeIndex: Int = 0,
 ): ChatSessionStartDomain {
-    val total = units.size.coerceAtLeast(0)
+    val total = units.size
     val lu = units.getOrNull(activeIndex)
     val ts = Clock.System.now().toEpochMilliseconds()
 
@@ -178,18 +178,21 @@ fun buildChatSessionFromStoredChat(
                 timestamp = ts,
                 type = "TEXT",
                 imagePath = lu?.images.orEmpty(),
-                id = "intro_${chat.chatId}_${lu?.numbering ?: 0}"
+                id = "intro_${chat.chatId}_${lu?.numbering ?: activeIndex}"
             )
         )
     } else {
         emptyList()
     }
 
-    val storedMessages = chat.messages
+    val storedMessagesForActiveUnit = chat.messages
         .sortedBy { it.createdAtEpochMillis }
+        .filter { msg ->
+            msg.unitNumber == lu?.numbering
+        }
         .map { it.toDomain() }
 
-    val allMessages = (introMessage + storedMessages)
+    val allMessages = (introMessage + storedMessagesForActiveUnit)
         .distinctBy { it.id }
 
     return ChatSessionStartDomain(
@@ -201,7 +204,7 @@ fun buildChatSessionFromStoredChat(
         ),
         learningUnit = LearningUnitDomain(
             title = lu?.title.orEmpty(),
-            orderIndex = lu?.numbering ?: 0,
+            orderIndex = lu?.numbering ?: activeIndex,
             quizAvailable = true,
             analysisCompleted = true,
             quizCompleted = false,
