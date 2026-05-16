@@ -90,10 +90,6 @@ class RegistrationViewModel(
                     registrationUseCase.signUp(
                         email = email, password = password, username = username
                     ) { success, userId ->
-                        Log.d(
-                            "Q12345 ", "userId $userId " +
-                                    " success $success "
-                        )
                         if (success) {
                             _state.update {
                                 it.copy(

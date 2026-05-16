@@ -40,7 +40,6 @@ object WebApp : KoinComponent {
         onAuthStateChanged(auth) { user ->
 
             AuthUserHolder.currentUser = user
-            println("Firebase user restored = ${user?.uid}")
 
             if (user != null) {
                 navController.navigate(WebScreen.Tutor)

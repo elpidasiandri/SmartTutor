@@ -934,12 +934,10 @@ class PromptLlmClient(
                 ?: return false
 
         val status = root["status"]?.jsonPrimitive?.content
-        println("RESP status = $status")
 
         if (status == "incomplete") {
             val reason = (root["incomplete_details"] as? JsonObject)
                 ?.get("reason")?.jsonPrimitive?.content
-            println("RESP incomplete reason = $reason")
             return false
         }
 
@@ -947,7 +945,6 @@ class PromptLlmClient(
             ?.get("message")?.jsonPrimitive?.content
 
         if (!errMsg.isNullOrBlank()) {
-            println("RESP error = $errMsg")
             return false
         }
 
