@@ -152,7 +152,15 @@ private fun ExerciseCard(
                 )
             }
             else -> {
-                Text("Unsupported exercise type: ${exercise.type}")
+                exercise.options.forEachIndexed { optIndex, opt ->
+                    val letter = ('A' + optIndex).toString()
+                    OptionRow(
+                        label = "$letter)",
+                        text = opt,
+                        selected = selectedIndex == optIndex,
+                        onClick = { selectedIndex = optIndex }
+                    )
+                }
             }
         }
 
