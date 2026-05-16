@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.w3c.dom.Screen
 
 class NavController {
-    private val _screen = MutableStateFlow<WebScreen>(WebScreen.Registration)
+    private val _screen = MutableStateFlow<WebScreen>(WebScreen.Splash)
     val screen: StateFlow<WebScreen> get() = _screen
 
     fun navigate(screen: WebScreen) {
@@ -13,6 +13,7 @@ class NavController {
     }
 }
 sealed class WebScreen {
+    object Splash : WebScreen()
     object Registration : WebScreen()
     object MyProgress : WebScreen()
     object DeleteAccountSettings : WebScreen()
