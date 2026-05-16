@@ -34,8 +34,6 @@ fun WebTutorScreenFlow(navController: NavController) {
         return
     }
 
-//    loadKoinModules(tutorModule)
-
     val koin = getKoin()
 
     val controller = remember(user.uid) {

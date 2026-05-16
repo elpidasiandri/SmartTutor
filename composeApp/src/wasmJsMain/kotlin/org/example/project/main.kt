@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
+import org.example.project.myProgress.di.myProgressModule
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.navController.di.navigationModule
@@ -28,7 +29,8 @@ object WebApp : KoinComponent {
             modules(
                 firebaseModule,
                 navigationModule,
-                tutorModule
+                tutorModule,
+                myProgressModule
             )
         }
 

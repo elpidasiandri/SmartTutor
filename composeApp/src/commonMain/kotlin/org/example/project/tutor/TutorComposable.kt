@@ -58,8 +58,8 @@ import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
-import org.example.project.dimens.Dimens.spacing48
 import org.example.project.dimens.Dimens.spacing8
+import org.example.project.dimens.Dimens.spacing80
 import org.example.project.strings.SmartTutorStrings.learning_unit_title
 import org.example.project.strings.SmartTutorStrings.material_title
 import org.example.project.strings.SmartTutorStrings.type_your_message
@@ -343,7 +343,7 @@ private fun TutorToastHost(
         Box(
             modifier = Modifier.padding(
                 start = spacing24,
-                bottom = spacing48,
+                bottom = spacing80,
                 end = spacing24
             )
         ) {
