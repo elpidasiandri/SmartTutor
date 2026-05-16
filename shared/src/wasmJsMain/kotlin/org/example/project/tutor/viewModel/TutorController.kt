@@ -34,7 +34,7 @@ class TutorController(
     private val analyticsTracker: IAnalyticsTracker,
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
-    private val uid: String,
+    private val userIdProvider: () -> String,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val common = TutorCommonViewModel(
@@ -45,7 +45,7 @@ class TutorController(
         loadTutorFromPdfUseCase = loadTutorFromPdfUseCase,
         getAllHistoryChatUseCase = getAllHistoryChatUseCase,
         userIdProvider = {
-            uid
+            userIdProvider()
         },
         askTutorUseCase = askTutorUseCase,
         getIdTokenSuspendUseCase = getIdTokenSuspendUseCase,

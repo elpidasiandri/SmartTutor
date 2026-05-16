@@ -7,6 +7,9 @@ import org.example.project.myProgress.repo.WebProgressRepoImpl
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.network.createWebHttpClient
+import org.example.project.registration.AuthUserHolder
+import org.example.project.registration.firebase.FirebaseApp
+import org.example.project.registration.firebase.FirebaseContext
 import org.example.project.registration.firebase.initFirebase
 import org.example.project.settings.logOut.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
@@ -33,7 +36,7 @@ val tutorModule = module {
     single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
     single<ITutorRepo> {
         WebTutorRepoImpl(
-            firebase = initFirebase().app,
+            firebase = get<FirebaseContext>().app,
             httpClient = get(),
             baseUrl = "https://smarttutor-production-5d4d.up.railway.app"
         )
@@ -80,8 +83,7 @@ val tutorModule = module {
     }
     factory { GetIdTokenSuspendUseCase(get()) }
 
-    factory  { params ->
-        val uid: String = params.get()
+    factory {
         TutorController(
             get(),
             get(),
@@ -95,7 +97,7 @@ val tutorModule = module {
             get(),
             get(),
             get(),
-            userIdProvider = { uid },
+            userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() }
         )
     }
     includes(logoutModule)

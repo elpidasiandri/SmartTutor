@@ -11,7 +11,10 @@ import org.example.project.navController.WebScreen
 import org.example.project.navController.di.navigationModule
 import org.example.project.navigations.NavigateToScreen
 import org.example.project.registration.AuthUserHolder
+import org.example.project.registration.firebase.FirebaseAuth
+import org.example.project.registration.firebase.FirebaseContext
 import org.example.project.registration.firebase.initFirebase
+import org.example.project.registration.firebase.module.firebaseModule
 import org.example.project.registration.firebase.onAuthStateChanged
 import org.example.project.tutor.di.tutorModule
 import org.koin.core.component.KoinComponent
@@ -23,14 +26,15 @@ object WebApp : KoinComponent {
     fun start() {
         startKoin {
             modules(
+                firebaseModule,
                 navigationModule,
                 tutorModule
             )
         }
 
         val navController: NavController by inject()
-        val auth = initFirebase().auth
-
+        val firebase: FirebaseContext by inject()
+        val auth = firebase.auth
         onAuthStateChanged(auth) { user ->
 
             AuthUserHolder.currentUser = user
