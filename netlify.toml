@@ -1,5 +1,5 @@
 [build]
-command = "chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
+command = "export JAVA_HOME=$JAVA_HOME_21_X64 && export PATH=$JAVA_HOME/bin:$PATH && java -version && chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
 publish = "composeApp/build/dist/wasmJs/productionExecutable"
 
 [build.environment]
