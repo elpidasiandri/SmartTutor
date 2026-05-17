@@ -4,3 +4,4 @@ publish = "composeApp/build/dist/wasmJs/productionExecutable"
 
 [build.environment]
 JAVA_VERSION = "21"
+NODE_VERSION = "20"
