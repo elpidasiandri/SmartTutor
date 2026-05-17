@@ -129,7 +129,7 @@ kotlin {
 
             val generateDocConfig = tasks.register<GenerateDocConfigTask>("generateDocConfig")
 
-            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+            tasks.matching { it.name == "compileKotlinWasmJs" || it.name == "compileKotlinJvm" }.configureEach {
                 dependsOn(generateDocConfig)
             }
 
@@ -183,10 +183,10 @@ kotlin {
             val generateFirebaseConfig =
                 tasks.register<GenerateFirebaseConfigTask>("generateFirebaseConfig")
 
-            tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+            tasks.matching { it.name == "compileKotlinWasmJs" }.configureEach {
                 dependsOn(generateFirebaseConfig)
             }
-            kotlin.srcDir(generateFirebaseConfig.flatMap { it.outputDir })
+            kotlin.srcDir(generateFirebaseConfig.map { it.outputDir.get().asFile })
         }
     }
 }
