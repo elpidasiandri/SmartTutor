@@ -1,5 +1,5 @@
 [build]
-command = "curl -sL https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.4_7.tar.gz -o /tmp/jdk21.tar.gz && mkdir -p /tmp/jdk21 && tar -xzf /tmp/jdk21.tar.gz -C /tmp/jdk21 --strip-components=1 && export JAVA_HOME=/tmp/jdk21 && export PATH=$JAVA_HOME/bin:$PATH && java -version && chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
+command = "curl -sL https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.4%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.4_7.tar.gz -o /tmp/jdk21.tar.gz && mkdir -p /tmp/jdk21 && tar -xzf /tmp/jdk21.tar.gz -C /tmp/jdk21 --strip-components=1 && export JAVA_HOME=/tmp/jdk21 && export PATH=$JAVA_HOME/bin:$PATH && printf 'WEB_API_KEY=%s\nWEB_AUTH_DOMAIN=%s\nWEB_STORAGE_BUCKET=%s\nSENDER_ID=%s\nPROJECT_ID=%s\nAPP_ID=%s\nDOC_ENGLISH=%s\nDOC_GREEK=%s\n' \"$WEB_API_KEY\" \"$WEB_AUTH_DOMAIN\" \"$WEB_STORAGE_BUCKET\" \"$SENDER_ID\" \"$PROJECT_ID\" \"$APP_ID\" \"$DOC_ENGLISH\" \"$DOC_GREEK\" > local.properties && chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
 publish = "composeApp/build/dist/wasmJs/productionExecutable"
 
 [build.environment]
