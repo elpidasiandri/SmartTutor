@@ -1,7 +1,6 @@
 [build]
-command = "chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
+command = "sdk install java 21.0.4-tem && sdk use java 21.0.4-tem && java -version && chmod +x gradlew && ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace"
 publish = "composeApp/build/dist/wasmJs/productionExecutable"
 
 [build.environment]
-JAVA_VERSION = "21"
 NODE_VERSION = "20"
