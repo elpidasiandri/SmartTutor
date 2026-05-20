@@ -27,6 +27,7 @@ object SmartTutorStrings {
     const val username_not_empty = "Username cannot be empty"
     const val invalid_password = "Password must be 8+ chars, include number & symbol"
     const val password_dismatch = "The two passwords do not match"
+    const val email_dismatch = "The email's fields do not match"
     const val password_conf_password_not_valid = "The confirmation password is not valid"
     const val generic_error = "Something went wrong. Please try again."
 

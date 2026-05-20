@@ -23,6 +23,7 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.strings.SmartTutorStrings.email_dismatch
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.validation.Validation
@@ -33,24 +34,27 @@ fun SignupComposable(
     isWebUi: Boolean = false,
 ) {
     var email by remember { mutableStateOf("") }
+    var email2 by remember { mutableStateOf("") }
+
     var username by remember { mutableStateOf("") }
     var password1 by remember { mutableStateOf("") }
     var password2 by remember { mutableStateOf("") }
 
     val isEmailValid = Validation.isValidEmail(email)
+    val isEmail2Valid = Validation.isValidEmail(email2)
+
     val isUsernameValid = username.isNotBlank()
     val isPassword1Valid = Validation.isValidPassword(password1)
     val isPassword2Valid = Validation.isValidPassword(password2)
     val arePasswordsSame: Boolean =
         password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
-
+    val areEmailsSame =
+        email == email2 && email.isNotEmpty() && email2.isNotEmpty()
     val isFormValid by derivedStateOf {
         isEmailValid &&
-                isPassword1Valid &&
-                isPassword2Valid &&
-                arePasswordsSame &&
-                isUsernameValid
-
+                isPassword1Valid && isPassword2Valid &&
+                arePasswordsSame && isUsernameValid &&
+                areEmailsSame && isUsernameValid
     }
 
     Column(
@@ -61,6 +65,25 @@ fun SignupComposable(
 
         if (!isEmailValid && email.isNotEmpty()) {
             ErrorTextComposable(SmartTutorStrings.invalid_email)
+        }
+        EmailTextFieldComposable(
+            value = email2,
+            onValueChange = { email2 = it },
+            isWebUi = isWebUi
+        )
+
+        if (!isEmail2Valid && email2.isNotEmpty()) {
+            ErrorTextComposable(SmartTutorStrings.invalid_email)
+        }
+
+        if (
+            email.isNotEmpty() &&
+            email2.isNotEmpty() &&
+            isEmailValid &&
+            isEmail2Valid &&
+            !areEmailsSame
+        ) {
+            ErrorTextComposable(email_dismatch)
         }
 
         OutlinedTextField(
