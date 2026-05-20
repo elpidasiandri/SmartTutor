@@ -57,7 +57,6 @@ fun WebTutorScreenFlow(navController: NavController) {
         when (state.event) {
             TutorEvents.NavigateToLogOut -> {
                 controller.onEvent(TutorUiEvents.ClearUiEvent)
-//                unloadKoinModules(tutorModule)
                 navController.navigate(WebScreen.Registration)
             }
 

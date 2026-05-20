@@ -21,6 +21,37 @@ class LoadTutorFromPdfUseCase(
     private val pdfUpload: PdfUploadServiceUseCase,
     private val getToken: GetIdTokenSuspendUseCase,
 ) {
+    suspend fun loadGreekTemplate(
+        userId: String,
+        mode: String
+    ): TutorLoadResult {
+        val token = getToken()
+
+        val languageEnum = LanguageOfLearningUnitsEnum.Greek
+        val templateDocId = TemplateDocIds.forLanguage(languageEnum)
+
+        val chatResponse = pdfUpload.createChatFromDocument(
+            request = CreateChatFromDocumentRequest(
+                userId = userId,
+                documentId = templateDocId,
+                mode = mode
+            ),
+            token = token
+        )
+
+        val chat = chatResponse.chat
+        val dto = chat.result ?: chat.partialResult
+        ?: error("Chat has no result for $templateDocId")
+
+        return TutorLoadResult(
+            materialId = templateDocId,
+            fileName = "Material java",
+            languageEnum = languageEnum,
+            templateDocId = templateDocId,
+            chatId = chat.chatId,
+            prototype = dto.toDomain()
+        )
+    }
     suspend fun loadTemplateForPickedPdf(
         picked: PickedFile,
         userId: String,

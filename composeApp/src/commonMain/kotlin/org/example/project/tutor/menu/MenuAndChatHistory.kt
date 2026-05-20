@@ -62,10 +62,10 @@ fun MenuAndChatHistory(
     scope: CoroutineScope,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onLearningUnitClick: (String,String) -> Unit,
+    onLearningUnitClick: (String, String) -> Unit,
     onChatTitleClick: () -> Unit,
     onDeleteSubject: (String) -> Unit,
-    onExistingChatClick: (String ) -> Unit,
+    onExistingChatClick: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
 
     ) {
@@ -109,7 +109,9 @@ fun MenuAndChatHistory(
 @Composable
 private fun NewChatButton(onChatTitleClick: () -> Unit) {
     TextButton(
-        onClick = { onChatTitleClick() },
+        onClick = {
+//            onChatTitleClick()
+        },
         modifier = Modifier.padding(vertical = spacing12, horizontal = spacing8)
     ) {
         Text(
@@ -298,7 +300,7 @@ private fun SubjectHeaderRow(
             modifier = Modifier.weight(1f)
         )
 
-        MoreButton(onClick = onMoreClick, Modifier.height(16.dp).width(24.dp))
+//        MoreButton(onClick = onMoreClick, Modifier.height(16.dp).width(24.dp))
 
         if (subject.learningUnits.isNotEmpty()) {
             Icon(

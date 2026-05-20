@@ -1,25 +1,16 @@
 package org.example.project.tutorScreen.tutorIntro
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,12 +32,9 @@ import org.example.project.utils.validation.validatePdf
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.unloadKoinModules
-import java.util.Locale
 
 class TutorIntroFragment : Fragment() {
     private val viewModel by activityViewModel<TutorIntroViewModel>()
-    private lateinit var textToSpeech: TextToSpeech
-    private var speechRecognizer: SpeechRecognizer? = null
     private lateinit var pdfPicker: AndroidPdfPicker
 
     private val settingsLauncher =
@@ -64,11 +52,7 @@ class TutorIntroFragment : Fragment() {
     ): View {
 
         pdfPicker = AndroidPdfPicker(this)
-        textToSpeech = TextToSpeech(requireContext()) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                textToSpeech.language = Locale.US
-            }
-        }
+
         setUpObserver()
         return ComposeView(requireContext()).apply {
             setContent {
@@ -126,9 +110,6 @@ class TutorIntroFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         unloadKoinModules(tutorModule)
-        textToSpeech.stop()
-        textToSpeech.shutdown()
-        speechRecognizer = null
     }
 
     private fun uploadPdfFile() {
@@ -145,51 +126,6 @@ class TutorIntroFragment : Fragment() {
                 }
             }
         }
-    }
-
-    private fun playAIMessage(message: String) {
-        textToSpeech.speak(message, TextToSpeech.QUEUE_FLUSH, null, null)
-    }
-
-    private fun startVoiceInput(onResult: (String) -> Unit) {
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
-        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-
-            override fun onPartialResults(partialResults: Bundle?) {
-                val matches =
-                    partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (!matches.isNullOrEmpty()) {
-                    onResult(matches[0])
-                }
-            }
-
-            override fun onResults(results: Bundle?) {
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (!matches.isNullOrEmpty()) {
-                    onResult(matches[0])
-                }
-            }
-
-            override fun onError(error: Int) {}
-
-            override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
-
-        speechRecognizer?.startListening(intent)
     }
 
     private fun setUpObserver() {
@@ -226,26 +162,6 @@ class TutorIntroFragment : Fragment() {
                     }
                 }
             }
-        }
-    }
-
-    private fun stopVoiceInput() {
-        speechRecognizer?.stopListening()
-        speechRecognizer?.cancel()
-        speechRecognizer?.destroy()
-        speechRecognizer = null
-    }
-
-    private fun checkAudioPermissions(onGranted: () -> Unit) {
-        val permission = Manifest.permission.RECORD_AUDIO
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                permission
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(requireActivity(), arrayOf(permission), 101)
-        } else {
-            onGranted()
         }
     }
 

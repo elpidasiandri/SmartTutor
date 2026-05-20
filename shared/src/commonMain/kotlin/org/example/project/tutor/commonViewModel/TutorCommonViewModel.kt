@@ -465,6 +465,7 @@ class TutorCommonViewModel(
         }
     }
 
+
     private fun Throwable.toUserMessage(): String {
         return when {
             this.message?.contains("10.0.2.2", ignoreCase = true) == true ->
@@ -669,7 +670,7 @@ class TutorCommonViewModel(
 
     fun initializeData() = scope.launch {
         val uid = userId()
-
+        loadGreekPdf()
         if (_state.value.session.material.fileUploaded) return@launch
 
         if (uid.isBlank()) {
@@ -819,6 +820,83 @@ class TutorCommonViewModel(
             }
         }
     }
+    private suspend fun loadGreekPdf() {
+        // todo remove this logic
+        try {
+            _state.update { it.copy(loading = true) }
+
+            val res = loadTutorFromPdfUseCase.loadGreekTemplate(
+                userId = userId(),
+                mode = state.value.selectedTab.name
+            )
+
+            val units = res.prototype.learningUnits
+            val subjectTitle = res.prototype.title
+
+            val session = buildChatSessionStart(
+                fileName = subjectTitle,
+                units = units,
+                activeIndex = 0
+            )
+
+            val refreshedChats = getAllHistoryChatUseCase(userId())
+
+            track(
+                name = PDF_UPLOADED,
+                params = mapOf(
+                    "chatId" to res.chatId,
+                    "documentTitle" to subjectTitle,
+                    "unitsCount" to units.size.toString(),
+                    "language" to res.languageEnum.value,
+                    "mode" to state.value.selectedTab.name,
+                    "userId" to userId()
+                )
+            )
+
+            _state.update {
+                it.copy(
+                    loading = false,
+                    activeChatId = res.chatId,
+                    subjectTitle = subjectTitle,
+                    allUnits = units,
+                    currentIndex = 0,
+                    unlockedCount = 1,
+                    currentUnit = units.firstOrNull() ?: LearningUnitContentDomain(),
+                    session = session,
+                    savedChats = refreshedChats,
+                    chatHistory = refreshedChats.toChatHistoryDomain(),
+                    showCustomMessage = true,
+                    message = "Chat loaded",
+                    isError = false,
+                    tabInfoMessage = buildLearningTabMessage(
+                        units.firstOrNull() ?: LearningUnitContentDomain()
+                    ),
+                    canGoNext = units.size > 1
+                )
+            }
+
+            saveProgress()
+
+        } catch (t: Throwable) {
+            track(
+                name = PDF_UPLOAD_FAILED,
+                params = mapOf(
+                    "reason" to (t.toUserMessage()),
+                    "userId" to userId()
+                )
+            )
+
+            _state.update {
+                it.copy(
+                    loading = false,
+                    showCustomMessage = true,
+                    isError = true,
+                    message = t.message ?: "Upload failed"
+                )
+            }
+        }
+    }
+
     private fun loadExistingChat(chatId: String) {
         scope.launch {
             try {
