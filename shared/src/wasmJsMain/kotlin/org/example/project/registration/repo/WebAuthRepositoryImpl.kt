@@ -18,7 +18,10 @@ import org.example.project.registration.firestore.getFirestore
 import org.example.project.registration.firestore.setDoc
 import kotlinx.datetime.Clock
 import org.example.project.extensions.JsVoid
+import org.example.project.extensions.awaitSafe
 import org.example.project.registration.firebase.createUserData
+import org.example.project.registration.firebase.sendEmailVerification
+import org.example.project.registration.firebase.signout
 
 class WebAuthRepositoryImpl(
     private val app: FirebaseApp,
@@ -37,6 +40,11 @@ class WebAuthRepositoryImpl(
             try {
                 val credential = createUserWithEmailAndPassword(auth, email, password).await()
                 val uid = credential.user.uid
+
+                try {
+                    sendEmailVerification(credential.user).awaitSafe()
+                } catch (e: Throwable) {
+                }
                 val db = getFirestore(app)
                 val userDocRef = doc(db, "users/$uid")
 
@@ -46,11 +54,15 @@ class WebAuthRepositoryImpl(
                     username,
                     Clock.System.now().toString()
                 )
+
                 try {
                     setDoc(userDocRef, userData).await<JsVoid>()
+
+                    signout(auth).awaitSafe()
+
                     onResult(true, uid)
                 } catch (e: Throwable) {
-                    onResult(false, e.message)
+                    onResult(false, uid)
                 }
 
             } catch (e: Throwable) {
@@ -60,12 +72,21 @@ class WebAuthRepositoryImpl(
     }
 
     override fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
-        CoroutineScope(Dispatchers.Default).launch() {
+        CoroutineScope(Dispatchers.Default).launch {
             try {
                 val credential = signInWithEmailAndPassword(auth, email, password).await()
-                onResult(true, credential.user.uid)
+
+                credential.user.reload().awaitSafe()
+
+                if (credential.user.emailVerified) {
+                    onResult(true, credential.user.uid)
+                } else {
+                    signout(auth).awaitSafe()
+                    onResult(false, "EMAIL_NOT_VERIFIED")
+                }
+
             } catch (e: Throwable) {
-                onResult(false, null)
+                onResult(false, e.message)
             }
         }
     }

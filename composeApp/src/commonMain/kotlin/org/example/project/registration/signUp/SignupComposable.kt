@@ -49,7 +49,7 @@ fun SignupComposable(
     val arePasswordsSame: Boolean =
         password1 == password2 && password1.isNotEmpty() && password2.isNotEmpty()
     val areEmailsSame =
-        email == email2 && email.isNotEmpty() && email2.isNotEmpty()
+        email.trim() == email2.trim() && email.trim().isNotEmpty() && email2.trim().isNotEmpty()
     val isFormValid by derivedStateOf {
         isEmailValid &&
                 isPassword1Valid && isPassword2Valid &&
@@ -132,7 +132,7 @@ fun SignupComposable(
             text = SmartTutorStrings.signup,
             enabled = isFormValid,
             onClick = {
-                signUp(email, password1, username)
+                signUp(email.trim(), password1, username)
             },
             modifier = if (isWebUi) Modifier.width(webSpacing)
                 .padding(vertical = spacing8)

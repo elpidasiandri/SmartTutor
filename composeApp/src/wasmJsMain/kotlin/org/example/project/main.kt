@@ -12,9 +12,7 @@ import org.example.project.navController.WebScreen
 import org.example.project.navController.di.navigationModule
 import org.example.project.navigations.NavigateToScreen
 import org.example.project.registration.AuthUserHolder
-import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.FirebaseContext
-import org.example.project.registration.firebase.initFirebase
 import org.example.project.registration.firebase.module.firebaseModule
 import org.example.project.registration.firebase.onAuthStateChanged
 import org.example.project.tutor.di.tutorModule
@@ -41,7 +39,7 @@ object WebApp : KoinComponent {
 
             AuthUserHolder.currentUser = user
 
-            if (user != null) {
+            if (user != null && user.emailVerified) {
                 navController.navigate(WebScreen.Tutor)
             } else {
                 navController.navigate(WebScreen.Registration)

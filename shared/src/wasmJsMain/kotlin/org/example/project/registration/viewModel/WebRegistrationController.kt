@@ -50,13 +50,22 @@ class WebRegistrationController(
 
     private fun login(email: String, password: String) {
         scope.launch {
-            registrationUseCases.logIn(email, password) { success, uid ->
+            registrationUseCases.logIn(email, password) { success, message ->
                 if (success) {
                     WebStorageHelper.saveTokenExpiry()
                     navigateToTutorScreen()
-
                 } else {
-                    stateForErrorMessage()
+                    when (message) {
+                        "EMAIL_NOT_VERIFIED" -> {
+                            stateForErrorMessage(
+                                "Please verify your email first. Check your inbox and then log in again."
+                            )
+                        }
+
+                        else -> {
+                            stateForErrorMessage()
+                        }
+                    }
                 }
             }
         }
@@ -111,10 +120,20 @@ class WebRegistrationController(
             ) { success, uid ->
 
                 if (success) {
-                    WebStorageHelper.saveTokenExpiry()
-                    navigateToTutorScreen()
+                    _state.update {
+                        it.copy(
+                            showCustomMessage = true,
+                            message = "We have sent you a confirmation email. Please confirm the email and then log in.",
+                            isError = false
+                        )
+                    }
                 } else {
-                    stateForErrorMessage()
+
+                    if (uid?.contains("email-already-in-use") == true) {
+                        stateForErrorMessage("This user is already exist.")
+                    } else {
+                        stateForErrorMessage()
+                    }
                 }
             }
         }

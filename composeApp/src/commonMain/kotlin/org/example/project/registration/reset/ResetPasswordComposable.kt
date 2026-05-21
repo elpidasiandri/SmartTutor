@@ -39,7 +39,7 @@ fun ResetPasswordComposable(
     isWebUi: Boolean,
 ) {
     var email by remember { mutableStateOf("") }
-    val isEmailValid = Validation.isValidEmail(email)
+    val isEmailValid = Validation.isValidDuthEmail(email)
     val isFormValid by derivedStateOf { isEmailValid }
 
     Column(
@@ -61,8 +61,8 @@ fun ResetPasswordComposable(
 
         EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
 
-        if (!isEmailValid && email.isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email)
+        if (!isEmailValid && email.trim().isNotEmpty()) {
+            ErrorTextComposable(SmartTutorStrings.invalid_email_duth)
         }
 
         Spacer(Modifier.height(spacing24))

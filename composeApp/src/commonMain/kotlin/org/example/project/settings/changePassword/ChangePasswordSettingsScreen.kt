@@ -142,7 +142,7 @@ fun ChangePasswordSettingsScreen(
                     changePassword(oldPassword, newPassword)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = isNewPassValid && isConfirmPassValid && passwordsMatch
+                enabled = isNewPassValid && isConfirmPassValid && passwordsMatch && newPassword != oldPassword
             ) {
                 Text(update_password)
             }
