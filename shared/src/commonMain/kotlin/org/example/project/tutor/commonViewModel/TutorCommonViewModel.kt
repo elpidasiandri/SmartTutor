@@ -12,6 +12,7 @@ import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.strings.SmartTutorStrings.generic_error
 import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.models.domainModels.tutorChat.ChatMessageDomain
@@ -188,7 +189,7 @@ class TutorCommonViewModel(
                     chatId = chatId,
                     userId = userId(),
                     unitIndex = unitIndex,
-                    message = trimmed,
+                    message = generic_error,
                     token = token,
                     chatMode = state.value.selectedTab.name
                 )
@@ -239,10 +240,10 @@ class TutorCommonViewModel(
 
                 val msg = when {
                     t.message?.contains("timeout", ignoreCase = true) == true ->
-                        "Ο server άργησε να απαντήσει. Δοκίμασε ξανά σε λίγο."
+                        generic_error
 
                     else ->
-                        t.message ?: "Failed to send message"
+                        "Failed to send message"
                 }
 
                 _state.update {
@@ -353,7 +354,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message = t.message ?: "Failed to load chat unit"
+                        message =  "Failed to load chat unit"
                     )
                 }
             }
@@ -458,7 +459,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message = t.message ?: "Upload failed"
+                        message =  "Upload failed"
                     )
                 }
             }
@@ -547,7 +548,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message = t.message ?: "Failed to delete chat"
+                        message =  "Failed to delete chat"
                     )
                 }
             }
@@ -773,7 +774,7 @@ class TutorCommonViewModel(
             _state.update {
                 it.copy(
                     loading = false,
-                    message = t.message ?: "Unknown error",
+                    message = generic_error,
                     showCustomMessage = true,
                     isError = true
                 )
@@ -852,7 +853,7 @@ class TutorCommonViewModel(
                     loading = false,
                     showCustomMessage = true,
                     isError = true,
-                    message = t.message ?: "Upload failed"
+                    message = "Upload failed"
                 )
             }
         }
@@ -927,7 +928,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message = t.message ?: "Failed to load chat"
+                        message = "Failed to load chat"
                     )
                 }
             }
