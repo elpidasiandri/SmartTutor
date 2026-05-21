@@ -17,7 +17,6 @@ object Validation {
         """\[\s*(?:hot\s*tip\s*=\s*)?quotation\s*\]""",
         RegexOption.IGNORE_CASE
     )
-    //  anyMarker [...] marker για να τα κάνουμε parse με σειρά
 
     val anyMarker = Regex("""\[[^\]]+\]""")
 
@@ -25,7 +24,9 @@ object Validation {
     fun isValidEmail(email: String): Boolean {
         return email.contains("@") && email.contains(".")
     }
-
+    fun isValidDuthEmail(email: String): Boolean {
+        return email.endsWith("@cs.duth.gr")
+    }
     fun isValidPassword(password: String): Boolean {
         if (password.length < 6) return false
         val hasLetter = password.any { it.isLetter() }

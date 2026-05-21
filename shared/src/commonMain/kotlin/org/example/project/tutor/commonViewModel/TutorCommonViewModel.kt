@@ -670,8 +670,10 @@ class TutorCommonViewModel(
 
     fun initializeData() = scope.launch {
         val uid = userId()
-        loadGreekPdf()
-        if (_state.value.session.material.fileUploaded) return@launch
+
+        if (_state.value.session.material.fileUploaded) {
+            return@launch
+        }
 
         if (uid.isBlank()) {
             platform.log("TutorStore", "UserId not ready yet", null)
@@ -682,22 +684,23 @@ class TutorCommonViewModel(
             _state.update { it.copy(loading = true, error = null) }
 
             val chats = getAllHistoryChatUseCase(uid)
-
+            if (chats.isEmpty()) {
+                loadGreekPdf()
+            }
             track(
                 name = TUTOR_SCREEN_OPENED,
                 params = mapOf(
                     "savedChatsCount" to chats.size.toString(),
-                    "userId" to userId()
+                    "userId" to uid
                 )
             )
 
             if (chats.isNotEmpty()) {
-
                 val latestChatSummary = chats.first()
 
                 val latestChat = getChatByIdUseCase(
                     chatId = latestChatSummary.chatId,
-                    userId = userId()
+                    userId = uid
                 )
 
                 track(
@@ -705,7 +708,7 @@ class TutorCommonViewModel(
                     params = mapOf(
                         "chatId" to latestChat.chatId,
                         "documentId" to latestChat.documentId,
-                        "userId" to userId()
+                        "userId" to uid
                     )
                 )
 
@@ -762,50 +765,7 @@ class TutorCommonViewModel(
                 return@launch
             }
 
-            val prototype = getLearningUnitUseCase()
-
-            val units = prototype.learningUnits
-            val subjectTitle = prototype.title
-
-            val first = units.firstOrNull()
-
-            val currentIndex = 0
-            val unlockedCount = 1
-
-            val session = buildChatSessionStart(
-                fileName = subjectTitle,
-                units = units,
-                activeIndex = currentIndex
-            )
-
-            val chatHistory = buildChatHistoryFromUnits(
-                units = units,
-                subjectTitle = subjectTitle
-            )
-
-            first?.let {
-                _state.update {
-                    it.copy(
-                        loading = false,
-
-                        tabInfoMessage = buildLearningTabMessage(first),
-                        selectedTab = TutorTab.Learning,
-
-                        allUnits = units,
-
-                        session = session,
-
-                        currentIndex = currentIndex,
-                        unlockedCount = unlockedCount,
-                        currentUnit = first,
-
-                        chatHistory = chatHistory,
-                        subjectTitle = subjectTitle,
-
-                        event = TutorEvents.Loaded
-                    )
-                }
-            }
+            return@launch
 
         } catch (t: Throwable) {
             platform.log("TutorStore", "initializeData failed", t)
@@ -820,6 +780,7 @@ class TutorCommonViewModel(
             }
         }
     }
+
     private suspend fun loadGreekPdf() {
         // todo remove this logic
         try {
