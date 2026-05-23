@@ -76,6 +76,7 @@ import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.excercise.ExercisesTab
 import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
+import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.koin.compose.koinInject
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -109,6 +110,7 @@ fun TutorScreen(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -143,8 +145,8 @@ fun TutorScreen(
             deleteSubject = { p1 ->
                 deleteSubject(p1)
             },
-            selectedTab = selectedTab,
             onChangeTab = { onChangeTab(it) },
+            selectedTab = selectedTab,
             tabInfoMessage = tabInfoMessage,
             currentUnit = currentUnit,
             onSendMessage = { text ->
@@ -159,6 +161,7 @@ fun TutorScreen(
             },
             canGoNext = canGoNext,
             askTutor = askTutor,
+            onExerciseAnswered = onExerciseAnswered
         )
     }
 }
@@ -192,6 +195,7 @@ fun TutorChatUI(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -295,6 +299,7 @@ fun TutorChatUI(
                             currentUnit = currentUnit,
                             isLoading = isLoading,
                             canGoNext = canGoNext,
+                            onExerciseAnswered = onExerciseAnswered
                         )
 
                         TutorToastHost(
@@ -439,7 +444,9 @@ private fun TutorChatContent(
     currentUnit: LearningUnitContentDomain,
     isLoading: Boolean,
     canGoNext: Boolean,
-) {
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
+
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -477,7 +484,8 @@ private fun TutorChatContent(
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
-                    exercises = currentUnit.exercises
+                    exercises = currentUnit.exercises,
+                    onExerciseAnswered =onExerciseAnswered
                 )
             }
         }

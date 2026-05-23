@@ -17,4 +17,5 @@ object AnalyticsEvents {
     const val CHAT_DELETED = "chat_deleted"
     const val CHAT_DELETE_FAILED = "chat_delete_failed"
     const val MY_PROGRESS_OPENED = "my_progress_opened"
+    const val EXERCISE_ANSWERED = "exercise_answered"
 }

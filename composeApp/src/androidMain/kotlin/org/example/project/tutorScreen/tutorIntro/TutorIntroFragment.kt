@@ -76,8 +76,8 @@ class TutorIntroFragment : Fragment() {
                     onUploadPdfClick = {
                         uploadPdfFile()
                     },
-                    selectLearningUnit = { title,subjectId ->
-                        viewModel.onEvent(TutorUiEvents.SelectLearningUnit(title,subjectId))
+                    selectLearningUnit = { title, subjectId ->
+                        viewModel.onEvent(TutorUiEvents.SelectLearningUnit(title, subjectId))
                     },
                     onNextUnitClick = { viewModel.onEvent(TutorUiEvents.NextUnit) },
                     onExercisesClick = { },
@@ -102,6 +102,18 @@ class TutorIntroFragment : Fragment() {
                     },
                     canGoNext = state.canGoNext,
                     askTutor = state.askTutor,
+                    onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs ->
+                        viewModel.onEvent(
+                            TutorUiEvents.ExerciseAnswered(
+                                exerciseIndex = index,
+                                exerciseType = type,
+                                selectedAnswer = selected,
+                                correctAnswer = correct,
+                                isCorrect = isCorrect,
+                                timeToAnswerMs = timeMs
+                            )
+                        )
+                    }
                 )
             }
         }

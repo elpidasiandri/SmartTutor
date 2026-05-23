@@ -2,6 +2,7 @@ package org.example.project.tutor.state
 
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.file.PickedFile
+import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.models.domainModels.tutorChat.ChatMessageDomain
 import org.example.project.tutor.models.domainModels.tutorChat.ChatSessionStartDomain
@@ -45,6 +46,15 @@ sealed class TutorUiEvents {
     data object NextUnit : TutorUiEvents()
     data object OpenMyProgress : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
+    data class ExerciseAnswered(
+        val exerciseIndex: Int,
+        val exerciseType: ExerciseType,
+        val selectedAnswer: String,
+        val correctAnswer: String,
+        val isCorrect: Boolean,
+        val timeToAnswerMs: Long,
+    ) : TutorUiEvents()
+
     data class SendMessage(val text: String) : TutorUiEvents()
     data class OpenExistingChat(val chatId: String) : TutorUiEvents()
     data class DeleteChat(val subjectId: String) : TutorUiEvents()

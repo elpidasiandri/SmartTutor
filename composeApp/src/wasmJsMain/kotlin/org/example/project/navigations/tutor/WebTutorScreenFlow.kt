@@ -120,5 +120,17 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         canGoNext = state.canGoNext,
         askTutor = state.askTutor,
+        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs ->
+            controller.onEvent(
+                TutorUiEvents.ExerciseAnswered(
+                    exerciseIndex = index,
+                    exerciseType = type,
+                    selectedAnswer = selected,
+                    correctAnswer = correct,
+                    isCorrect = isCorrect,
+                    timeToAnswerMs = timeMs
+                )
+            )
+        }
     )
 }

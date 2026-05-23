@@ -11,6 +11,7 @@ import org.example.project.shared.FirebaseConfig
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.registration.firebase.getAnalytics
 import org.example.project.registration.firebase.logEvent
+import org.example.project.tutor.models.AnalyticsEvents.EXERCISE_ANSWERED
 import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SENT
 import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOADED
 import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
@@ -76,7 +77,24 @@ class WebAnalyticsTrackerImpl : IAnalyticsTracker {
                         )
                     )
                 }
-
+                EXERCISE_ANSWERED -> {
+                    logEvent(
+                        analytics,
+                        name,
+                        createExerciseAnsweredParams(
+                            chatId = params["chatId"].orEmpty(),
+                            unitIndex = params["unitIndex"].orEmpty(),
+                            unitTitle = params["unitTitle"].orEmpty(),
+                            exerciseIndex = params["exerciseIndex"].orEmpty(),
+                            exerciseType = params["exerciseType"].orEmpty(),
+                            selectedAnswer = params["selectedAnswer"].orEmpty(),
+                            correctAnswer = params["correctAnswer"].orEmpty(),
+                            isCorrect = params["isCorrect"].orEmpty(),
+                            timeToAnswerMs = params["timeToAnswerMs"].orEmpty(),
+                            userId = params["userId"].orEmpty()
+                        )
+                    )
+                }
                 else -> {
                     logEvent(analytics, name)
                 }
@@ -84,3 +102,4 @@ class WebAnalyticsTrackerImpl : IAnalyticsTracker {
         }
     }
 }
+

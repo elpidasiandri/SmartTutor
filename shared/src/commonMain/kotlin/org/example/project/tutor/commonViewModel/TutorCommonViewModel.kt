@@ -30,6 +30,7 @@ import org.example.project.tutor.mappers.learningUnits.buildLearningTabMessage
 import org.example.project.tutor.models.AnalyticsEvents.AI_REPLY_RECEIVED
 import org.example.project.tutor.models.AnalyticsEvents.CHAT_DELETED
 import org.example.project.tutor.models.AnalyticsEvents.CHAT_DELETE_FAILED
+import org.example.project.tutor.models.AnalyticsEvents.EXERCISE_ANSWERED
 import org.example.project.tutor.models.AnalyticsEvents.EXISTING_CHAT_OPENED
 import org.example.project.tutor.models.AnalyticsEvents.EXISTING_CHAT_OPEN_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.LATEST_CHAT_AUTO_LOADED
@@ -105,6 +106,7 @@ class TutorCommonViewModel(
             )
 
             TutorUiEvents.NextUnit -> goNext()
+            is TutorUiEvents.ExerciseAnswered ->  trackExerciseAnswered(event)
             TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
             is TutorUiEvents.ChangeTab -> {
@@ -128,7 +130,24 @@ class TutorCommonViewModel(
             platform.log("Analytics", "Failed to log event: $name", it)
         }
     }
+    private fun trackExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
+        val unit = _state.value.currentUnit
 
+        track(
+            name = EXERCISE_ANSWERED,
+            params = mapOf(
+                "chatId" to _state.value.activeChatId,
+                "unitIndex" to _state.value.currentIndex.toString(),
+                "unitTitle" to unit.title,
+                "exerciseIndex" to event.exerciseIndex.toString(),
+                "exerciseType" to event.exerciseType.name,
+                "selectedAnswer" to event.selectedAnswer,
+                "correctAnswer" to event.correctAnswer,
+                "isCorrect" to event.isCorrect.toString(),
+                "timeToAnswerMs" to event.timeToAnswerMs.toString()
+            )
+        )
+    }
     fun playAIMessage(text: String) {
         platform.speak(normalizeTranscript(text))
     }

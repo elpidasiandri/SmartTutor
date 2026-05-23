@@ -31,18 +31,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.Clock
 import org.example.project.colors.AppColors
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
-import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
 fun ExercisesTab(
     modifier: Modifier = Modifier,
     exercises: List<ExerciseDomain>,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
 ) {
     if (exercises.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -64,7 +65,8 @@ fun ExercisesTab(
         ) { index, ex ->
             ExerciseCard(
                 index = index,
-                exercise = ex
+                exercise = ex,
+                onExerciseAnswered = onExerciseAnswered
             )
         }
     }
@@ -74,6 +76,7 @@ fun ExercisesTab(
 private fun ExerciseCard(
     index: Int,
     exercise: ExerciseDomain,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
 ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
@@ -133,7 +136,17 @@ private fun ExerciseCard(
                         selected = selectedIndex == optIndex,
                         isCorrect = isSelected && isCorrect,
                         isWrong = isSelected && !isCorrect,
-                        onClick = { selectedIndex = optIndex }
+                        onClick = {
+                            onExerciseAnswered(
+                                index,
+                                ExerciseType.MCQ,
+                                opt,
+                                exercise.options.getOrNull(optIndex).orEmpty(),
+                                isCorrect,
+                                Clock.System.now().toEpochMilliseconds()
+                            )
+                            selectedIndex = optIndex
+                        }
                     )
                 }
             }
@@ -148,6 +161,8 @@ private fun ExerciseCard(
 
                 val falseCorrect = correctAnswer.equals(falseLabel, ignoreCase = true)
                         || correctAnswer.equals("false", ignoreCase = true)
+                val selectedAnswer = trueLabel
+                val isCorrect = selectedAnswer == correctAnswer
 
                 OptionRow(
                     label = "",
@@ -157,7 +172,17 @@ private fun ExerciseCard(
                         (tfSelected == true && trueCorrect) ||
                                 (tfSelected == false && trueCorrect),
                     isWrong = tfSelected == true && !trueCorrect,
-                    onClick = { tfSelected = true }
+                    onClick = {
+                        onExerciseAnswered(
+                            index,
+                            ExerciseType.TRUE_FALSE,
+                            selectedAnswer,
+                            correctAnswer,
+                            isCorrect,
+                            Clock.System.now().toEpochMilliseconds()
+                        )
+                        tfSelected = true
+                    }
                 )
 
                 OptionRow(
@@ -168,7 +193,17 @@ private fun ExerciseCard(
                         (tfSelected == false && falseCorrect) ||
                                 (tfSelected == true && falseCorrect),
                     isWrong = tfSelected == false && !falseCorrect,
-                    onClick = { tfSelected = false }
+                    onClick = {
+                        onExerciseAnswered(
+                            index,
+                            ExerciseType.TRUE_FALSE,
+                            selectedAnswer,
+                            correctAnswer,
+                            isCorrect,
+                            Clock.System.now().toEpochMilliseconds()
+                        )
+                        tfSelected = false
+                    }
                 )
             }
 
@@ -186,13 +221,25 @@ private fun ExerciseCard(
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
                     val isCorrect = isCorrectOption(exercise, optIndex, opt)
+
+
                     OptionRow(
                         label = "$letter)",
                         text = opt,
                         selected = selectedIndex == optIndex,
                         isCorrect = isSelected && isCorrect,
                         isWrong = isSelected && !isCorrect,
-                        onClick = { selectedIndex = optIndex }
+                        onClick = {
+                            onExerciseAnswered(
+                                index,
+                                ExerciseType.MCQ,
+                                opt,
+                                exercise.options.getOrNull(optIndex).orEmpty(),
+                                isCorrect,
+                                Clock.System.now().toEpochMilliseconds()
+                            )
+                            selectedIndex = optIndex
+                        }
                     )
                 }
             }
