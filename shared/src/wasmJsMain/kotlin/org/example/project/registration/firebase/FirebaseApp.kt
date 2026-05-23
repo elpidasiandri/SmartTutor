@@ -18,6 +18,45 @@ external interface FirebaseOptions: JsAny {
     var appId: String
 }
 
+external interface ExerciseAnsweredParams : JsAny
+
+@JsFun(
+    """(
+        chatId,
+        unitIndex,
+        unitTitle,
+        exerciseIndex,
+        exerciseType,
+        selectedAnswer,
+        correctAnswer,
+        isCorrect,
+        timeToAnswerMs,
+        userId
+    ) => ({
+        chatId,
+        unitIndex,
+        unitTitle,
+        exerciseIndex,
+        exerciseType,
+        selectedAnswer,
+        correctAnswer,
+        isCorrect,
+        timeToAnswerMs,
+        userId
+    })"""
+)
+external fun createExerciseAnsweredParams(
+    chatId: String,
+    unitIndex: String,
+    unitTitle: String,
+    exerciseIndex: String,
+    exerciseType: String,
+    selectedAnswer: String,
+    correctAnswer: String,
+    isCorrect: String,
+    timeToAnswerMs: String,
+    userId: String,
+): ExerciseAnsweredParams
 @JsFun(
     """(apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId) => ({
         apiKey,
