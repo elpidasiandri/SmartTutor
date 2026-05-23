@@ -1,10 +1,10 @@
 package org.example.project.tutor.mappers.chatHistory
 
 import kotlinx.datetime.Clock
+import org.example.project.tutor.mappers.learningUnits.toExerciseType
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
-import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.models.domainModels.learningUnits.QuotationDomain
 import org.example.project.tutor.models.domainModels.learningUnits.UnitImageDomain
@@ -227,7 +227,8 @@ fun buildChatSessionFromStoredChat(
 }
 fun ExerciseDto.toDomain(): ExerciseDomain {
     return ExerciseDomain(
-        type = runCatching { ExerciseType.valueOf(type) }.getOrDefault(ExerciseType.NONE),
+
+        type = type.toExerciseType(),
         difficulty = difficulty.nonNull,
         estimatedMinutes = estimatedMinutes.nonNull,
         question = question.nonNull,

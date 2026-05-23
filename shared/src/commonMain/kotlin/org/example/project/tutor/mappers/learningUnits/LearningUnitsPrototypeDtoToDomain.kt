@@ -67,8 +67,8 @@ fun QuotationDto.toDomain(): QuotationDomain =
         numbering = numbering ?: 0
     )
 
-fun ExerciseDto.toDomain(): ExerciseDomain =
-    ExerciseDomain(
+fun ExerciseDto.toDomain(): ExerciseDomain {
+    return ExerciseDomain(
         type = type.toExerciseType(),
         difficulty = difficulty.orEmpty(),
         estimatedMinutes = estimatedMinutes ?: 0,
@@ -79,11 +79,13 @@ fun ExerciseDto.toDomain(): ExerciseDomain =
         explanation = explanation.orEmpty(),
         solution = solution.orEmpty(),
     )
+}
 
-fun String?.toExerciseType(): ExerciseType = when (this?.lowercase()) {
+
+fun String?.toExerciseType(): ExerciseType = when (this?.trim()?.lowercase()) {
     "mcq" -> ExerciseType.MCQ
     "true_false" -> ExerciseType.TRUE_FALSE
-    "open" -> ExerciseType.OPEN
+    "open", "OPEN", "Open" -> ExerciseType.OPEN
     else -> ExerciseType.NONE
 }
 

@@ -1,6 +1,8 @@
 package org.example.project.tutor.excercise
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +56,12 @@ fun ExercisesTab(
         contentPadding = PaddingValues(bottom = spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing12)
     ) {
-        itemsIndexed(exercises) { index, ex ->
+        itemsIndexed(
+            exercises,
+            key = { index, ex ->
+                ex.question.ifBlank { index.toString() }
+            }
+        ) { index, ex ->
             ExerciseCard(
                 index = index,
                 exercise = ex
@@ -72,8 +80,8 @@ private fun ExerciseCard(
     var showSolution by remember { mutableStateOf(false) }
 
     // user can answer on this field
-    var selectedIndex by remember { mutableStateOf<Int?>(null) }   // MCQ
-    var tfSelected by remember { mutableStateOf<Boolean?>(null) }  // TRUE/FALSE
+    var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
+    var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
     var openAnswer by remember { mutableStateOf("") }              // OPEN
 
     val type = exercise.type
@@ -117,32 +125,53 @@ private fun ExerciseCard(
                 // options A,B,C, D...
                 exercise.options.forEachIndexed { optIndex, opt ->
                     val letter = ('A' + optIndex).toString()
+                    val isSelected = selectedIndex == optIndex
+                    val isCorrect = isCorrectOption(exercise, optIndex, opt)
                     OptionRow(
                         label = "$letter)",
                         text = opt,
                         selected = selectedIndex == optIndex,
+                        isCorrect = isSelected && isCorrect,
+                        isWrong = isSelected && !isCorrect,
                         onClick = { selectedIndex = optIndex }
                     )
                 }
             }
+
             ExerciseType.TRUE_FALSE -> {
                 // true false options
                 val trueLabel = exercise.options.getOrNull(0) ?: "True"
                 val falseLabel = exercise.options.getOrNull(1) ?: "False"
+                val correctAnswer = exercise.solution.trim()
+                val trueCorrect = correctAnswer.equals(trueLabel, ignoreCase = true)
+                        || correctAnswer.equals("true", ignoreCase = true)
+
+                val falseCorrect = correctAnswer.equals(falseLabel, ignoreCase = true)
+                        || correctAnswer.equals("false", ignoreCase = true)
 
                 OptionRow(
                     label = "",
                     text = trueLabel,
                     selected = tfSelected == true,
+                    isCorrect =
+                        (tfSelected == true && trueCorrect) ||
+                                (tfSelected == false && trueCorrect),
+                    isWrong = tfSelected == true && !trueCorrect,
                     onClick = { tfSelected = true }
                 )
+
                 OptionRow(
                     label = "",
                     text = falseLabel,
                     selected = tfSelected == false,
+                    isCorrect =
+                        (tfSelected == false && falseCorrect) ||
+                                (tfSelected == true && falseCorrect),
+                    isWrong = tfSelected == false && !falseCorrect,
                     onClick = { tfSelected = false }
                 )
             }
+
             ExerciseType.OPEN -> {
                 OutlinedTextField(
                     value = openAnswer,
@@ -151,13 +180,18 @@ private fun ExerciseCard(
                     placeholder = { Text("Write your answer...") }
                 )
             }
+
             else -> {
                 exercise.options.forEachIndexed { optIndex, opt ->
                     val letter = ('A' + optIndex).toString()
+                    val isSelected = selectedIndex == optIndex
+                    val isCorrect = isCorrectOption(exercise, optIndex, opt)
                     OptionRow(
                         label = "$letter)",
                         text = opt,
                         selected = selectedIndex == optIndex,
+                        isCorrect = isSelected && isCorrect,
+                        isWrong = isSelected && !isCorrect,
                         onClick = { selectedIndex = optIndex }
                     )
                 }
@@ -180,6 +214,10 @@ private fun ExerciseCard(
             ExpandSection(title = "Solution", text = exercise.solution)
         }
     }
+}
+
+private fun isCorrectOption(exercise: ExerciseDomain, optIndex: Int, optText: String): Boolean {
+    return exercise.solution.trim().contains(optText.trim(), ignoreCase = true)
 }
 
 @Composable
@@ -235,16 +273,31 @@ private fun OptionRow(
     label: String,
     text: String,
     selected: Boolean,
+    isCorrect: Boolean,
+    isWrong: Boolean,
     onClick: () -> Unit,
 ) {
-    val bg = if (selected) Color(0xFFEDE7F6) else Color(0xFFF6F6F6)
+    val bg = when {
+        isCorrect -> Color(0xFFE6F4EA) // green light
+        isWrong -> Color(0xFFFFE8E8)   // red light
+        selected -> Color(0xFFEDE7F6)
+        else -> Color(0xFFF6F6F6)
+    }
+
+    val borderColor = when {
+        isCorrect -> Color(0xFF2E7D32)
+        isWrong -> Color(0xFFC62828)
+        else -> Color.Transparent
+    }
+
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .background(bg, RoundedCornerShape(10.dp))
-            .padding(horizontal = 10.dp, vertical = 10.dp)
-            .noRippleClickable { onClick() },
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (label.isNotBlank()) {
