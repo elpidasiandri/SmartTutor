@@ -31,13 +31,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.datetime.Clock
 import org.example.project.colors.AppColors
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
+import kotlin.time.TimeSource
 
 @Composable
 fun ExercisesTab(
@@ -88,7 +88,9 @@ private fun ExerciseCard(
     var openAnswer by remember { mutableStateOf("") }              // OPEN
 
     val type = exercise.type
-
+    val startedAt = remember(exercise.question) {
+        TimeSource.Monotonic.markNow()
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -143,7 +145,7 @@ private fun ExerciseCard(
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
                                 isCorrect,
-                                Clock.System.now().toEpochMilliseconds()
+                                startedAt.elapsedNow().inWholeMilliseconds
                             )
                             selectedIndex = optIndex
                         }
@@ -179,7 +181,7 @@ private fun ExerciseCard(
                             selectedAnswer,
                             correctAnswer,
                             isCorrect,
-                            Clock.System.now().toEpochMilliseconds()
+                            startedAt.elapsedNow().inWholeMilliseconds
                         )
                         tfSelected = true
                     }
@@ -200,7 +202,7 @@ private fun ExerciseCard(
                             selectedAnswer,
                             correctAnswer,
                             isCorrect,
-                            Clock.System.now().toEpochMilliseconds()
+                            startedAt.elapsedNow().inWholeMilliseconds
                         )
                         tfSelected = false
                     }
@@ -236,7 +238,7 @@ private fun ExerciseCard(
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
                                 isCorrect,
-                                Clock.System.now().toEpochMilliseconds()
+                                startedAt.elapsedNow().inWholeMilliseconds
                             )
                             selectedIndex = optIndex
                         }
