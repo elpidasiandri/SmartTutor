@@ -132,13 +132,15 @@ private fun ExerciseCard(
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
 
-                    val isCorrect = isCorrectOption(exercise, optIndex, opt)
+                    val clickedIsCorrect =
+                        isCorrectOption(exercise, optIndex, opt)
+
                     OptionRow(
                         label = "$letter)",
                         text = opt,
                         selected = selectedIndex == optIndex,
-                        isCorrect = isSelected && isCorrect,
-                        isWrong = isSelected && !isCorrect,
+                        isCorrect = isSelected && clickedIsCorrect,
+                        isWrong = isSelected && !clickedIsCorrect,
                         onClick = {
                             selectedIndex = optIndex
                             onExerciseAnswered(
@@ -146,7 +148,7 @@ private fun ExerciseCard(
                                 ExerciseType.MCQ,
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
-                                isSelected && isCorrect,
+                                clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question
                             )
@@ -156,36 +158,36 @@ private fun ExerciseCard(
             }
 
             ExerciseType.TRUE_FALSE -> {
-                // true false options
+
                 val trueLabel = exercise.options.getOrNull(0) ?: "True"
                 val falseLabel = exercise.options.getOrNull(1) ?: "False"
-                val correctAnswer = exercise.solution.trim()
-                val trueCorrect = correctAnswer.equals(trueLabel, ignoreCase = true)
-                        || correctAnswer.equals("true", ignoreCase = true)
 
-                val falseCorrect = correctAnswer.equals(falseLabel, ignoreCase = true)
-                        || correctAnswer.equals("false", ignoreCase = true)
-                val selectedAnswer = trueLabel
-                val isCorrect = selectedAnswer == correctAnswer
+                val correctAnswer = exercise.solution.trim()
+
+                val trueCorrect =
+                    correctAnswer.equals(trueLabel, ignoreCase = true) ||
+                            correctAnswer.equals("true", ignoreCase = true)
+
+                val falseCorrect =
+                    correctAnswer.equals(falseLabel, ignoreCase = true) ||
+                            correctAnswer.equals("false", ignoreCase = true)
 
                 OptionRow(
                     label = "",
                     text = trueLabel,
                     selected = tfSelected == true,
-                    isCorrect =
-                        (tfSelected == true && trueCorrect) ||
-                                (tfSelected == false && trueCorrect),
+                    isCorrect = tfSelected == true && trueCorrect,
                     isWrong = tfSelected == true && !trueCorrect,
                     onClick = {
+
                         tfSelected = true
 
                         onExerciseAnswered(
                             index,
                             ExerciseType.TRUE_FALSE,
-                            selectedAnswer,
+                            trueLabel,
                             correctAnswer,
-                            (tfSelected == true && trueCorrect) ||
-                                    (tfSelected == false && trueCorrect),
+                            trueCorrect,
                             startedAt.elapsedNow().inWholeMilliseconds,
                             exercise.question,
                         )
@@ -196,27 +198,24 @@ private fun ExerciseCard(
                     label = "",
                     text = falseLabel,
                     selected = tfSelected == false,
-                    isCorrect =
-                        (tfSelected == false && falseCorrect) ||
-                                (tfSelected == true && falseCorrect),
+                    isCorrect = tfSelected == false && falseCorrect,
                     isWrong = tfSelected == false && !falseCorrect,
                     onClick = {
+
                         tfSelected = false
 
                         onExerciseAnswered(
                             index,
                             ExerciseType.TRUE_FALSE,
-                            selectedAnswer,
+                            falseLabel,
                             correctAnswer,
-                            (tfSelected == false && falseCorrect) ||
-                                    (tfSelected == true && falseCorrect),
+                            falseCorrect,
                             startedAt.elapsedNow().inWholeMilliseconds,
                             exercise.question,
                         )
                     }
                 )
             }
-
             ExerciseType.OPEN -> {
                 OutlinedTextField(
                     value = openAnswer,
@@ -230,15 +229,15 @@ private fun ExerciseCard(
                 exercise.options.forEachIndexed { optIndex, opt ->
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
-                    val isCorrect = isCorrectOption(exercise, optIndex, opt)
-
+                    val clickedIsCorrect =
+                        isCorrectOption(exercise, optIndex, opt)
 
                     OptionRow(
                         label = "$letter)",
                         text = opt,
                         selected = selectedIndex == optIndex,
-                        isCorrect = isSelected && isCorrect,
-                        isWrong = isSelected && !isCorrect,
+                        isCorrect = isSelected && clickedIsCorrect,
+                        isWrong = isSelected && !clickedIsCorrect,
                         onClick = {
                             selectedIndex = optIndex
 
@@ -247,7 +246,7 @@ private fun ExerciseCard(
                                 ExerciseType.MCQ,
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
-                                isSelected && isCorrect,
+                                clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question,
                             )
@@ -275,8 +274,43 @@ private fun ExerciseCard(
     }
 }
 
-private fun isCorrectOption(exercise: ExerciseDomain, optIndex: Int, optText: String): Boolean {
-    return exercise.solution.trim().contains(optText.trim(), ignoreCase = true)
+//private fun isCorrectOption(exercise: ExerciseDomain, optText: String): Boolean {
+//    return exercise.solution.trim().contains(optText.trim())
+//}
+
+private fun isExerciseAnswerCorrect(
+    exercise: ExerciseDomain,
+    optIndex: Int,
+    optText: String
+): Boolean {
+
+    val hasValidAnswerIndex =
+        exercise.answerIndex in exercise.options.indices
+
+    if (hasValidAnswerIndex) {
+        return optIndex == exercise.answerIndex
+    }
+
+    return exercise.solution
+        .trim()
+        .contains(optText.trim(), ignoreCase = true)
+}
+
+private fun isCorrectOption(
+    exercise: ExerciseDomain,
+    optIndex: Int,
+    optText: String,
+): Boolean {
+    val hasValidAnswerIndex =
+        exercise.answerIndex in exercise.options.indices
+
+    if (hasValidAnswerIndex) {
+        return optIndex == exercise.answerIndex
+    }
+
+    return exercise.solution
+        .trim()
+        .contains(optText.trim(), ignoreCase = true)
 }
 
 @Composable
