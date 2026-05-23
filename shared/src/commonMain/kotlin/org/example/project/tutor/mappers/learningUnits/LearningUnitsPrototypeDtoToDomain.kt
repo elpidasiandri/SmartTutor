@@ -51,7 +51,8 @@ fun LearningUnitDto.toDomain(defaultIndex: Int): LearningUnitContentDomain =
         text = textInfo.orEmpty(),
         images = images.map { it.toDomain() },
         quotations = quotations.map { it.toDomain() },
-        exercises = exercises.map { it.toDomain() }
+        exercises = exercises.map { it.toDomain() },
+        isRead = isRead ?: false
     )
 
 fun UnitImageDto.toDomain(): UnitImageDomain =

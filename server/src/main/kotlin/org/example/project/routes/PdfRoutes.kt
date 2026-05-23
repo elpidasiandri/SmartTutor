@@ -16,6 +16,28 @@ import java.util.UUID
 fun Route.pdfRoutes(repo: PdfJobRepository) {
     route("/v1/pdfs") {
 
+        post("/{documentId}/units/{unitIndex}/read") {
+            val documentId = call.parameters["documentId"]
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing documentId")
+                )
+
+            val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing unitIndex")
+                )
+
+            val updated = repo.markUnitAsRead(documentId, unitIndex)
+                ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    mapOf("error" to "Not found")
+                )
+
+            call.respond(updated)
+        }
+
         post("/upload") {
             val multipart = call.receiveMultipart()
 
@@ -34,6 +56,7 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
                                 language = part.value.trim().ifBlank { "el" }
                             }
                         }
+
                         is PartData.FileItem -> {
                             if (part.name == "file") {
                                 fileName = part.originalFileName ?: "upload.pdf"
@@ -52,6 +75,7 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
                                 savedFile = file
                             }
                         }
+
                         else -> {}
                     }
                 } finally {
@@ -65,7 +89,10 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
             }
 
             val pdf = savedFile ?: run {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing multipart field 'file'"))
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing multipart field 'file'")
+                )
                 return@post
             }
 
@@ -87,7 +114,10 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
 
         get("/{documentId}") {
             val documentId = call.parameters["documentId"]
-                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing documentId"))
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing documentId")
+                )
             val status = repo.getStatus(documentId)
                 ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Not found"))
 
@@ -96,7 +126,10 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
 
         get("/{documentId}/debug/last") {
             val documentId = call.parameters["documentId"]
-                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing documentId"))
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing documentId")
+                )
 
             val raw = repo.getLastLlmRaw(documentId) ?: ""
             call.respond(mapOf("documentId" to documentId, "lastLlmRaw" to raw))

@@ -25,6 +25,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
@@ -62,6 +63,7 @@ val tutorModule = module {
     single { LoadTutorFromPdfUseCase(get(), get()) }
     single { UpsertChatProgressUseCase(get()) }
     single { DeleteChatProgressUseCase(get()) }
+    single { MarkUnitAsReadUseCase(get()) }
 
     factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     factory<TutorPlatform> {
@@ -100,7 +102,8 @@ val tutorModule = module {
             get(),
             get(),
             userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() },
-            saveExerciseAnswerUseCase = get()
+            saveExerciseAnswerUseCase = get(),
+            get()
         )
     }
     includes(logoutModule)

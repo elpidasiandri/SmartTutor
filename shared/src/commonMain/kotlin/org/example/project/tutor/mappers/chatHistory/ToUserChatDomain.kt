@@ -48,9 +48,11 @@ fun LearningUnitDto.toDomain(): LearningUnitContentDomain {
         text = textInfo.nonNull,
         images = images.map { it.toDomain() },
         quotations = quotations.map { it.toDomain() },
-        exercises = exercises.map { it.toDomain() }
+        exercises = exercises.map { it.toDomain() },
+        isRead = isRead ?: false
     )
 }
+
 fun UnitImageDto.toDomain(): UnitImageDomain {
     return UnitImageDomain(
         relativePath = relativePath.nonNull,
@@ -66,6 +68,7 @@ fun QuotationDto.toDomain(): QuotationDomain {
         numbering = numbering.nonNull
     )
 }
+
 fun ChatMessageDto.toDomain(): ChatMessageDomain {
     val normalizedSender = when (sender.lowercase()) {
         "user" -> SenderType.USER.name
@@ -146,6 +149,7 @@ fun buildChatSessionForSelectedUnit(
         )
     )
 }
+
 private fun messagesForUnit(
     allMessages: List<ChatMessageDomain>,
     unit: LearningUnitContentDomain,
@@ -154,6 +158,7 @@ private fun messagesForUnit(
         msg.unitNumber == unit.numbering || msg.unitTitle == unit.title
     }
 }
+
 @OptIn(ExperimentalUuidApi::class)
 fun buildChatSessionFromStoredChat(
     chat: UserChatDto,
@@ -225,6 +230,7 @@ fun buildChatSessionFromStoredChat(
         )
     )
 }
+
 fun ExerciseDto.toDomain(): ExerciseDomain {
     return ExerciseDomain(
 

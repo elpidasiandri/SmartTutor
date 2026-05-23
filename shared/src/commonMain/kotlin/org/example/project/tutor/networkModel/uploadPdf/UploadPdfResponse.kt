@@ -33,6 +33,7 @@ data class LearningUnitDto(
     @SerialName("title") val title: String? = null,
     @SerialName("numbering") val numbering: Int? = null,
     @SerialName("text") val textInfo: String? = null,
+    @SerialName("isRead") val isRead: Boolean? = false,
     @SerialName("quotations") val quotations: List<QuotationDto> = emptyList(),
     @SerialName("images") val images: List<UnitImageDto> = emptyList(),
     @SerialName("exercises") val exercises: List<ExerciseDto> = emptyList(),

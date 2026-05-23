@@ -23,6 +23,12 @@ interface ITutorRepo {
         token: String,
     ): CreateChatFromDocumentResponse
 
+    suspend fun markUnitAsRead(
+        documentId: String,
+        unitIndex: Int,
+        token: String
+    ): PdfJobStatusResponse
+
     suspend fun getChats(userId: String): List<UserChatDto>
 
     suspend fun getChat(

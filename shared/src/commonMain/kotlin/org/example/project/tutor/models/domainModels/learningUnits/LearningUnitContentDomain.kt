@@ -16,6 +16,7 @@ data class LearningUnitContentDomain(
     val images: List<UnitImageDomain> = emptyList(),
     val quotations: List<QuotationDomain> = emptyList(),
     val exercises: List<ExerciseDomain> = emptyList(),
+    val isRead: Boolean = false,
 )
 
 

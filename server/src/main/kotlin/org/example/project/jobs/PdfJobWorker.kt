@@ -18,7 +18,7 @@ import kotlin.random.Random
 
 class PdfJobWorker(
     private val repo: PdfJobRepository,
-    private val llm: PromptLlmClient
+    private val llm: PromptLlmClient,
 ) {
     private val workerId = "worker_" + UUID.randomUUID().toString().take(8)
 
@@ -89,7 +89,7 @@ class PdfJobWorker(
 
                 carry = preview.carry
 
-                val unitOnly = preview.unit ?: continue
+                val unitOnly = preview.unit?.copy(isRead = false) ?: continue
 
                 units.add(unitOnly)
                 repo.savePartialResult(
@@ -124,7 +124,10 @@ class PdfJobWorker(
                     error("Exercises failed permanently (unit=$unitNumber): ${lastErr?.message}")
                 }
 
-                var unitFull = unitOnly.copy(exercises = exercises)
+                var unitFull = unitOnly.copy(
+                    isRead = false,
+                    exercises = exercises
+                )
 
                 run {
                     val maxImgs = 2

@@ -6,7 +6,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
-import org.example.project.registration.AuthUserHolder
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.tutor.commonViewModel.TutorCommonViewModel
@@ -19,6 +18,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
@@ -37,8 +37,8 @@ class TutorController(
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
     private val userIdProvider: () -> String,
     private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
-
-    ) {
+    private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
+) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val common = TutorCommonViewModel(
         logoutUseCase = logoutUseCase,
@@ -57,7 +57,8 @@ class TutorController(
         analyticsTracker = analyticsTracker,
         upsertChatProgressUseCase = upsertChatProgressUseCase,
         deleteChatProgressUseCase = deleteChatProgressUseCase,
-        saveExerciseAnswerUseCase = saveExerciseAnswerUseCase
+        saveExerciseAnswerUseCase = saveExerciseAnswerUseCase,
+        markUnitAsReadUseCase = markUnitAsReadUseCase
     )
 
     val state: StateFlow<TutorState> = common.state

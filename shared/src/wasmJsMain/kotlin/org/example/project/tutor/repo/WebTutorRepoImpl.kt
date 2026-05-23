@@ -120,6 +120,16 @@ class WebTutorRepoImpl(
         return json.decodeFromString(raw)
     }
 
+    override suspend fun markUnitAsRead(
+        documentId: String,
+        unitIndex: Int,
+        token: String,
+    ): PdfJobStatusResponse {
+        return httpClient.post("$baseUrl/v1/pdfs/$documentId/units/$unitIndex/read") {
+            header("Authorization", "Bearer $token")
+        }.body()
+    }
+
     override suspend fun getPdfJobRaw(
         documentId: String,
         idToken: String,

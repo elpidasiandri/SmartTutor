@@ -11,6 +11,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
@@ -215,6 +216,14 @@ class TutorIntroRepoImpl(
 
             json.decodeFromString(raw)
         }
+    }
+
+    override suspend fun saveExerciseAnswer(
+        answer: ExerciseAnswerProgressDto,
+        userId: String,
+        token: String,
+    ) {
+        TODO("Not yet implemented")
     }
 
 }

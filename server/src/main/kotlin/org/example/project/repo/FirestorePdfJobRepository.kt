@@ -62,6 +62,66 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
             ).get()
     }
 
+    override fun markUnitAsRead(
+        documentId: String,
+        unitIndex: Int
+    ): PdfJobStatusResponse? {
+        val docRef = col.document(documentId)
+        val now = Timestamp.now()
+
+        db.runTransaction { tx ->
+            val snap = tx.get(docRef).get()
+            if (!snap.exists()) return@runTransaction null
+
+            fun updateJson(field: String): String? {
+                val raw = snap.getString(field).orEmpty()
+                if (raw.isBlank()) return null
+
+                val old = json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    raw
+                )
+
+                val updated = old.copy(
+                    learningUnits = old.learningUnits.mapIndexed { index, unit ->
+                        if (index == unitIndex) {
+                            unit.copy(isRead = true)
+                        } else {
+                            unit
+                        }
+                    }
+                )
+
+                return json.encodeToString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    updated
+                )
+            }
+
+            val updates = mutableMapOf<String, Any>(
+                "updatedAt" to now
+            )
+
+            updateJson("partialResultJson")?.let {
+                updates["partialResultJson"] = it
+            }
+
+            updateJson("resultJson")?.let {
+                updates["resultJson"] = it
+            }
+
+            tx.update(docRef, updates)
+
+            null
+        }.get()
+
+        db.collection("pdfs").document(documentId)
+            .update(mapOf("updatedAt" to now))
+            .get()
+
+        return getStatus(documentId)
+    }
+
     override fun claimNextJob(workerId: String): PdfJob? {
         val now = Timestamp.now()
         val lockSeconds = 120L

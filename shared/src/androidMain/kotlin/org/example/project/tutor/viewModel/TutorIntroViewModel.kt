@@ -20,6 +20,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
@@ -38,7 +39,9 @@ class TutorIntroViewModel(
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
     private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
-) : ViewModel() {
+    private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
+
+    ) : ViewModel() {
 
     val common = TutorCommonViewModel(
         logoutUseCase = logout,
@@ -55,7 +58,8 @@ class TutorIntroViewModel(
         analyticsTracker = analyticsTracker,
         upsertChatProgressUseCase = upsertChatProgressUseCase,
         deleteChatProgressUseCase = deleteChatProgressUseCase,
-        saveExerciseAnswerUseCase = saveExerciseAnswerUseCase
+        saveExerciseAnswerUseCase = saveExerciseAnswerUseCase,
+        markUnitAsReadUseCase = markUnitAsReadUseCase
     )
 
     init {

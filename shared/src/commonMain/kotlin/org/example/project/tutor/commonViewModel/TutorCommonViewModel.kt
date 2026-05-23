@@ -54,6 +54,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.utils.EmptyValues
@@ -84,6 +85,8 @@ class TutorCommonViewModel(
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
     private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
+    private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
+
     ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -108,15 +111,17 @@ class TutorCommonViewModel(
             )
 
             TutorUiEvents.NextUnit -> goNext()
-            is TutorUiEvents.ExerciseAnswered ->  {
+            is TutorUiEvents.ExerciseAnswered -> {
                 trackExerciseAnswered(event)
                 saveExerciseAnswered(event)
             }
+
             TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
             is TutorUiEvents.ChangeTab -> {
                 refreshTabInfoMessage(event.tab)
             }
+
             else -> {}
         }
     }
@@ -183,6 +188,21 @@ class TutorCommonViewModel(
 
     }
 
+//    private fun markCurrentUnitAsRead(index: Int) {
+//        _state.update { current ->
+//            val updatedUnits = current.allUnits.mapIndexed { i, unit ->
+//                if (i == index) unit.copy(isRead = true) else unit
+//            }
+//
+//            current.copy(
+//                allUnits = updatedUnits,
+//                currentUnit = updatedUnits.getOrNull(index) ?: current.currentUnit
+//            )
+//        }
+//
+//        saveProgress()
+//    }
+
     private fun trackExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
         val unit = _state.value.currentUnit
 
@@ -201,6 +221,7 @@ class TutorCommonViewModel(
             )
         )
     }
+
     fun playAIMessage(text: String) {
         platform.speak(normalizeTranscript(text))
     }
@@ -368,7 +389,7 @@ class TutorCommonViewModel(
                 canGoNext = index < units.lastIndex
             )
         }
-
+        markUnitAsRead(index)
         saveProgress()
     }
 
@@ -417,7 +438,7 @@ class TutorCommonViewModel(
                         canGoNext = index < domainUnits.lastIndex
                     )
                 }
-
+                markUnitAsRead(index)
                 saveProgress()
 
             } catch (t: Throwable) {
@@ -426,7 +447,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message =  "Failed to load chat unit"
+                        message = "Failed to load chat unit"
                     )
                 }
             }
@@ -457,6 +478,40 @@ class TutorCommonViewModel(
             )
         }
         saveProgress()
+    }
+
+    private fun markUnitAsRead(index: Int) {
+        val documentId = _state.value.activeDocumentId
+        if (documentId.isBlank()) return
+
+        val unit = _state.value.allUnits.getOrNull(index) ?: return
+
+        if (unit.isRead) return
+
+        _state.update { current ->
+            val updatedUnits = current.allUnits.mapIndexed { i, unit ->
+                if (i == index) unit.copy(isRead = true) else unit
+            }
+
+            current.copy(
+                allUnits = updatedUnits,
+                currentUnit = updatedUnits.getOrNull(index) ?: current.currentUnit
+            )
+        }
+
+        scope.launch {
+            runCatching {
+                val token = getIdTokenSuspendUseCase()
+
+                markUnitAsReadUseCase(
+                    documentId = documentId,
+                    unitIndex = index,
+                    token = token
+                )
+            }.onFailure {
+                platform.log("Progress", "Failed to mark unit as read", it)
+            }
+        }
     }
 
     private fun uploadPdf(picked: PickedFile) {
@@ -531,7 +586,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message =  "Upload failed"
+                        message = "Upload failed"
                     )
                 }
             }
@@ -620,7 +675,7 @@ class TutorCommonViewModel(
                         loading = false,
                         showCustomMessage = true,
                         isError = true,
-                        message =  "Failed to delete chat"
+                        message = "Failed to delete chat"
                     )
                 }
             }
@@ -682,6 +737,7 @@ class TutorCommonViewModel(
                 canGoNext = nextIndex < units.lastIndex
             )
         }
+        markUnitAsRead(nextIndex)
         saveProgress()
     }
 

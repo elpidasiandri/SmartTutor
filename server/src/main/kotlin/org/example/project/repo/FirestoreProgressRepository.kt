@@ -4,18 +4,19 @@ import com.google.cloud.firestore.Firestore
 import org.example.project.myProgress.networkModel.ChatProgressDto
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.networkModel.LearningUnitExerciseStatsDto
+import org.example.project.myProgress.networkModel.UnitReadProgressDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 import org.example.project.myProgress.repo.IProgressRepository
 
 class FirestoreProgressRepository(
-    private val db: Firestore
+    private val db: Firestore,
 ) : IProgressRepository {
 
     private val usersCol = db.collection("users")
 
     override fun upsertChatProgress(
         userId: String,
-        progress: ChatProgressDto
+        progress: ChatProgressDto,
     ) {
         val docRef = usersCol
             .document(userId)
@@ -36,7 +37,14 @@ class FirestoreProgressRepository(
                 "messagesSentCount" to progress.messagesSentCount,
                 "availableExercisesCount" to progress.availableExercisesCount,
                 "lastActivityEpochMillis" to progress.lastActivityEpochMillis,
-                "progressPercent" to progress.progressPercent
+                "progressPercent" to progress.progressPercent,
+                "units" to progress.units.map {
+                    mapOf(
+                        "unitIndex" to it.unitIndex,
+                        "unitTitle" to it.unitTitle,
+                        "isRead" to it.isRead
+                    )
+                }
             )
         ).get()
     }
@@ -45,7 +53,7 @@ class FirestoreProgressRepository(
     override fun incrementMessageCount(
         userId: String,
         chatId: String,
-        delta: Int
+        delta: Int,
     ) {
         val docRef = usersCol
             .document(userId)
@@ -138,6 +146,7 @@ class FirestoreProgressRepository(
             .get()
 
         return snap.documents.map {
+            val unitsRaw = it.get("units") as? List<*>
             ChatProgressDto(
                 chatId = it.getString("chatId") ?: it.id,
                 userId = it.getString("userId") ?: "",
@@ -149,7 +158,16 @@ class FirestoreProgressRepository(
                 messagesSentCount = (it.getLong("messagesSentCount") ?: 0L).toInt(),
                 availableExercisesCount = (it.getLong("availableExercisesCount") ?: 0L).toInt(),
                 lastActivityEpochMillis = it.getLong("lastActivityEpochMillis") ?: 0L,
-                progressPercent = (it.getLong("progressPercent") ?: 0L).toInt()
+                progressPercent = (it.getLong("progressPercent") ?: 0L).toInt(),
+                units = unitsRaw?.mapNotNull { raw ->
+                    val unit = raw as? Map<*, *> ?: return@mapNotNull null
+
+                    UnitReadProgressDto(
+                        unitIndex = (unit["unitIndex"] as? Long)?.toInt() ?: 0,
+                        unitTitle = unit["unitTitle"] as? String ?: "",
+                        isRead = unit["isRead"] as? Boolean ?: false
+                    )
+                } ?: emptyList()
             )
         }.sortedByDescending { it.lastActivityEpochMillis }
     }
@@ -199,7 +217,7 @@ class FirestoreProgressRepository(
     }
 
     override suspend fun getExerciseStats(
-        userId: String
+        userId: String,
     ): List<LearningUnitExerciseStatsDto> {
 
         val snap = usersCol.document(userId)
