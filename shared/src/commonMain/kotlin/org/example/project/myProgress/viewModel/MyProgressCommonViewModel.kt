@@ -11,6 +11,7 @@ import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressEvents
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.myProgress.state.MyProgressUiEvents
+import org.example.project.myProgress.state.toDomain
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.GetChatProgressListUseCase
 import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
@@ -131,7 +132,8 @@ class MyProgressCommonViewModel(
                                 unitTitle = exerciseState.unitTitle,
                                 correctCount = exerciseState.correctCount,
                                 wrongCount = exerciseState.wrongCount,
-                                totalAnswered = exerciseState.totalAnswered
+                                totalAnswered = exerciseState.totalAnswered,
+                                answers = exerciseState.answers.map { answers -> answers.toDomain() }
                             )
                         },
                         event = MyProgressEvents.Loaded

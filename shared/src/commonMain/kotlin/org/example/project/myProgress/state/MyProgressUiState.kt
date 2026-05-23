@@ -1,5 +1,9 @@
 package org.example.project.myProgress.state
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
+
 data class MyProgressState(
     val loading: Boolean = false,
     val error: String? = null,
@@ -35,8 +39,40 @@ data class MyProgressChatItem(
     val chatId: String,
     val title: String,
     val progressPercent: Int,
-    val lastActivityEpochMillis: Long = 0L
+    val lastActivityEpochMillis: Long = 0L,
 )
+
+data class ExerciseAnswerProgressDomain(
+    val chatId: String,
+    val userId: String,
+    val unitIndex: Int,
+    val unitTitle: String,
+    val exerciseIndex: Int,
+    val exerciseType: String,
+    val question: String,
+    val selectedAnswer: String,
+    val correctAnswer: String,
+    val isCorrect: Boolean,
+    val timeToAnswerMs: Long,
+    val answeredAtEpochMillis: Long,
+)
+
+fun ExerciseAnswerProgressDto.toDomain(): ExerciseAnswerProgressDomain {
+    return ExerciseAnswerProgressDomain(
+        chatId = chatId,
+        userId = userId,
+        unitIndex = unitIndex,
+        unitTitle = unitTitle,
+        exerciseIndex = exerciseIndex,
+        exerciseType = exerciseType,
+        question = question,
+        selectedAnswer = selectedAnswer,
+        correctAnswer = correctAnswer,
+        isCorrect = isCorrect,
+        timeToAnswerMs = timeToAnswerMs,
+        answeredAtEpochMillis = answeredAtEpochMillis
+    )
+}
 
 data class LearningUnitExerciseStatsUi(
     val unitIndex: Int,
@@ -44,7 +80,9 @@ data class LearningUnitExerciseStatsUi(
     val correctCount: Int,
     val wrongCount: Int,
     val totalAnswered: Int,
+    val answers: List<ExerciseAnswerProgressDomain>,
 )
+
 sealed class MyProgressEvents {
     data object None : MyProgressEvents()
     data object Loaded : MyProgressEvents()

@@ -170,8 +170,7 @@ class FirestoreProgressRepository(
         userId: String,
         answer: ExerciseAnswerProgressDto,
     ) {
-        val docId = "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}"
-
+        val docId = "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}_${answer.question.hashCode()}"
         usersCol.document(userId)
             .collection("progress")
             .document("exerciseAnswers")
@@ -201,6 +200,7 @@ class FirestoreProgressRepository(
     override suspend fun getExerciseStats(
         userId: String
     ): List<LearningUnitExerciseStatsDto> {
+
         val snap = usersCol.document(userId)
             .collection("progress")
             .document("exerciseAnswers")
@@ -208,24 +208,45 @@ class FirestoreProgressRepository(
             .get()
             .get()
 
-        return snap.documents
-            .groupBy {
-                val unitIndex = (it.getLong("unitIndex") ?: 0L).toInt()
-                val unitTitle = it.getString("unitTitle") ?: ""
-                unitIndex to unitTitle
+        val latestAnswers = snap.documents
+            .map { doc ->
+                ExerciseAnswerProgressDto(
+                    chatId = doc.getString("chatId") ?: "",
+                    userId = doc.getString("userId") ?: userId,
+                    unitIndex = (doc.getLong("unitIndex") ?: 0L).toInt(),
+                    unitTitle = doc.getString("unitTitle") ?: "",
+                    exerciseIndex = (doc.getLong("exerciseIndex") ?: 0L).toInt(),
+                    exerciseType = doc.getString("exerciseType") ?: "",
+                    question = doc.getString("question") ?: "",
+                    selectedAnswer = doc.getString("selectedAnswer") ?: "",
+                    correctAnswer = doc.getString("correctAnswer") ?: "",
+                    isCorrect = doc.getBoolean("isCorrect") == true,
+                    timeToAnswerMs = doc.getLong("timeToAnswerMs") ?: 0L,
+                    answeredAtEpochMillis = doc.getLong("answeredAtEpochMillis") ?: 0L
+                )
             }
-            .map { (unit, docs) ->
-                val correct = docs.count { it.getBoolean("isCorrect") == true }
-                val wrong = docs.count { it.getBoolean("isCorrect") == false }
+            .groupBy {
+                "${it.chatId}_${it.unitIndex}_${it.exerciseIndex}_${it.question.hashCode()}"
+            }
+            .mapNotNull { (_, answers) ->
+                answers.maxByOrNull { it.answeredAtEpochMillis }
+            }
+
+        return latestAnswers
+            .groupBy { it.unitIndex to it.unitTitle }
+            .map { (unit, answers) ->
+                val sortedAnswers = answers.sortedBy { it.exerciseIndex }
 
                 LearningUnitExerciseStatsDto(
                     unitIndex = unit.first,
                     unitTitle = unit.second,
-                    correctCount = correct,
-                    wrongCount = wrong,
-                    totalAnswered = correct + wrong
+                    correctCount = sortedAnswers.count { it.isCorrect },
+                    wrongCount = sortedAnswers.count { !it.isCorrect },
+                    totalAnswered = sortedAnswers.size,
+                    answers = sortedAnswers
                 )
             }
             .sortedBy { it.unitIndex }
     }
+
 }

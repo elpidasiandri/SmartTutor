@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressState
@@ -100,17 +101,38 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                 StatItem("Wrong", state.totalWrongAnswers.toString())
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
 
             state.unitExerciseStats.forEach { unit ->
-                Text("Unit ${unit.unitIndex + 1}: ${unit.unitTitle}")
+                Text(
+                    text = "Unit ${unit.unitIndex + 1}: ${unit.unitTitle}",
+                    fontWeight = FontWeight.Bold
+                )
+
                 Text("Correct: ${unit.correctCount} | Wrong: ${unit.wrongCount}")
+
                 Spacer(Modifier.height(8.dp))
+
+                unit.answers.forEach { answer ->
+                    Text("Exercise ${answer.exerciseIndex + 1}")
+                    Text(answer.question)
+
+                    Text(
+                        text = if (answer.isCorrect) "Correct" else "Wrong",
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text("Your answer: ${answer.selectedAnswer}")
+                    Text("Correct answer: ${answer.correctAnswer}")
+
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
 }
-
 @Composable
 fun CurrentLearningCard(state: MyProgressState) {
     Card(modifier = Modifier.fillMaxWidth()) {

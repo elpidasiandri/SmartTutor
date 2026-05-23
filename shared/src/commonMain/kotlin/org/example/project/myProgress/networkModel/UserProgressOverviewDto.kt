@@ -51,5 +51,6 @@ data class LearningUnitExerciseStatsDto(
     @SerialName("correctCount") val correctCount: Int,
     @SerialName("wrongCount") val wrongCount: Int,
     @SerialName("totalAnswered") val totalAnswered: Int,
+    @SerialName("answers") val answers: List<ExerciseAnswerProgressDto> = emptyList(),
 )
 

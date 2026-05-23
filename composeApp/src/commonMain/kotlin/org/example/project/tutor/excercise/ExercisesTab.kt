@@ -131,6 +131,7 @@ private fun ExerciseCard(
                 exercise.options.forEachIndexed { optIndex, opt ->
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
+
                     val isCorrect = isCorrectOption(exercise, optIndex, opt)
                     OptionRow(
                         label = "$letter)",
@@ -139,16 +140,16 @@ private fun ExerciseCard(
                         isCorrect = isSelected && isCorrect,
                         isWrong = isSelected && !isCorrect,
                         onClick = {
+                            selectedIndex = optIndex
                             onExerciseAnswered(
                                 index,
                                 ExerciseType.MCQ,
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
-                                isCorrect,
+                                isSelected && isCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question
                             )
-                            selectedIndex = optIndex
                         }
                     )
                 }
@@ -176,16 +177,18 @@ private fun ExerciseCard(
                                 (tfSelected == false && trueCorrect),
                     isWrong = tfSelected == true && !trueCorrect,
                     onClick = {
+                        tfSelected = true
+
                         onExerciseAnswered(
                             index,
                             ExerciseType.TRUE_FALSE,
                             selectedAnswer,
                             correctAnswer,
-                            isCorrect,
+                            (tfSelected == true && trueCorrect) ||
+                                    (tfSelected == false && trueCorrect),
                             startedAt.elapsedNow().inWholeMilliseconds,
                             exercise.question,
                         )
-                        tfSelected = true
                     }
                 )
 
@@ -198,16 +201,18 @@ private fun ExerciseCard(
                                 (tfSelected == true && falseCorrect),
                     isWrong = tfSelected == false && !falseCorrect,
                     onClick = {
+                        tfSelected = false
+
                         onExerciseAnswered(
                             index,
                             ExerciseType.TRUE_FALSE,
                             selectedAnswer,
                             correctAnswer,
-                            isCorrect,
+                            (tfSelected == false && falseCorrect) ||
+                                    (tfSelected == true && falseCorrect),
                             startedAt.elapsedNow().inWholeMilliseconds,
                             exercise.question,
                         )
-                        tfSelected = false
                     }
                 )
             }
@@ -235,16 +240,17 @@ private fun ExerciseCard(
                         isCorrect = isSelected && isCorrect,
                         isWrong = isSelected && !isCorrect,
                         onClick = {
+                            selectedIndex = optIndex
+
                             onExerciseAnswered(
                                 index,
                                 ExerciseType.MCQ,
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
-                                isCorrect,
+                                isSelected && isCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question,
                             )
-                            selectedIndex = optIndex
                         }
                     )
                 }
