@@ -102,7 +102,7 @@ class TutorIntroFragment : Fragment() {
                     },
                     canGoNext = state.canGoNext,
                     askTutor = state.askTutor,
-                    onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs ->
+                    onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question ->
                         viewModel.onEvent(
                             TutorUiEvents.ExerciseAnswered(
                                 exerciseIndex = index,
@@ -110,7 +110,8 @@ class TutorIntroFragment : Fragment() {
                                 selectedAnswer = selected,
                                 correctAnswer = correct,
                                 isCorrect = isCorrect,
-                                timeToAnswerMs = timeMs
+                                timeToAnswerMs = timeMs,
+                                question = question,
                             )
                         )
                     }

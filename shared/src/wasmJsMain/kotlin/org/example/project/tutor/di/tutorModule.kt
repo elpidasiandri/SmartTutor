@@ -26,6 +26,7 @@ import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
+import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.tutor.viewModel.TutorController
 import org.koin.dsl.module
@@ -53,6 +54,7 @@ val tutorModule = module {
 
     single { LearningUnitsUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
+    single { SaveExerciseAnswerUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
     single { AskTutorUseCase(get()) }
     single { GetChatByIdUseCase(get()) }
@@ -97,7 +99,8 @@ val tutorModule = module {
             get(),
             get(),
             get(),
-            userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() }
+            userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() },
+            saveExerciseAnswerUseCase = get()
         )
     }
     includes(logoutModule)

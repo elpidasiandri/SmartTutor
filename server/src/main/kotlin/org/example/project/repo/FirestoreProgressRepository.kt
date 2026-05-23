@@ -2,6 +2,8 @@ package org.example.project.repo
 
 import com.google.cloud.firestore.Firestore
 import org.example.project.myProgress.networkModel.ChatProgressDto
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
+import org.example.project.myProgress.networkModel.LearningUnitExerciseStatsDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 import org.example.project.myProgress.repo.IProgressRepository
 
@@ -162,5 +164,68 @@ class FirestoreProgressRepository(
             .get()
 
         updateOverview(userId)
+    }
+
+    override suspend fun saveExerciseAnswer(
+        userId: String,
+        answer: ExerciseAnswerProgressDto,
+    ) {
+        val docId = "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}"
+
+        usersCol.document(userId)
+            .collection("progress")
+            .document("exerciseAnswers")
+            .collection("items")
+            .document(docId)
+            .set(
+                mapOf(
+                    "chatId" to answer.chatId,
+                    "userId" to userId,
+                    "unitIndex" to answer.unitIndex,
+                    "unitTitle" to answer.unitTitle,
+                    "exerciseIndex" to answer.exerciseIndex,
+                    "exerciseType" to answer.exerciseType,
+                    "question" to answer.question,
+                    "selectedAnswer" to answer.selectedAnswer,
+                    "correctAnswer" to answer.correctAnswer,
+                    "isCorrect" to answer.isCorrect,
+                    "timeToAnswerMs" to answer.timeToAnswerMs,
+                    "answeredAtEpochMillis" to answer.answeredAtEpochMillis
+                )
+            )
+            .get()
+
+        updateOverview(userId)
+    }
+
+    override suspend fun getExerciseStats(
+        userId: String
+    ): List<LearningUnitExerciseStatsDto> {
+        val snap = usersCol.document(userId)
+            .collection("progress")
+            .document("exerciseAnswers")
+            .collection("items")
+            .get()
+            .get()
+
+        return snap.documents
+            .groupBy {
+                val unitIndex = (it.getLong("unitIndex") ?: 0L).toInt()
+                val unitTitle = it.getString("unitTitle") ?: ""
+                unitIndex to unitTitle
+            }
+            .map { (unit, docs) ->
+                val correct = docs.count { it.getBoolean("isCorrect") == true }
+                val wrong = docs.count { it.getBoolean("isCorrect") == false }
+
+                LearningUnitExerciseStatsDto(
+                    unitIndex = unit.first,
+                    unitTitle = unit.second,
+                    correctCount = correct,
+                    wrongCount = wrong,
+                    totalAnswered = correct + wrong
+                )
+            }
+            .sortedBy { it.unitIndex }
     }
 }

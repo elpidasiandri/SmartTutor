@@ -20,6 +20,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 class TutorIntroViewModel(
@@ -35,8 +36,9 @@ class TutorIntroViewModel(
     private val deleteChatUseCase: DeleteChatUseCase,
     private val analyticsTracker: IAnalyticsTracker,
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
-    private val deleteChatProgressUseCase: DeleteChatProgressUseCase
-    ) : ViewModel() {
+    private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
+    private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
+) : ViewModel() {
 
     val common = TutorCommonViewModel(
         logoutUseCase = logout,
@@ -53,10 +55,13 @@ class TutorIntroViewModel(
         analyticsTracker = analyticsTracker,
         upsertChatProgressUseCase = upsertChatProgressUseCase,
         deleteChatProgressUseCase = deleteChatProgressUseCase,
+        saveExerciseAnswerUseCase = saveExerciseAnswerUseCase
     )
+
     init {
         common.initializeData()
     }
+
     val state: StateFlow<TutorState> = common.state
 
     fun onEvent(event: TutorUiEvents) = common.onEvent(event)

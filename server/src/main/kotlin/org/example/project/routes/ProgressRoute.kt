@@ -9,11 +9,31 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.example.project.myProgress.networkModel.ChatProgressDto
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 import org.example.project.myProgress.repo.IProgressRepository
 
 fun Route.progressRoutes(progressRepo: IProgressRepository) {
     route("/v1/progress") {
+
+        post("/exercise-answers") {
+            val userId = call.request.queryParameters["userId"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId"))
+
+            val answer = call.receive<ExerciseAnswerProgressDto>()
+
+            progressRepo.saveExerciseAnswer(userId, answer)
+            progressRepo.updateOverview(userId)
+
+            call.respond(HttpStatusCode.OK, mapOf("success" to true))
+        }
+
+        get("/exercise-stats") {
+            val userId = call.request.queryParameters["userId"]
+                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId"))
+
+            call.respond(progressRepo.getExerciseStats(userId))
+        }
 
         get("/overview") {
             val userId = call.request.queryParameters["userId"]

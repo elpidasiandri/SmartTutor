@@ -43,7 +43,7 @@ import kotlin.time.TimeSource
 fun ExercisesTab(
     modifier: Modifier = Modifier,
     exercises: List<ExerciseDomain>,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
 ) {
     if (exercises.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -76,7 +76,7 @@ fun ExercisesTab(
 private fun ExerciseCard(
     index: Int,
     exercise: ExerciseDomain,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
 ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
@@ -145,7 +145,8 @@ private fun ExerciseCard(
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
                                 isCorrect,
-                                startedAt.elapsedNow().inWholeMilliseconds
+                                startedAt.elapsedNow().inWholeMilliseconds,
+                                exercise.question
                             )
                             selectedIndex = optIndex
                         }
@@ -181,7 +182,8 @@ private fun ExerciseCard(
                             selectedAnswer,
                             correctAnswer,
                             isCorrect,
-                            startedAt.elapsedNow().inWholeMilliseconds
+                            startedAt.elapsedNow().inWholeMilliseconds,
+                            exercise.question,
                         )
                         tfSelected = true
                     }
@@ -202,7 +204,8 @@ private fun ExerciseCard(
                             selectedAnswer,
                             correctAnswer,
                             isCorrect,
-                            startedAt.elapsedNow().inWholeMilliseconds
+                            startedAt.elapsedNow().inWholeMilliseconds,
+                            exercise.question,
                         )
                         tfSelected = false
                     }
@@ -238,7 +241,8 @@ private fun ExerciseCard(
                                 opt,
                                 exercise.options.getOrNull(optIndex).orEmpty(),
                                 isCorrect,
-                                startedAt.elapsedNow().inWholeMilliseconds
+                                startedAt.elapsedNow().inWholeMilliseconds,
+                                exercise.question,
                             )
                             selectedIndex = optIndex
                         }

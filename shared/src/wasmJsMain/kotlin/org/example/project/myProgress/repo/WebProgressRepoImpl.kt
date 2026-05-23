@@ -11,6 +11,8 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import org.example.project.myProgress.networkModel.ChatProgressDto
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
+import org.example.project.myProgress.networkModel.LearningUnitExerciseStatsDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 
 class WebProgressRepoImpl(
@@ -54,4 +56,15 @@ class WebProgressRepoImpl(
             parameter("userId", userId)
         }
     }
+
+
+
+    override suspend fun getExerciseStats(
+        userId: String
+    ): List<LearningUnitExerciseStatsDto> {
+        return httpClient.get("$baseUrl/v1/progress/exercise-stats") {
+            parameter("userId", userId)
+        }.body()
+    }
+
 }

@@ -110,7 +110,7 @@ fun TutorScreen(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -195,7 +195,7 @@ fun TutorChatUI(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -444,7 +444,7 @@ private fun TutorChatContent(
     currentUnit: LearningUnitContentDomain,
     isLoading: Boolean,
     canGoNext: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
 
     ) {
     Column(
@@ -485,7 +485,7 @@ private fun TutorChatContent(
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
                     exercises = currentUnit.exercises,
-                    onExerciseAnswered =onExerciseAnswered
+                    onExerciseAnswered = onExerciseAnswered
                 )
             }
         }

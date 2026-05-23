@@ -19,6 +19,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 class TutorController(
@@ -35,7 +36,9 @@ class TutorController(
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
     private val userIdProvider: () -> String,
-) {
+    private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
+
+    ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val common = TutorCommonViewModel(
         logoutUseCase = logoutUseCase,
@@ -53,7 +56,8 @@ class TutorController(
         deleteChatUseCase = deleteChatUseCase,
         analyticsTracker = analyticsTracker,
         upsertChatProgressUseCase = upsertChatProgressUseCase,
-        deleteChatProgressUseCase = deleteChatProgressUseCase
+        deleteChatProgressUseCase = deleteChatProgressUseCase,
+        saveExerciseAnswerUseCase = saveExerciseAnswerUseCase
     )
 
     val state: StateFlow<TutorState> = common.state

@@ -1,6 +1,8 @@
 package org.example.project.myProgress.repo
 
 import org.example.project.myProgress.networkModel.ChatProgressDto
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
+import org.example.project.myProgress.networkModel.LearningUnitExerciseStatsDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 
 interface IProgressRepository {
@@ -24,4 +26,7 @@ interface IProgressRepository {
     fun getChatProgressList(userId: String): List<ChatProgressDto>
 
     fun deleteChatProgress(userId: String, chatId: String)
+    suspend fun saveExerciseAnswer(userId: String, answer: ExerciseAnswerProgressDto)
+
+    suspend fun getExerciseStats(userId: String): List<LearningUnitExerciseStatsDto>
 }

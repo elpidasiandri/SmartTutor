@@ -94,7 +94,7 @@ fun WebTutorScreenFlow(navController: NavController) {
             }
         },
         selectLearningUnit = { title, subjectId ->
-            controller.onEvent(TutorUiEvents.SelectLearningUnit(title,subjectId))
+            controller.onEvent(TutorUiEvents.SelectLearningUnit(title, subjectId))
         },
         onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
         onExercisesClick = { },
@@ -120,7 +120,7 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         canGoNext = state.canGoNext,
         askTutor = state.askTutor,
-        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs ->
+        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question ->
             controller.onEvent(
                 TutorUiEvents.ExerciseAnswered(
                     exerciseIndex = index,
@@ -128,7 +128,8 @@ fun WebTutorScreenFlow(navController: NavController) {
                     selectedAnswer = selected,
                     correctAnswer = correct,
                     isCorrect = isCorrect,
-                    timeToAnswerMs = timeMs
+                    timeToAnswerMs = timeMs,
+                    question = question,
                 )
             )
         }

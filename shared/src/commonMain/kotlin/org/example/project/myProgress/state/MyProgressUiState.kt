@@ -26,6 +26,9 @@ data class MyProgressState(
 
     val event: MyProgressEvents = MyProgressEvents.None,
     val uiEvent: MyProgressUiEvents = MyProgressUiEvents.None,
+    val totalCorrectAnswers: Int = 0,
+    val totalWrongAnswers: Int = 0,
+    val unitExerciseStats: List<LearningUnitExerciseStatsUi> = emptyList(),
 )
 
 data class MyProgressChatItem(
@@ -35,6 +38,13 @@ data class MyProgressChatItem(
     val lastActivityEpochMillis: Long = 0L
 )
 
+data class LearningUnitExerciseStatsUi(
+    val unitIndex: Int,
+    val unitTitle: String,
+    val correctCount: Int,
+    val wrongCount: Int,
+    val totalAnswered: Int,
+)
 sealed class MyProgressEvents {
     data object None : MyProgressEvents()
     data object Loaded : MyProgressEvents()

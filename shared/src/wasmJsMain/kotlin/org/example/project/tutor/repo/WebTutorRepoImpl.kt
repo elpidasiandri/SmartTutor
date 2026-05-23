@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.example.project.extensions.await
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.registration.firebase.FirebaseApp
 import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
@@ -221,6 +222,19 @@ class WebTutorRepoImpl(
 
         if (!response.status.isSuccess()) {
             error("Delete chat failed: ${response.status} body=$raw")
+        }
+    }
+
+    override suspend fun saveExerciseAnswer(
+        answer: ExerciseAnswerProgressDto,
+        userId: String,
+        token: String,
+    ) {
+        httpClient.post("$baseUrl/v1/progress/exercise-answers") {
+            header("Authorization", "Bearer $token")
+            parameter("userId", userId)
+            contentType(ContentType.Application.Json)
+            setBody(answer)
         }
     }
 }

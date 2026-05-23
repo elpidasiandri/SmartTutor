@@ -53,6 +53,7 @@ sealed class TutorUiEvents {
         val correctAnswer: String,
         val isCorrect: Boolean,
         val timeToAnswerMs: Long,
+        val question: String,
     ) : TutorUiEvents()
 
     data class SendMessage(val text: String) : TutorUiEvents()

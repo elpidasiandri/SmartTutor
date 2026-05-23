@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.example.project.myProgress.mappers.toDto
+import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
@@ -53,6 +54,7 @@ import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
+import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.utils.EmptyValues
 import kotlin.uuid.ExperimentalUuidApi
@@ -80,8 +82,8 @@ class TutorCommonViewModel(
     private val deleteChatUseCase: DeleteChatUseCase,
     private val analyticsTracker: IAnalyticsTracker,
     private val upsertChatProgressUseCase: UpsertChatProgressUseCase,
+    private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
-
     ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -106,13 +108,15 @@ class TutorCommonViewModel(
             )
 
             TutorUiEvents.NextUnit -> goNext()
-            is TutorUiEvents.ExerciseAnswered ->  trackExerciseAnswered(event)
+            is TutorUiEvents.ExerciseAnswered ->  {
+                trackExerciseAnswered(event)
+                saveExerciseAnswered(event)
+            }
             TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
             is TutorUiEvents.ChangeTab -> {
                 refreshTabInfoMessage(event.tab)
             }
-
             else -> {}
         }
     }
@@ -130,6 +134,55 @@ class TutorCommonViewModel(
             platform.log("Analytics", "Failed to log event: $name", it)
         }
     }
+
+    private fun saveExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
+        val current = _state.value
+        val unit = current.currentUnit
+
+        track(
+            name = EXERCISE_ANSWERED,
+            params = mapOf(
+                "chatId" to current.activeChatId,
+                "unitIndex" to current.currentIndex.toString(),
+                "unitTitle" to unit.title,
+                "exerciseIndex" to event.exerciseIndex.toString(),
+                "exerciseType" to event.exerciseType.name,
+                "selectedAnswer" to event.selectedAnswer,
+                "correctAnswer" to event.correctAnswer,
+                "isCorrect" to event.isCorrect.toString(),
+                "timeToAnswerMs" to event.timeToAnswerMs.toString()
+            )
+        )
+
+        scope.launch {
+            runCatching {
+                val token = getIdTokenSuspendUseCase()
+
+                saveExerciseAnswerUseCase(
+                    userId = userId(),
+                    token = token,
+                    answer = ExerciseAnswerProgressDto(
+                        chatId = current.activeChatId,
+                        userId = userId(),
+                        unitIndex = current.currentIndex,
+                        unitTitle = unit.title,
+                        exerciseIndex = event.exerciseIndex,
+                        exerciseType = event.exerciseType.name,
+                        question = event.question,
+                        selectedAnswer = event.selectedAnswer,
+                        correctAnswer = event.correctAnswer,
+                        isCorrect = event.isCorrect,
+                        timeToAnswerMs = event.timeToAnswerMs,
+                        answeredAtEpochMillis = event.timeToAnswerMs
+                    )
+                )
+            }.onFailure {
+                platform.log("Progress", "Failed to save exercise answer", it)
+            }
+        }
+
+    }
+
     private fun trackExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
         val unit = _state.value.currentUnit
 

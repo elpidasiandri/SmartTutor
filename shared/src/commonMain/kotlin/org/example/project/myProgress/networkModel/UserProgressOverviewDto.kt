@@ -27,3 +27,29 @@ data class ChatProgressDto(
     @SerialName("lastActivityEpochMillis") val lastActivityEpochMillis: Long = 0L,
     @SerialName("progressPercent") val progressPercent: Int = 0,
 )
+
+@Serializable
+data class ExerciseAnswerProgressDto(
+    @SerialName("chatId") val chatId: String,
+    @SerialName("userId") val userId: String,
+    @SerialName("unitIndex") val unitIndex: Int,
+    @SerialName("unitTitle") val unitTitle: String,
+    @SerialName("exerciseIndex") val exerciseIndex: Int,
+    @SerialName("exerciseType") val exerciseType: String,
+    @SerialName("question") val question: String,
+    @SerialName("selectedAnswer") val selectedAnswer: String,
+    @SerialName("correctAnswer") val correctAnswer: String,
+    @SerialName("isCorrect") val isCorrect: Boolean,
+    @SerialName("timeToAnswerMs") val timeToAnswerMs: Long,
+    @SerialName("answeredAtEpochMillis") val answeredAtEpochMillis: Long,
+)
+
+@Serializable
+data class LearningUnitExerciseStatsDto(
+    @SerialName("unitIndex") val unitIndex: Int,
+    @SerialName("unitTitle") val unitTitle: String,
+    @SerialName("correctCount") val correctCount: Int,
+    @SerialName("wrongCount") val wrongCount: Int,
+    @SerialName("totalAnswered") val totalAnswered: Int,
+)
+

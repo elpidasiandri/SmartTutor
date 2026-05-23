@@ -6,12 +6,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.example.project.myProgress.state.LearningUnitExerciseStatsUi
 import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressEvents
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.myProgress.state.MyProgressUiEvents
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.GetChatProgressListUseCase
+import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
@@ -26,6 +28,7 @@ class MyProgressCommonViewModel(
     private val platform: TutorPlatform,
     private val getProgressOverviewUseCase: GetProgressOverviewUseCase,
     private val getChatProgressListUseCase: GetChatProgressListUseCase,
+    private val getExerciseStateUseCase: GetExerciseStatsUseCase,
 ) {
     private val _state = MutableStateFlow(MyProgressState())
     val state: StateFlow<MyProgressState> = _state
@@ -95,6 +98,7 @@ class MyProgressCommonViewModel(
                 val chatProgressList = getChatProgressListUseCase(userId)
 
                 val latestChat = chatProgressList.maxByOrNull { it.lastActivityEpochMillis }
+                val exerciseStats = getExerciseStateUseCase(userId)
 
                 _state.update {
                     it.copy(
@@ -117,6 +121,17 @@ class MyProgressCommonViewModel(
                                 title = chat.title,
                                 progressPercent = chat.progressPercent,
                                 lastActivityEpochMillis = chat.lastActivityEpochMillis
+                            )
+                        },
+                        totalCorrectAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.correctCount },
+                        totalWrongAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.wrongCount },
+                        unitExerciseStats = exerciseStats.map { exerciseState ->
+                            LearningUnitExerciseStatsUi(
+                                unitIndex = exerciseState.unitIndex,
+                                unitTitle = exerciseState.unitTitle,
+                                correctCount = exerciseState.correctCount,
+                                wrongCount = exerciseState.wrongCount,
+                                totalAnswered = exerciseState.totalAnswered
                             )
                         },
                         event = MyProgressEvents.Loaded

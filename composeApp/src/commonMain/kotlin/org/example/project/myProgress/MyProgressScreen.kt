@@ -69,6 +69,9 @@ fun MyProgressScreen(
             item {
                 ActivityCard(state)
             }
+            item {
+                ExerciseAnswersCard(state)
+            }
 
             item {
                 Text("Recent Chats", style = MaterialTheme.typography.titleMedium)
@@ -76,6 +79,33 @@ fun MyProgressScreen(
 
             items(state.recentChats) { chat ->
                 RecentChatCard(chat)
+            }
+        }
+    }
+}
+
+@Composable
+fun ExerciseAnswersCard(state: MyProgressState) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Exercise Answers", style = MaterialTheme.typography.titleMedium)
+
+            Spacer(Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                StatItem("Correct", state.totalCorrectAnswers.toString())
+                StatItem("Wrong", state.totalWrongAnswers.toString())
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            state.unitExerciseStats.forEach { unit ->
+                Text("Unit ${unit.unitIndex + 1}: ${unit.unitTitle}")
+                Text("Correct: ${unit.correctCount} | Wrong: ${unit.wrongCount}")
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -99,17 +129,18 @@ fun CurrentLearningCard(state: MyProgressState) {
             Spacer(modifier = Modifier.height(8.dp))
 
             LinearProgressIndicator(
-            progress = { state.progressPercent / 100f },
-            modifier = Modifier.fillMaxWidth(),
-            color = ProgressIndicatorDefaults.linearColor,
-            trackColor = ProgressIndicatorDefaults.linearTrackColor,
-            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                progress = { state.progressPercent / 100f },
+                modifier = Modifier.fillMaxWidth(),
+                color = ProgressIndicatorDefaults.linearColor,
+                trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
 
             Text("${state.progressPercent}%")
         }
     }
 }
+
 @Composable
 fun StatItem(title: String, value: String) {
     Column {
@@ -128,11 +159,11 @@ fun RecentChatCard(chat: MyProgressChatItem) {
             Spacer(modifier = Modifier.height(8.dp))
 
             LinearProgressIndicator(
-            progress = { chat.progressPercent / 100f },
-            modifier = Modifier.fillMaxWidth(),
-            color = ProgressIndicatorDefaults.linearColor,
-            trackColor = ProgressIndicatorDefaults.linearTrackColor,
-            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                progress = { chat.progressPercent / 100f },
+                modifier = Modifier.fillMaxWidth(),
+                color = ProgressIndicatorDefaults.linearColor,
+                trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
             )
 
             Text("${chat.progressPercent}%")
@@ -158,6 +189,7 @@ fun ActivityCard(state: MyProgressState) {
         }
     }
 }
+
 @Composable
 private fun ProgressOverviewCard(state: MyProgressState) {
     Card(
@@ -168,14 +200,20 @@ private fun ProgressOverviewCard(state: MyProgressState) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 StatItem("Chats", state.totalChats.toString())
                 StatItem("PDFs", state.totalUploadedPdfs.toString())
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 StatItem("Questions", state.totalQuestionsAsked.toString())
                 StatItem("Exercises", state.totalExercisesCount.toString())
             }

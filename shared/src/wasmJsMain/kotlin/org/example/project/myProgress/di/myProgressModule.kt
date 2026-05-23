@@ -5,6 +5,7 @@ import org.example.project.myProgress.MyProgressController
 import org.example.project.myProgress.repo.IProgressRepo
 import org.example.project.myProgress.repo.WebProgressRepoImpl
 import org.example.project.myProgress.useCases.GetChatProgressListUseCase
+import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.WebAnalyticsTrackerImpl
@@ -15,6 +16,7 @@ val myProgressModule = module {
     factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     single { GetProgressOverviewUseCase(get()) }
     single { GetChatProgressListUseCase(get()) }
+    single { GetExerciseStatsUseCase(get()) }
     single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
 
     factory<IProgressRepo> {
@@ -46,6 +48,7 @@ val myProgressModule = module {
 
     single {
         MyProgressController(
+            get(),
             get(),
             get(),
             get(),

@@ -26,6 +26,7 @@ import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
+import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 import org.example.project.tutor.viewModel.TutorIntroViewModel
 import org.koin.android.ext.koin.androidContext
@@ -57,6 +58,7 @@ val tutorModule = module {
     single { UpsertChatProgressUseCase(get()) }
     single { DeleteChatProgressUseCase(get()) }
     single { LearningUnitsUseCase(get()) }
+    single { SaveExerciseAnswerUseCase(get()) }
     single { PdfUploadServiceUseCase(get()) }
     single { GetAllHistoryChatUseCase(get()) }
     single { GetChatByIdUseCase(get()) }
@@ -96,6 +98,7 @@ val tutorModule = module {
             get(),
             get(),
             FirebaseAuth.getInstance(),
+            get(),
             get(),
             get(),
             get(),
