@@ -62,6 +62,7 @@ fun LearningRichMessage(
         }
     }
 }
+
 @Composable
 private fun CodeBlockView(
     code: String,

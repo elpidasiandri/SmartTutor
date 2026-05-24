@@ -104,9 +104,11 @@ class TutorCommonViewModel(
             is TutorUiEvents.DeleteChat -> {
                 deleteChat(event.subjectId)
             }
+
             is TutorUiEvents.AskTutorForOpenExercise -> {
                 askTutorForOpenExercise(event)
             }
+
             is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(
                 event.title,
                 event.subjectId
@@ -488,8 +490,18 @@ class TutorCommonViewModel(
 
         Ενδεικτική απάντηση:
         ${event.suggestedSolution}
+  Απάντησε σύντομα και βοηθητικά.
 
-        Απάντησε σύντομα και βοηθητικά:
+    Αν γράψεις κώδικα, βάλ' τον ΠΑΝΤΑ μέσα σε markdown code block με γλώσσα.
+    Παράδειγμα:
+    ```java
+    int counter = 0;
+    while (counter < 5) {
+        counter++;
+    }
+    ```
+        
+    Μορφή απάντησης:
         1. Αν είναι σωστή ή όχι η απάντησή μου.
         2. Τι λείπει, αν λείπει κάτι.
         3. Πώς μπορώ να τη βελτιώσω.
@@ -532,6 +544,7 @@ class TutorCommonViewModel(
             }
         }
     }
+
     private fun markUnitAsRead(index: Int) {
         val current = _state.value
         val chatId = current.activeChatId

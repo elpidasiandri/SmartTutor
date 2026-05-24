@@ -19,28 +19,53 @@ fun normalizeForHeaderCompare(s: String): String {
         .replace(Regex("^\\s*[-•–—]+\\s*"), "")
         .trim()
 }
+
 fun splitIntoCodeAndTextBlocks(input: String): List<RichBlock> {
-    // Matches ```lang\n ... \n```
-    val regex = Regex("```(\\w+)?\\n([\\s\\S]*?)\\n```")
+    val normalizedInput = input
+        .replace("\\n", "\n")
+        .replace("```java ", "```java\n")
+        .replace("```kotlin ", "```kotlin\n")
+        .replace("```python ", "```python\n")
+        .replace("```javascript ", "```javascript\n")
+
+    val regex = Regex(
+        "```\\s*([A-Za-z0-9_+-]*)?\\s*\\n?([\\s\\S]*?)\\s*```",
+        RegexOption.MULTILINE
+    )
+
     val out = mutableListOf<RichBlock>()
     var last = 0
 
-    regex.findAll(input).forEach { m ->
+    regex.findAll(normalizedInput).forEach { m ->
         val start = m.range.first
         val end = m.range.last + 1
 
-        val before = input.substring(last, start)
-        if (before.isNotBlank()) out += RichBlock.Text(before.trimEnd())
+        val before = normalizedInput.substring(last, start)
+        if (before.isNotBlank()) {
+            out += RichBlock.Text(before.trimEnd())
+        }
 
-        val lang = m.groupValues.getOrNull(1)?.takeIf { it.isNotBlank() }
-        val code = m.groupValues[2]
-        out += RichBlock.Code(code = code.trimEnd(), language = lang)
+        val lang = m.groupValues
+            .getOrNull(1)
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+
+        val code = m.groupValues[2].trim()
+
+        if (code.isNotBlank()) {
+            out += RichBlock.Code(
+                code = code,
+                language = lang
+            )
+        }
 
         last = end
     }
 
-    val tail = input.substring(last)
-    if (tail.isNotBlank()) out += RichBlock.Text(tail.trim())
+    val tail = normalizedInput.substring(last)
+    if (tail.isNotBlank()) {
+        out += RichBlock.Text(tail.trim())
+    }
 
     return out
 }
@@ -78,7 +103,9 @@ private fun AnnotatedString.Builder.appendInlineCodeAsItalic(line: String) {
     // 1) `token`
     // 2) 'token'
     // 3) ‘token’ (smart quotes)
-    val regex = Regex("(`([^`]+)`)|('([^']+)')|(‘([^’]+)’)")
+    val regex = Regex(
+        "(`([^`]+)`)|(\\\\\\(([^)]+)\\\\\\))|('([^']+)')|(‘([^’]+)’)"
+    )
     var last = 0
 
     regex.findAll(line).forEach { m ->
@@ -87,8 +114,12 @@ private fun AnnotatedString.Builder.appendInlineCodeAsItalic(line: String) {
 
         if (start > last) append(line.substring(last, start))
 
-        val token = listOf(m.groupValues[2], m.groupValues[4], m.groupValues[6])
-            .firstOrNull { it.isNotBlank() }
+        val token = listOf(
+            m.groupValues[2],
+            m.groupValues[4],
+            m.groupValues[6],
+            m.groupValues[8]
+        ).firstOrNull { it.isNotBlank() }
             .orEmpty()
 
         val looksLikeCode =
