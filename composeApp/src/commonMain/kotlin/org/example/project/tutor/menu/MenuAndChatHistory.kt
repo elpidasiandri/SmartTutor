@@ -197,20 +197,27 @@ private fun BottomRow(
             .padding(horizontal = spacing8, vertical = spacing12),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            "My Progress",
-            fontWeight = FontWeight.Medium,
-            fontSize = 12.sp,
+        Row(
             modifier = Modifier.noRippleClickable {
                 navigateToMyProgress()
-            },
-        )
-        Spacer(modifier = Modifier.width(spacing4))
-        Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Progress")
+            }
+        ) {
+            Text(
+                "My Progress",
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp,
+            )
+            Spacer(modifier = Modifier.width(spacing4))
+            Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Progress")
+        }
+
 
         Spacer(modifier = Modifier.weight(1f))
 
-        IconButton(onClick = { onLogoutClick() }) {
+        IconButton(
+            onClick = { onLogoutClick() },
+            modifier = Modifier.size(32.dp)
+        ) {
             Icon(
                 Icons.AutoMirrored.Filled.ExitToApp,
                 contentDescription = "Logout",

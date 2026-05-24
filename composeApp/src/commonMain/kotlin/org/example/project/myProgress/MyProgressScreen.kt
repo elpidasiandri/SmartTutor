@@ -98,6 +98,7 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                 horizontalArrangement = Arrangement.Start
             ) {
                 StatItem("Correct", state.totalCorrectAnswers.toString())
+                Spacer(modifier = Modifier.padding(start = 24.dp))
                 StatItem("Wrong", state.totalWrongAnswers.toString())
             }
 
@@ -136,6 +137,7 @@ fun ExerciseAnswersCard(state: MyProgressState) {
         }
     }
 }
+
 @Composable
 fun CurrentLearningCard(state: MyProgressState) {
     Card(modifier = Modifier.fillMaxWidth()) {
