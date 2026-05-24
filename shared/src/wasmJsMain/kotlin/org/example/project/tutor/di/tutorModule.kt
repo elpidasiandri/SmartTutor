@@ -53,17 +53,17 @@ val tutorModule = module {
     }
 
 
-    single { LearningUnitsUseCase(get()) }
-    single { PdfUploadServiceUseCase(get()) }
-    single { SaveExerciseAnswerUseCase(get()) }
-    single { GetAllHistoryChatUseCase(get()) }
-    single { AskTutorUseCase(get()) }
-    single { GetChatByIdUseCase(get()) }
-    single { DeleteChatUseCase(get()) }
-    single { LoadTutorFromPdfUseCase(get(), get()) }
-    single { UpsertChatProgressUseCase(get()) }
-    single { DeleteChatProgressUseCase(get()) }
-    single { MarkUnitAsReadUseCase(get()) }
+    factory { LearningUnitsUseCase(get()) }
+    factory { PdfUploadServiceUseCase(get()) }
+    factory { SaveExerciseAnswerUseCase(get()) }
+    factory { GetAllHistoryChatUseCase(get()) }
+    factory { AskTutorUseCase(get()) }
+    factory { GetChatByIdUseCase(get()) }
+    factory { DeleteChatUseCase(get()) }
+    factory { LoadTutorFromPdfUseCase(get(), get()) }
+    factory { UpsertChatProgressUseCase(get()) }
+    factory { DeleteChatProgressUseCase(get()) }
+    factory { MarkUnitAsReadUseCase(get()) }
 
     factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     factory<TutorPlatform> {

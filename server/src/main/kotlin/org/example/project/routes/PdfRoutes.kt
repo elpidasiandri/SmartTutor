@@ -16,28 +16,6 @@ import java.util.UUID
 fun Route.pdfRoutes(repo: PdfJobRepository) {
     route("/v1/pdfs") {
 
-        post("/{documentId}/units/{unitIndex}/read") {
-            val documentId = call.parameters["documentId"]
-                ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing documentId")
-                )
-
-            val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
-                ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Missing unitIndex")
-                )
-
-            val updated = repo.markUnitAsRead(documentId, unitIndex)
-                ?: return@post call.respond(
-                    HttpStatusCode.NotFound,
-                    mapOf("error" to "Not found")
-                )
-
-            call.respond(updated)
-        }
-
         post("/upload") {
             val multipart = call.receiveMultipart()
 

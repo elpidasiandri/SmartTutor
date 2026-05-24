@@ -21,7 +21,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
         documentId: String,
         fileName: String,
         language: String,
-        storagePath: String
+        storagePath: String,
     ) {
         val now = Timestamp.now()
 
@@ -60,66 +60,6 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
                     "updatedAt" to now,
                 )
             ).get()
-    }
-
-    override fun markUnitAsRead(
-        documentId: String,
-        unitIndex: Int
-    ): PdfJobStatusResponse? {
-        val docRef = col.document(documentId)
-        val now = Timestamp.now()
-
-        db.runTransaction { tx ->
-            val snap = tx.get(docRef).get()
-            if (!snap.exists()) return@runTransaction null
-
-            fun updateJson(field: String): String? {
-                val raw = snap.getString(field).orEmpty()
-                if (raw.isBlank()) return null
-
-                val old = json.decodeFromString(
-                    LearningUnitsPrototypeDto.serializer(),
-                    raw
-                )
-
-                val updated = old.copy(
-                    learningUnits = old.learningUnits.mapIndexed { index, unit ->
-                        if (index == unitIndex) {
-                            unit.copy(isRead = true)
-                        } else {
-                            unit
-                        }
-                    }
-                )
-
-                return json.encodeToString(
-                    LearningUnitsPrototypeDto.serializer(),
-                    updated
-                )
-            }
-
-            val updates = mutableMapOf<String, Any>(
-                "updatedAt" to now
-            )
-
-            updateJson("partialResultJson")?.let {
-                updates["partialResultJson"] = it
-            }
-
-            updateJson("resultJson")?.let {
-                updates["resultJson"] = it
-            }
-
-            tx.update(docRef, updates)
-
-            null
-        }.get()
-
-        db.collection("pdfs").document(documentId)
-            .update(mapOf("updatedAt" to now))
-            .get()
-
-        return getStatus(documentId)
     }
 
     override fun claimNextJob(workerId: String): PdfJob? {
@@ -209,7 +149,11 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
         mirrorToUserIndex(documentId, now, status = null, progress = p)
     }
 
-    override fun savePartialResult(documentId: String, partial: LearningUnitsPrototypeDto, progress: Int) {
+    override fun savePartialResult(
+        documentId: String,
+        partial: LearningUnitsPrototypeDto,
+        progress: Int,
+    ) {
         val now = Timestamp.now()
         val p = progress.coerceIn(0, 99)
         val partialJson = json.encodeToString(LearningUnitsPrototypeDto.serializer(), partial)
@@ -287,11 +231,21 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
         val resultJson = doc.getString("resultJson")
 
         val partial = if (!partialJson.isNullOrBlank()) {
-            runCatching { json.decodeFromString(LearningUnitsPrototypeDto.serializer(), partialJson) }.getOrNull()
+            runCatching {
+                json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    partialJson
+                )
+            }.getOrNull()
         } else null
 
         val result = if (!resultJson.isNullOrBlank()) {
-            runCatching { json.decodeFromString(LearningUnitsPrototypeDto.serializer(), resultJson) }.getOrNull()
+            runCatching {
+                json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    resultJson
+                )
+            }.getOrNull()
         } else null
 
         return PdfJobStatusResponse(
@@ -308,7 +262,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
         documentId: String,
         now: Timestamp,
         status: String?,
-        progress: Int?
+        progress: Int?,
     ) {
         val doc = col.document(documentId).get().get()
         if (!doc.exists()) return
@@ -324,7 +278,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
 
     private fun safeTimestamp(
         doc: com.google.cloud.firestore.DocumentSnapshot,
-        field: String
+        field: String,
     ): Timestamp? {
         return try {
             doc.getTimestamp(field)

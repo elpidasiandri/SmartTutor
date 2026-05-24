@@ -19,6 +19,40 @@ import java.util.UUID
 
 fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
     route("/v1/chats") {
+        post("/{chatId}/units/{unitIndex}/read") {
+            val userId = call.request.queryParameters["userId"]
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing userId")
+                )
+
+            val chatId = call.parameters["chatId"]
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing chatId")
+                )
+
+            val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing unitIndex")
+                )
+
+            val updated = chatRepo.markUnitAsRead(
+                userId = userId,
+                chatId = chatId,
+                unitIndex = unitIndex
+            )
+
+            if (!updated) {
+                return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    mapOf("error" to "Chat or unit not found")
+                )
+            }
+
+            call.respond(HttpStatusCode.OK, mapOf("success" to true))
+        }
 
         post("/from-document") {
             val req = call.receive<CreateChatFromDocumentRequest>()

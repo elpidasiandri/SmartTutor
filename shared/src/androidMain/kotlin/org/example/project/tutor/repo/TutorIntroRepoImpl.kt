@@ -133,6 +133,18 @@ class TutorIntroRepoImpl(
         return json.decodeFromString(raw)
     }
 
+    override suspend fun markUnitAsRead(
+        userId: String,
+        chatId: String,
+        unitIndex: Int,
+        token: String,
+    ) {
+        httpClient.post("$baseUrl/v1/chats/$chatId/units/$unitIndex/read") {
+            header("Authorization", "Bearer $token")
+            parameter("userId", userId)
+        }
+    }
+
     override suspend fun getChat(
         chatId: String,
         userId: String,

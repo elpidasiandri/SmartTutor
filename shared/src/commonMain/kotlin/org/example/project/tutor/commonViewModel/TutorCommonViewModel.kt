@@ -188,21 +188,6 @@ class TutorCommonViewModel(
 
     }
 
-//    private fun markCurrentUnitAsRead(index: Int) {
-//        _state.update { current ->
-//            val updatedUnits = current.allUnits.mapIndexed { i, unit ->
-//                if (i == index) unit.copy(isRead = true) else unit
-//            }
-//
-//            current.copy(
-//                allUnits = updatedUnits,
-//                currentUnit = updatedUnits.getOrNull(index) ?: current.currentUnit
-//            )
-//        }
-//
-//        saveProgress()
-//    }
-
     private fun trackExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
         val unit = _state.value.currentUnit
 
@@ -482,14 +467,13 @@ class TutorCommonViewModel(
 
     private fun markUnitAsRead(index: Int) {
         val current = _state.value
-        val documentId = current.activeDocumentId
-        if (documentId.isBlank()) return
+        val chatId = current.activeChatId
+        if (chatId.isBlank()) return
 
         val unit = current.allUnits.getOrNull(index) ?: return
         if (unit.isRead) return
 
         val unitTitle = unit.title
-        val activeChatId = current.activeChatId
 
         _state.update { state ->
             val updatedUnits = state.allUnits.mapIndexed { i, item ->
@@ -498,7 +482,7 @@ class TutorCommonViewModel(
 
             val updatedHistory = state.chatHistory.copy(
                 subjects = state.chatHistory.subjects.map { subject ->
-                    if (subject.subjectId != activeChatId) subject
+                    if (subject.subjectId != chatId) subject
                     else subject.copy(
                         learningUnits = subject.learningUnits.map { lu ->
                             if (lu.title.trim() == unitTitle.trim()) {
@@ -520,17 +504,17 @@ class TutorCommonViewModel(
 
         scope.launch {
             runCatching {
-                val token = getIdTokenSuspendUseCase()
                 markUnitAsReadUseCase(
-                    documentId = documentId,
+                    userId = userId(),
+                    chatId = chatId,
                     unitIndex = index,
-                    token = token
                 )
             }.onFailure {
                 platform.log("Progress", "Failed to mark unit as read", it)
             }
         }
     }
+
     private fun uploadPdf(picked: PickedFile) {
         scope.launch {
             try {

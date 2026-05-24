@@ -25,7 +25,6 @@ interface PdfJobRepository {
     fun getLastLlmRaw(documentId: String): String?
 
     fun getStatus(documentId: String): PdfJobStatusResponse?
-    fun markUnitAsRead(documentId: String, unitIndex: Int): PdfJobStatusResponse?
 }
 
 data class PdfJob(

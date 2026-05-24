@@ -23,4 +23,9 @@ interface IChatRepository {
     )
 
     fun deleteChat(userId: String, chatId: String)
+    fun markUnitAsRead(
+        userId: String,
+        chatId: String,
+        unitIndex: Int,
+    ): Boolean
 }

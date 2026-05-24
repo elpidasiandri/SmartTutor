@@ -1,20 +1,17 @@
 package org.example.project.tutor.useCases
 
-import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
-import org.example.project.tutor.repo.ITutorRepo
+import org.example.project.tutor.repo.IChatRepository
 
 class MarkUnitAsReadUseCase(
-    private val repo: ITutorRepo
+    private val repo: IChatRepository,
 ) {
     suspend operator fun invoke(
-        documentId: String,
+        userId: String,
+        chatId: String,
         unitIndex: Int,
-        token: String
-    ): PdfJobStatusResponse {
-        return repo.markUnitAsRead(
-            documentId = documentId,
-            unitIndex = unitIndex,
-            token = token
-        )
-    }
+    ) = repo.markUnitAsRead(
+        userId = userId,
+        chatId = chatId,
+        unitIndex = unitIndex,
+    )
 }

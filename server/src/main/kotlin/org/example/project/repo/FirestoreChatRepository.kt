@@ -10,6 +10,7 @@ import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.repo.IChatRepository
 import java.util.UUID
+import com.google.cloud.Timestamp
 
 class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
 
@@ -20,6 +21,64 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
         ignoreUnknownKeys = true
         encodeDefaults = true
         isLenient = true
+    }
+
+    override fun markUnitAsRead(
+        userId: String,
+        chatId: String,
+        unitIndex: Int,
+    ): Boolean {
+        val chatRef = usersCol
+            .document(userId)
+            .collection("chats")
+            .document(chatId)
+
+        val now = Timestamp.now()
+
+        return db.runTransaction { tx ->
+            val snap = tx.get(chatRef).get()
+            if (!snap.exists()) return@runTransaction false
+
+            fun updatePrototypeJson(field: String): String? {
+                val raw = snap.getString(field).orEmpty()
+                if (raw.isBlank()) return null
+
+                val old = json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    raw
+                )
+
+                if (unitIndex !in old.learningUnits.indices) return null
+
+                val updated = old.copy(
+                    learningUnits = old.learningUnits.mapIndexed { index, unit ->
+                        if (index == unitIndex) unit.copy(isRead = true) else unit
+                    }
+                )
+
+                return json.encodeToString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    updated
+                )
+            }
+
+            val updates = mutableMapOf<String, Any>(
+                "updatedAtEpochMillis" to System.currentTimeMillis()
+            )
+
+            updatePrototypeJson("resultJson")?.let {
+                updates["resultJson"] = it
+            }
+
+            updatePrototypeJson("partialResultJson")?.let {
+                updates["partialResultJson"] = it
+            }
+
+            if (updates.size == 1) return@runTransaction false
+
+            tx.update(chatRef, updates)
+            true
+        }.get()
     }
 
     override fun createOrGetChatFromDocument(
