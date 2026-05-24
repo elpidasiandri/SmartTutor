@@ -78,20 +78,69 @@ fun buildStyledLearningText(raw: String): AnnotatedString {
             val trimmed = line.trimEnd()
 
             when {
-                // headings ### ...
                 trimmed.trimStart().startsWith("###") -> {
                     val title = trimmed.trimStart().removePrefix("###").trimStart()
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                        appendInlineCodeAsItalic(title)
+                        appendMarkdownStyles(title)
                     }
                 }
 
-                else -> appendInlineCodeAsItalic(trimmed)
+                else -> appendMarkdownStyles(trimmed)
             }
 
             if (index != lines.lastIndex) append("\n")
         }
     }
+}
+private fun AnnotatedString.Builder.appendMarkdownStyles(line: String) {
+    val regex = Regex(
+        "(\\*\\*([^*]+)\\*\\*)|(`([^`]+)`)|(\\\\\\(([^)]+)\\\\\\))|('([^']+)')|(‘([^’]+)’)"
+    )
+
+    var last = 0
+
+    regex.findAll(line).forEach { m ->
+        val start = m.range.first
+        val end = m.range.last + 1
+
+        if (start > last) append(line.substring(last, start))
+
+        when {
+            m.groupValues[2].isNotBlank() -> {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                    append(m.groupValues[2])
+                }
+            }
+
+            m.groupValues[4].isNotBlank() -> {
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                    append(m.groupValues[4])
+                }
+            }
+
+            m.groupValues[6].isNotBlank() -> {
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                    append(m.groupValues[6])
+                }
+            }
+
+            m.groupValues[8].isNotBlank() -> {
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                    append(m.groupValues[8])
+                }
+            }
+
+            m.groupValues[10].isNotBlank() -> {
+                withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                    append(m.groupValues[10])
+                }
+            }
+        }
+
+        last = end
+    }
+
+    if (last < line.length) append(line.substring(last))
 }
 
 /**
