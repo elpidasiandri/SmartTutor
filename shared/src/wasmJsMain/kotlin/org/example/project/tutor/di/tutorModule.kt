@@ -14,6 +14,7 @@ import org.example.project.registration.firebase.initFirebase
 import org.example.project.settings.logOut.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
+import org.example.project.tutor.repo.IChatRepository
 import org.example.project.tutor.repo.WebAnalyticsTrackerImpl
 import org.example.project.tutor.repo.ITutorRepo
 import org.example.project.tutor.repo.WebTutorRepoImpl
@@ -44,7 +45,6 @@ val tutorModule = module {
         )
     }
 
-
     factory<IProgressRepo> {
         WebProgressRepoImpl(
             httpClient = get(),
@@ -65,8 +65,8 @@ val tutorModule = module {
     factory { DeleteChatProgressUseCase(get()) }
     factory { MarkUnitAsReadUseCase(get()) }
 
-    factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
-    factory<TutorPlatform> {
+    single<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
+    single<TutorPlatform> {
         object : TutorPlatform {
             override fun speak(text: String) {
 
@@ -85,9 +85,9 @@ val tutorModule = module {
             }
         }
     }
-    factory { GetIdTokenSuspendUseCase(get()) }
+    single { GetIdTokenSuspendUseCase(get()) }
 
-    factory {
+    single {
         TutorController(
             get(),
             get(),

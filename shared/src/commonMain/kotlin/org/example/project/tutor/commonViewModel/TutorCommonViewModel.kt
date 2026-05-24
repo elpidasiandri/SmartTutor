@@ -503,11 +503,14 @@ class TutorCommonViewModel(
         }
 
         scope.launch {
+            val token = getIdTokenSuspendUseCase()
+
             runCatching {
                 markUnitAsReadUseCase(
                     userId = userId(),
                     chatId = chatId,
                     unitIndex = index,
+                    token = token
                 )
             }.onFailure {
                 platform.log("Progress", "Failed to mark unit as read", it)
@@ -891,7 +894,7 @@ class TutorCommonViewModel(
                         event = TutorEvents.Loaded
                     )
                 }
-
+                markUnitAsRead(activeIndex)
                 return@launch
             }
 
