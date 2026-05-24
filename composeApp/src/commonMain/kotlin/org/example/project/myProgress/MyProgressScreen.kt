@@ -109,21 +109,24 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                     fontWeight = FontWeight.Bold
                 )
 
-                Text("Correct: ${unit.correctCount} | Wrong: ${unit.wrongCount}")
+                Text(
+                    text = "Attempts: ${unit.totalAnswered} | Correct: ${unit.correctCount} | Wrong: ${unit.wrongCount}"
+                )
 
                 Spacer(Modifier.height(8.dp))
 
-                unit.answers.forEach { answer ->
-                    Text("Exercise ${answer.exerciseIndex + 1}")
-                    Text(answer.question)
-
+                unit.questions.forEach { question ->
                     Text(
-                        text = if (answer.isCorrect) "Correct" else "Wrong",
+                        text = "Exercise ${question.exerciseIndex + 1}",
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text("Your answer: ${answer.selectedAnswer}")
-                    Text("Correct answer: ${answer.correctAnswer}")
+                    Text(question.question)
+
+                    Text("Attempts: ${question.attemptsCount}")
+                    Text("Correct: ${question.correctCount} | Wrong: ${question.wrongCount}")
+                    Text("Last answer: ${question.lastSelectedAnswer}")
+                    Text("Correct answer: ${question.correctAnswer}")
 
                     Spacer(Modifier.height(12.dp))
                 }

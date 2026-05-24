@@ -60,6 +60,16 @@ data class LearningUnitExerciseStatsDto(
     @SerialName("correctCount") val correctCount: Int,
     @SerialName("wrongCount") val wrongCount: Int,
     @SerialName("totalAnswered") val totalAnswered: Int,
-    @SerialName("answers") val answers: List<ExerciseAnswerProgressDto> = emptyList(),
+    @SerialName("questions") val questions: List<ExerciseQuestionStatsDto> = emptyList(),
 )
 
+@Serializable
+data class ExerciseQuestionStatsDto(
+    @SerialName("exerciseIndex") val exerciseIndex: Int,
+    @SerialName("question") val question: String,
+    @SerialName("attemptsCount") val attemptsCount: Int,
+    @SerialName("correctCount") val correctCount: Int,
+    @SerialName("wrongCount") val wrongCount: Int,
+    @SerialName("lastSelectedAnswer") val lastSelectedAnswer: String,
+    @SerialName("correctAnswer") val correctAnswer: String,
+)

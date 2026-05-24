@@ -391,6 +391,7 @@ private fun LearningUnitRow(
         if (!isRead) {
             Box(
                 modifier = Modifier
+                    .padding(start = 24.dp)
                     .size(8.dp)
                     .background(Color.Red, CircleShape)
             )

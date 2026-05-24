@@ -481,28 +481,46 @@ class TutorCommonViewModel(
     }
 
     private fun markUnitAsRead(index: Int) {
-        val documentId = _state.value.activeDocumentId
+        val current = _state.value
+        val documentId = current.activeDocumentId
         if (documentId.isBlank()) return
 
-        val unit = _state.value.allUnits.getOrNull(index) ?: return
-
+        val unit = current.allUnits.getOrNull(index) ?: return
         if (unit.isRead) return
 
-        _state.update { current ->
-            val updatedUnits = current.allUnits.mapIndexed { i, unit ->
-                if (i == index) unit.copy(isRead = true) else unit
+        val unitTitle = unit.title
+        val activeChatId = current.activeChatId
+
+        _state.update { state ->
+            val updatedUnits = state.allUnits.mapIndexed { i, item ->
+                if (i == index) item.copy(isRead = true) else item
             }
 
-            current.copy(
+            val updatedHistory = state.chatHistory.copy(
+                subjects = state.chatHistory.subjects.map { subject ->
+                    if (subject.subjectId != activeChatId) subject
+                    else subject.copy(
+                        learningUnits = subject.learningUnits.map { lu ->
+                            if (lu.title.trim() == unitTitle.trim()) {
+                                lu.copy(isRead = true)
+                            } else {
+                                lu
+                            }
+                        }
+                    )
+                }
+            )
+
+            state.copy(
                 allUnits = updatedUnits,
-                currentUnit = updatedUnits.getOrNull(index) ?: current.currentUnit
+                currentUnit = updatedUnits.getOrNull(index) ?: state.currentUnit,
+                chatHistory = updatedHistory
             )
         }
 
         scope.launch {
             runCatching {
                 val token = getIdTokenSuspendUseCase()
-
                 markUnitAsReadUseCase(
                     documentId = documentId,
                     unitIndex = index,
@@ -513,7 +531,6 @@ class TutorCommonViewModel(
             }
         }
     }
-
     private fun uploadPdf(picked: PickedFile) {
         scope.launch {
             try {

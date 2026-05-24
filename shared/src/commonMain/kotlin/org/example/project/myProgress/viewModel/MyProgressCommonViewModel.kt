@@ -133,7 +133,7 @@ class MyProgressCommonViewModel(
                                 correctCount = exerciseState.correctCount,
                                 wrongCount = exerciseState.wrongCount,
                                 totalAnswered = exerciseState.totalAnswered,
-                                answers = exerciseState.answers.map { answers -> answers.toDomain() }
+                                questions = exerciseState.questions.map {questions-> questions.toDomain() }
                             )
                         },
                         event = MyProgressEvents.Loaded
