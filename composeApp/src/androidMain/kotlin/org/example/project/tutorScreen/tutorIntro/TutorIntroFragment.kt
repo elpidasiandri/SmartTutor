@@ -114,7 +114,19 @@ class TutorIntroFragment : Fragment() {
                                 question = question,
                             )
                         )
-                    }
+                    },
+                    onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution ->
+                        viewModel.onEvent(
+                            TutorUiEvents.AskTutorForOpenExercise(
+                                exerciseIndex = exerciseIndex,
+                                question = question,
+                                userAnswer = userAnswer,
+                                suggestedSolution = suggestedSolution,
+                            )
+                        )
+                    },
+                    exerciseTutorAnswers = state.exerciseTutorAnswers
+
                 )
             }
         }

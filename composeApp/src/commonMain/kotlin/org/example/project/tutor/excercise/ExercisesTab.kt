@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -43,7 +44,14 @@ import kotlin.time.TimeSource
 fun ExercisesTab(
     modifier: Modifier = Modifier,
     exercises: List<ExerciseDomain>,
+    exerciseTutorAnswers: Map<Int, String>,
     onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onAskTutorForOpenExercise: (
+        exerciseIndex: Int,
+        question: String,
+        userAnswer: String,
+        suggestedSolution: String,
+    ) -> Unit,
 ) {
     if (exercises.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -66,7 +74,9 @@ fun ExercisesTab(
             ExerciseCard(
                 index = index,
                 exercise = ex,
-                onExerciseAnswered = onExerciseAnswered
+                tutorAnswer = exerciseTutorAnswers[index],
+                onExerciseAnswered = onExerciseAnswered,
+                onAskTutorForOpenExercise = onAskTutorForOpenExercise
             )
         }
     }
@@ -76,28 +86,35 @@ fun ExercisesTab(
 private fun ExerciseCard(
     index: Int,
     exercise: ExerciseDomain,
+    tutorAnswer: String?,
     onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onAskTutorForOpenExercise: (
+        exerciseIndex: Int,
+        question: String,
+        userAnswer: String,
+        suggestedSolution: String,
+    ) -> Unit,
 ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
     var showSolution by remember { mutableStateOf(false) }
 
-    // user can answer on this field
     var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
     var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
-    var openAnswer by remember { mutableStateOf("") }              // OPEN
+    var openAnswer by rememberSaveable(index) { mutableStateOf("") }
 
     val type = exercise.type
+
     val startedAt = remember(exercise.question) {
         TimeSource.Monotonic.markNow()
     }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White, RoundedCornerShape(14.dp))
             .padding(spacing12)
     ) {
-        // Header: "Exercise 1"
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -116,29 +133,27 @@ private fun ExerciseCard(
                 onToggleHint = { showHint = !showHint },
                 onToggleExplanation = { showExplanation = !showExplanation },
                 onToggleSolution = { showSolution = !showSolution },
+                type = type
             )
         }
 
         Spacer(Modifier.height(spacing8))
 
-        // Question
         ExerciseRichItem(text = exercise.question)
+
         Spacer(Modifier.height(spacing8))
 
         when (type) {
             ExerciseType.MCQ -> {
-                // options A,B,C, D...
                 exercise.options.forEachIndexed { optIndex, opt ->
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
-
-                    val clickedIsCorrect =
-                        isCorrectOption(exercise, optIndex, opt)
+                    val clickedIsCorrect = isCorrectOption(exercise, optIndex, opt)
 
                     OptionRow(
                         label = "$letter)",
                         text = opt,
-                        selected = selectedIndex == optIndex,
+                        selected = isSelected,
                         isCorrect = isSelected && clickedIsCorrect,
                         isWrong = isSelected && !clickedIsCorrect,
                         onClick = {
@@ -158,7 +173,6 @@ private fun ExerciseCard(
             }
 
             ExerciseType.TRUE_FALSE -> {
-
                 val trueLabel = exercise.options.getOrNull(0) ?: "True"
                 val falseLabel = exercise.options.getOrNull(1) ?: "False"
 
@@ -179,9 +193,7 @@ private fun ExerciseCard(
                     isCorrect = tfSelected == true && trueCorrect,
                     isWrong = tfSelected == true && !trueCorrect,
                     onClick = {
-
                         tfSelected = true
-
                         onExerciseAnswered(
                             index,
                             ExerciseType.TRUE_FALSE,
@@ -189,7 +201,7 @@ private fun ExerciseCard(
                             correctAnswer,
                             trueCorrect,
                             startedAt.elapsedNow().inWholeMilliseconds,
-                            exercise.question,
+                            exercise.question
                         )
                     }
                 )
@@ -201,9 +213,7 @@ private fun ExerciseCard(
                     isCorrect = tfSelected == false && falseCorrect,
                     isWrong = tfSelected == false && !falseCorrect,
                     onClick = {
-
                         tfSelected = false
-
                         onExerciseAnswered(
                             index,
                             ExerciseType.TRUE_FALSE,
@@ -211,11 +221,12 @@ private fun ExerciseCard(
                             correctAnswer,
                             falseCorrect,
                             startedAt.elapsedNow().inWholeMilliseconds,
-                            exercise.question,
+                            exercise.question
                         )
                     }
                 )
             }
+
             ExerciseType.OPEN -> {
                 OutlinedTextField(
                     value = openAnswer,
@@ -223,24 +234,62 @@ private fun ExerciseCard(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Write your answer...") }
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        onAskTutorForOpenExercise(
+                            index,
+                            exercise.question,
+                            openAnswer,
+                            exercise.solution
+                        )
+                        openAnswer = ""
+                    },
+                    enabled = openAnswer.isNotBlank()
+                ) {
+                    Text("Ask tutor about my answer")
+                }
+
+                if (!tutorAnswer.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Color(0xFFF3F3F3),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "Tutor Answer",
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        ExerciseRichItem(text = tutorAnswer)
+                    }
+                }
             }
 
             else -> {
                 exercise.options.forEachIndexed { optIndex, opt ->
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
-                    val clickedIsCorrect =
-                        isCorrectOption(exercise, optIndex, opt)
+                    val clickedIsCorrect = isCorrectOption(exercise, optIndex, opt)
 
                     OptionRow(
                         label = "$letter)",
                         text = opt,
-                        selected = selectedIndex == optIndex,
+                        selected = isSelected,
                         isCorrect = isSelected && clickedIsCorrect,
                         isWrong = isSelected && !clickedIsCorrect,
                         onClick = {
                             selectedIndex = optIndex
-
                             onExerciseAnswered(
                                 index,
                                 ExerciseType.MCQ,
@@ -248,7 +297,7 @@ private fun ExerciseCard(
                                 correctAnswerText(exercise),
                                 clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
-                                exercise.question,
+                                exercise.question
                             )
                         }
                     )
@@ -256,7 +305,6 @@ private fun ExerciseCard(
             }
         }
 
-        // Expandable sections
         if (showHint && exercise.hint.isNotBlank()) {
             Spacer(Modifier.height(spacing8))
             ExpandSection(title = "Hint", text = exercise.hint)
@@ -267,7 +315,7 @@ private fun ExerciseCard(
             ExpandSection(title = "Explanation", text = exercise.explanation)
         }
 
-        if (showSolution && exercise.solution.isNotBlank()) {
+        if (showSolution && exercise.solution.isNotBlank() && exercise.type == ExerciseType.OPEN) {
             Spacer(Modifier.height(spacing8))
             ExpandSection(title = "Solution", text = exercise.solution)
         }
@@ -277,9 +325,8 @@ private fun ExerciseCard(
 private fun isCorrectOption(
     exercise: ExerciseDomain,
     optIndex: Int,
-    optText: String
+    optText: String,
 ): Boolean {
-
     val answerIndex = exercise.answerIndex
 
     if (
@@ -295,9 +342,8 @@ private fun isCorrectOption(
 }
 
 private fun correctAnswerText(
-    exercise: ExerciseDomain
+    exercise: ExerciseDomain,
 ): String {
-
     val answerIndex = exercise.answerIndex
 
     return if (
@@ -318,9 +364,9 @@ private fun HintExplainSolutionRow(
     onToggleHint: () -> Unit,
     onToggleExplanation: () -> Unit,
     onToggleSolution: () -> Unit,
+    type: ExerciseType,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-
         SmallToggleChip(
             text = "Hint",
             selected = showHint,
@@ -333,11 +379,13 @@ private fun HintExplainSolutionRow(
             onClick = onToggleExplanation
         )
 
-        SmallToggleChip(
-            text = "Solution",
-            selected = showSolution,
-            onClick = onToggleSolution
-        )
+        if (type == ExerciseType.OPEN) {
+            SmallToggleChip(
+                text = "Solution",
+                selected = showSolution,
+                onClick = onToggleSolution
+            )
+        }
     }
 }
 
@@ -368,8 +416,8 @@ private fun OptionRow(
     onClick: () -> Unit,
 ) {
     val bg = when {
-        isCorrect -> Color(0xFFE6F4EA) // green light
-        isWrong -> Color(0xFFFFE8E8)   // red light
+        isCorrect -> Color(0xFFE6F4EA)
+        isWrong -> Color(0xFFFFE8E8)
         selected -> Color(0xFFEDE7F6)
         else -> Color(0xFFF6F6F6)
     }
@@ -379,7 +427,6 @@ private fun OptionRow(
         isWrong -> Color(0xFFC62828)
         else -> Color.Transparent
     }
-
 
     Row(
         modifier = Modifier
@@ -391,10 +438,16 @@ private fun OptionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (label.isNotBlank()) {
-            Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
+            Text(
+                text = label,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(end = 8.dp)
+            )
         }
+
         Text(text)
     }
+
     Spacer(Modifier.height(8.dp))
 }
 
@@ -410,7 +463,10 @@ private fun ExpandSection(
             .padding(10.dp)
     ) {
         Text(title, fontWeight = FontWeight.Bold)
+
         Spacer(Modifier.height(6.dp))
+
         ExerciseRichItem(text = text)
     }
 }
+

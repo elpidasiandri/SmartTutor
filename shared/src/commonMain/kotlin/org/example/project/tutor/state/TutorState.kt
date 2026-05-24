@@ -34,6 +34,7 @@ data class TutorState(
     val activeChatId: String = EmptyValues.EMPTY_STRING,
     val savedChats: List<UserChatDto> = emptyList(),
     val allChatMessages: List<ChatMessageDomain> = emptyList(),
+    val exerciseTutorAnswers: Map<Int, String> = emptyMap()
 )
 
 sealed class TutorUiEvents {
@@ -46,6 +47,12 @@ sealed class TutorUiEvents {
     data object NextUnit : TutorUiEvents()
     data object OpenMyProgress : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
+    data class AskTutorForOpenExercise(
+        val exerciseIndex: Int,
+        val question: String,
+        val userAnswer: String,
+        val suggestedSolution: String,
+    ) : TutorUiEvents()
     data class ExerciseAnswered(
         val exerciseIndex: Int,
         val exerciseType: ExerciseType,

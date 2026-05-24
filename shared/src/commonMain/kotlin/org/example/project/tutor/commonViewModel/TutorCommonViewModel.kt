@@ -104,7 +104,9 @@ class TutorCommonViewModel(
             is TutorUiEvents.DeleteChat -> {
                 deleteChat(event.subjectId)
             }
-
+            is TutorUiEvents.AskTutorForOpenExercise -> {
+                askTutorForOpenExercise(event)
+            }
             is TutorUiEvents.SelectLearningUnit -> selectLearningUnitByTitle(
                 event.title,
                 event.subjectId
@@ -465,6 +467,71 @@ class TutorCommonViewModel(
         saveProgress()
     }
 
+    private fun askTutorForOpenExercise(
+        event: TutorUiEvents.AskTutorForOpenExercise,
+    ) {
+        val current = _state.value
+        val chatId = current.activeChatId
+        val unitIndex = current.currentIndex
+
+        if (chatId.isBlank()) return
+        if (event.userAnswer.isBlank()) return
+
+        val hiddenPrompt = """
+        Θέλω να ελέγξεις την απάντησή μου για την παρακάτω άσκηση.
+
+        Ερώτηση:
+        ${event.question}
+
+        Η απάντησή μου:
+        ${event.userAnswer}
+
+        Ενδεικτική απάντηση:
+        ${event.suggestedSolution}
+
+        Απάντησε σύντομα και βοηθητικά:
+        1. Αν είναι σωστή ή όχι η απάντησή μου.
+        2. Τι λείπει, αν λείπει κάτι.
+        3. Πώς μπορώ να τη βελτιώσω.
+        4. Δώσε καλύτερη ενδεικτική απάντηση μόνο αν χρειάζεται.
+    """.trimIndent()
+
+        _state.update { it.copy(loading = true) }
+
+        scope.launch {
+            runCatching {
+                val token = getIdTokenSuspendUseCase()
+
+                val response = askTutorUseCase(
+                    chatId = chatId,
+                    userId = userId(),
+                    unitIndex = unitIndex,
+                    message = hiddenPrompt,
+                    token = token,
+                    chatMode = "exercises"
+                )
+
+                val aiText = response.aiMessage?.text.orEmpty()
+
+                _state.update { state ->
+                    state.copy(
+                        loading = false,
+                        exerciseTutorAnswers = state.exerciseTutorAnswers +
+                                (event.exerciseIndex to aiText)
+                    )
+                }
+            }.onFailure {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = "Failed to check your answer"
+                    )
+                }
+            }
+        }
+    }
     private fun markUnitAsRead(index: Int) {
         val current = _state.value
         val chatId = current.activeChatId

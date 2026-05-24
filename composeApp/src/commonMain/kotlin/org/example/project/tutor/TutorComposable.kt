@@ -111,7 +111,15 @@ fun TutorScreen(
     canGoNext: Boolean,
     askTutor: Boolean,
     onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
-) {
+    onAskTutorForOpenExercise: (
+        exerciseIndex: Int,
+        question: String,
+        userAnswer: String,
+        suggestedSolution: String,
+    ) -> Unit,
+    exerciseTutorAnswers: Map<Int, String>,
+
+    ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
@@ -161,7 +169,9 @@ fun TutorScreen(
             },
             canGoNext = canGoNext,
             askTutor = askTutor,
-            onExerciseAnswered = onExerciseAnswered
+            onExerciseAnswered = onExerciseAnswered,
+            onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+            exerciseTutorAnswers = exerciseTutorAnswers
         )
     }
 }
@@ -196,7 +206,15 @@ fun TutorChatUI(
     canGoNext: Boolean,
     askTutor: Boolean,
     onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
-) {
+    onAskTutorForOpenExercise: (
+        exerciseIndex: Int,
+        question: String,
+        userAnswer: String,
+        suggestedSolution: String,
+    ) -> Unit,
+    exerciseTutorAnswers: Map<Int, String>,
+
+    ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -299,7 +317,10 @@ fun TutorChatUI(
                             currentUnit = currentUnit,
                             isLoading = isLoading,
                             canGoNext = canGoNext,
-                            onExerciseAnswered = onExerciseAnswered
+                            onExerciseAnswered = onExerciseAnswered,
+                            onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                            exerciseTutorAnswers = exerciseTutorAnswers
+
                         )
 
                         TutorToastHost(
@@ -445,6 +466,13 @@ private fun TutorChatContent(
     isLoading: Boolean,
     canGoNext: Boolean,
     onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onAskTutorForOpenExercise: (
+        exerciseIndex: Int,
+        question: String,
+        userAnswer: String,
+        suggestedSolution: String,
+    ) -> Unit,
+    exerciseTutorAnswers: Map<Int, String>,
 
     ) {
     Column(
@@ -485,7 +513,9 @@ private fun TutorChatContent(
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
                     exercises = currentUnit.exercises,
-                    onExerciseAnswered = onExerciseAnswered
+                    onExerciseAnswered = onExerciseAnswered,
+                    onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                    exerciseTutorAnswers = exerciseTutorAnswers
                 )
             }
         }
