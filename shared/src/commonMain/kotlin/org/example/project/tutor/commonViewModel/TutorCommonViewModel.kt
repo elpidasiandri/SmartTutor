@@ -397,9 +397,19 @@ class TutorCommonViewModel(
                 val domainUnits = units.map { it.toDomain() }
 
                 val index = domainUnits.indexOfFirst {
-                    it.title.trim() == unitTitle.trim()
-                }.takeIf { it != -1 } ?: 0
-
+                    it.title.trim().equals(unitTitle.trim(), ignoreCase = true)
+                }
+                if (index == -1) {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            showCustomMessage = true,
+                            isError = true,
+                            message = "Unit not found: $unitTitle"
+                        )
+                    }
+                    return@launch
+                }
                 val selected = domainUnits.getOrNull(index) ?: LearningUnitContentDomain()
 
                 val fullMessages = fullChat.messages
@@ -579,7 +589,6 @@ class TutorCommonViewModel(
 
             state.copy(
                 allUnits = updatedUnits,
-                currentUnit = updatedUnits.getOrNull(index) ?: state.currentUnit,
                 chatHistory = updatedHistory
             )
         }
@@ -808,6 +817,7 @@ class TutorCommonViewModel(
         )
 
         val history = buildChatHistoryFromUnits(
+            chatId = _state.value.activeChatId,
             units = units,
             subjectTitle = subjectTitle
         )
@@ -816,10 +826,11 @@ class TutorCommonViewModel(
             it.copy(
                 currentIndex = nextIndex,
                 unlockedCount = newUnlocked,
-                currentUnit = units.getOrNull(nextIndex) ?: LearningUnitContentDomain(),
+                currentUnit = selectedUnit,
                 session = session,
                 chatHistory = history,
                 selectedTab = TutorTab.Learning,
+                tabInfoMessage = buildLearningTabMessage(selectedUnit),
                 canGoNext = nextIndex < units.lastIndex
             )
         }

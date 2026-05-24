@@ -153,12 +153,14 @@ fun buildExercisesTabMessage(unit: LearningUnitContentDomain): String {
 }
 
 fun buildChatHistoryFromUnits(
+    chatId: String,
     units: List<LearningUnitContentDomain>,
     subjectTitle: String,
 ): ChatHistoryDomain {
     return ChatHistoryDomain(
         subjects = listOf(
             SubjectHistoryDomain(
+                subjectId = chatId,
                 title = subjectTitle.ifBlank { "Material" },
                 learningUnits = units
             )
