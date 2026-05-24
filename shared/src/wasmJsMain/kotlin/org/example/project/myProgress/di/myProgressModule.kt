@@ -14,9 +14,9 @@ import org.koin.dsl.module
 
 val myProgressModule = module {
     factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
-    single { GetProgressOverviewUseCase(get()) }
-    single { GetChatProgressListUseCase(get()) }
-    single { GetExerciseStatsUseCase(get()) }
+    factory { GetProgressOverviewUseCase(get()) }
+    factory { GetChatProgressListUseCase(get()) }
+    factory { GetExerciseStatsUseCase(get()) }
     single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
 
     factory<IProgressRepo> {
@@ -46,7 +46,7 @@ val myProgressModule = module {
         }
     }
 
-    single {
+    factory {
         MyProgressController(
             get(),
             get(),

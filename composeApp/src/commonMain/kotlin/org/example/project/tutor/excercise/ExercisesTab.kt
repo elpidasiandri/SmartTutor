@@ -147,7 +147,7 @@ private fun ExerciseCard(
                                 index,
                                 ExerciseType.MCQ,
                                 opt,
-                                exercise.options.getOrNull(optIndex).orEmpty(),
+                                correctAnswerText(exercise),
                                 clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question
@@ -165,12 +165,12 @@ private fun ExerciseCard(
                 val correctAnswer = exercise.solution.trim()
 
                 val trueCorrect =
-                    correctAnswer.equals(trueLabel, ignoreCase = true) ||
-                            correctAnswer.equals("true", ignoreCase = true)
+                    correctAnswer.contains(trueLabel, ignoreCase = true) ||
+                            correctAnswer.contains("true", ignoreCase = true)
 
                 val falseCorrect =
-                    correctAnswer.equals(falseLabel, ignoreCase = true) ||
-                            correctAnswer.equals("false", ignoreCase = true)
+                    correctAnswer.contains(falseLabel, ignoreCase = true) ||
+                            correctAnswer.contains("false", ignoreCase = true)
 
                 OptionRow(
                     label = "",
@@ -245,7 +245,7 @@ private fun ExerciseCard(
                                 index,
                                 ExerciseType.MCQ,
                                 opt,
-                                exercise.options.getOrNull(optIndex).orEmpty(),
+                                correctAnswerText(exercise),
                                 clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question,
@@ -274,21 +274,19 @@ private fun ExerciseCard(
     }
 }
 
-//private fun isCorrectOption(exercise: ExerciseDomain, optText: String): Boolean {
-//    return exercise.solution.trim().contains(optText.trim())
-//}
-
-private fun isExerciseAnswerCorrect(
+private fun isCorrectOption(
     exercise: ExerciseDomain,
     optIndex: Int,
     optText: String
 ): Boolean {
 
-    val hasValidAnswerIndex =
-        exercise.answerIndex in exercise.options.indices
+    val answerIndex = exercise.answerIndex
 
-    if (hasValidAnswerIndex) {
-        return optIndex == exercise.answerIndex
+    if (
+        answerIndex != null &&
+        answerIndex in exercise.options.indices
+    ) {
+        return optIndex == answerIndex
     }
 
     return exercise.solution
@@ -296,21 +294,20 @@ private fun isExerciseAnswerCorrect(
         .contains(optText.trim(), ignoreCase = true)
 }
 
-private fun isCorrectOption(
-    exercise: ExerciseDomain,
-    optIndex: Int,
-    optText: String,
-): Boolean {
-    val hasValidAnswerIndex =
-        exercise.answerIndex in exercise.options.indices
+private fun correctAnswerText(
+    exercise: ExerciseDomain
+): String {
 
-    if (hasValidAnswerIndex) {
-        return optIndex == exercise.answerIndex
+    val answerIndex = exercise.answerIndex
+
+    return if (
+        answerIndex != null &&
+        answerIndex in exercise.options.indices
+    ) {
+        exercise.options[answerIndex]
+    } else {
+        exercise.solution
     }
-
-    return exercise.solution
-        .trim()
-        .contains(optText.trim(), ignoreCase = true)
 }
 
 @Composable

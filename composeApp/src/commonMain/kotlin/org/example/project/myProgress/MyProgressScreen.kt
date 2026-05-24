@@ -95,7 +95,7 @@ fun ExerciseAnswersCard(state: MyProgressState) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Start
             ) {
                 StatItem("Correct", state.totalCorrectAnswers.toString())
                 StatItem("Wrong", state.totalWrongAnswers.toString())
