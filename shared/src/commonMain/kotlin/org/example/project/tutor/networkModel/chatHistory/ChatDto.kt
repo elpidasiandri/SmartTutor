@@ -55,6 +55,7 @@ data class AskTutorRequest(
     @SerialName("message") val message: String?,
     @SerialName("tab") val tab: String,              // "learning" | "exercises"
     @SerialName("contextText") val contextText: String? = null,
+    @SerialName("saveToChat") val saveToChat: Boolean = true,
 )
 
 @Serializable

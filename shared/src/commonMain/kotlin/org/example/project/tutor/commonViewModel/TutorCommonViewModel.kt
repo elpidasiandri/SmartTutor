@@ -95,7 +95,7 @@ class TutorCommonViewModel(
     fun onEvent(event: TutorUiEvents) {
         when (event) {
             TutorUiEvents.Logout -> logOutUser()
-            is TutorUiEvents.SendMessage -> sendMessageToTutor(event.text)
+            is TutorUiEvents.SendMessage -> sendMessageToTutor(event.text, true)
             is TutorUiEvents.OpenExistingChat -> loadExistingChat(event.chatId)
             TutorUiEvents.NewChat -> startNewChat()
             TutorUiEvents.InitializeStateAfterShowingMessage -> initializeStateAfterShowingMessage()
@@ -225,7 +225,7 @@ class TutorCommonViewModel(
 
 
     @OptIn(ExperimentalUuidApi::class)
-    private fun sendMessageToTutor(text: String) {
+    private fun sendMessageToTutor(text: String, saveToChat: Boolean) {
         val trimmed = text.trim()
         if (trimmed.isBlank()) return
 
@@ -273,7 +273,8 @@ class TutorCommonViewModel(
                     unitIndex = unitIndex,
                     message = generic_error,
                     token = token,
-                    chatMode = state.value.selectedTab.name
+                    chatMode = state.value.selectedTab.name,
+                    saveToChat = saveToChat
                 )
 
                 val aiMsg = response.aiMessage?.toDomain()
@@ -520,7 +521,8 @@ class TutorCommonViewModel(
                     unitIndex = unitIndex,
                     message = hiddenPrompt,
                     token = token,
-                    chatMode = "exercises"
+                    chatMode = "exercises",
+                    saveToChat = false
                 )
 
                 val aiText = response.aiMessage?.text.orEmpty()

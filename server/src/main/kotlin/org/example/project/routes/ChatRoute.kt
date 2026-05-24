@@ -128,8 +128,9 @@ fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
                 createdAtEpochMillis = System.currentTimeMillis()
             )
 
-            chatRepo.addMessage(userId, chatId, userMessage)
-
+            if (req.saveToChat) {
+                chatRepo.addMessage(userId, chatId, userMessage)
+            }
             val recentMessages = chatRepo.getMessages(userId, chatId).takeLast(12)
 
             val contextText = req.contextText?.trim().orEmpty().ifBlank {
@@ -159,7 +160,9 @@ fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
                 createdAtEpochMillis = System.currentTimeMillis()
             )
 
-            chatRepo.addMessage(userId, chatId, aiMessage)
+            if (req.saveToChat) {
+                chatRepo.addMessage(userId, chatId, aiMessage)
+            }
 
             call.respond(
                 AskTutorResponse(
