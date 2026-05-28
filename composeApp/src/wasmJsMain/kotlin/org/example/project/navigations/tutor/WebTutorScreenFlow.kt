@@ -29,7 +29,7 @@ fun WebTutorScreenFlow(navController: NavController) {
     val user = AuthUserHolder.currentUser
 
     if (user == null) {
-        Text("Loading user...")
+        navController.navigate(WebScreen.Registration)
         return
     }
 
@@ -50,7 +50,7 @@ fun WebTutorScreenFlow(navController: NavController) {
 
 
     if (user == null) {
-        Text("Loading user...")
+        navController.navigate(WebScreen.Registration)
         return
     }
     LaunchedEffect(state.event) {
