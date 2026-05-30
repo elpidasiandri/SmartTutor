@@ -626,10 +626,11 @@ fun ChatUiHeader(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+
         val statusFileText =
             if (material.fileUploaded) uploaded_file_success_title else uploaded_file_failure_title
         val learningText =
-            if (material.fileUploaded) "\n$learning_unit_title : ${learningUnit.title}" else ""
+            if (material.fileUploaded) "\n$learning_unit_title ${learningUnit.orderIndex}: ${learningUnit.title}" else ""
 
         Text(
             text = "$material_title : $statusFileText \n$learningText",

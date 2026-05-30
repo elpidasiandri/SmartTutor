@@ -52,6 +52,7 @@ import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.chat_history_title
 import org.example.project.strings.SmartTutorStrings.new_chat
+import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.utils.UtilsComposable.noRippleClickable
@@ -261,9 +262,9 @@ fun SubjectHistoryItem(
         )
 
         if (expanded) {
-            subject.learningUnits.forEach { lu ->
+            subject.learningUnits.forEachIndexed { index, lu ->
                 LearningUnitRow(
-                    title = lu.title,
+                    title = "${unit_title} ${index + 1}: ${lu.title}",
                     isRead = lu.isRead,
                     onClick = { onLearningUnitClick(lu.title, subject.subjectId) }
                 )
