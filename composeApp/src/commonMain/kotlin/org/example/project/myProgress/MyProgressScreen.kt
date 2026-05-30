@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,9 +31,11 @@ import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.strings.SmartTutorStrings.correct_answer
 import org.example.project.strings.SmartTutorStrings.correct_answer_
+import org.example.project.strings.SmartTutorStrings.current_learning
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.exerscize_answers
 import org.example.project.strings.SmartTutorStrings.last_answer
+import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.progress_activity
 import org.example.project.strings.SmartTutorStrings.progress_attempts
 import org.example.project.strings.SmartTutorStrings.progress_chat
@@ -41,6 +44,7 @@ import org.example.project.strings.SmartTutorStrings.progress_last_activity
 import org.example.project.strings.SmartTutorStrings.progress_question
 import org.example.project.strings.SmartTutorStrings.progress_streak
 import org.example.project.strings.SmartTutorStrings.progress_streak_days
+import org.example.project.strings.SmartTutorStrings.recent_chats
 import org.example.project.strings.SmartTutorStrings.study_stats
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.strings.SmartTutorStrings.wrong_answer
@@ -55,7 +59,7 @@ fun MyProgressScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("My Progress")
+                    Text(my_progress_title)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -80,22 +84,10 @@ fun MyProgressScreen(
             }
 
             item {
-                CurrentLearningCard(state)
-            }
-
-            item {
                 ActivityCard(state)
             }
             item {
                 ExerciseAnswersCard(state)
-            }
-
-            item {
-                Text("Recent Chats", style = MaterialTheme.typography.titleMedium)
-            }
-
-            items(state.recentChats) { chat ->
-                RecentChatCard(chat)
             }
         }
     }
@@ -150,36 +142,6 @@ fun ExerciseAnswersCard(state: MyProgressState) {
 
                 Spacer(Modifier.height(16.dp))
             }
-        }
-    }
-}
-
-@Composable
-fun CurrentLearningCard(state: MyProgressState) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Current Learning", style = MaterialTheme.typography.titleMedium)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(state.currentSubjectTitle.ifBlank { "No active material" })
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text("Unit ${state.currentUnitIndex + 1} / ${state.totalUnits}")
-            Text("Tab: ${state.selectedTab}")
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LinearProgressIndicator(
-                progress = { state.progressPercent / 100f },
-                modifier = Modifier.fillMaxWidth(),
-                color = ProgressIndicatorDefaults.linearColor,
-                trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-            )
-
-            Text("${state.progressPercent}%")
         }
     }
 }
@@ -244,22 +206,15 @@ private fun ProgressOverviewCard(state: MyProgressState) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Start,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                StatItem(progress_chat, state.totalChats.toString())
+                StatItem(progress_chat, state.totalQuestionsAsked.toString())
+                Spacer(modifier = Modifier.width(24.dp))
+
                 StatItem("PDFs", state.totalUploadedPdfs.toString())
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                StatItem(progress_question, state.totalQuestionsAsked.toString())
-                StatItem(progress_exercises, state.totalExercisesCount.toString())
-            }
         }
     }
 }

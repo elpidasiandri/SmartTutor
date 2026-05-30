@@ -116,14 +116,16 @@ class MyProgressCommonViewModel(
                         lastActivityEpochMillis = overview.lastActivityEpochMillis,
                         lastActivityLabel = formatLastActivity(overview.lastActivityEpochMillis),
                         streakDays = overview.streakDays,
-                        recentChats = chatProgressList.take(5).map { chat ->
-                            MyProgressChatItem(
-                                chatId = chat.chatId,
-                                title = chat.title,
-                                progressPercent = chat.progressPercent,
-                                lastActivityEpochMillis = chat.lastActivityEpochMillis
-                            )
-                        },
+//                        recentChats = chatProgressList.flatMap { chat ->
+//                            chat.units.map { unit ->
+//                                MyProgressChatItem(
+//                                    chatId = chat.chatId,
+//                                    title = "Unit ${unit.unitIndex + 1}: ${unit.unitTitle}",
+//                                    progressPercent = chat.progressPercent,
+//                                    lastActivityEpochMillis = chat.lastActivityEpochMillis
+//                                )
+//                            }
+//                        },
                         totalCorrectAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.correctCount },
                         totalWrongAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.wrongCount },
                         unitExerciseStats = exerciseStats.map { exerciseState ->
@@ -133,7 +135,7 @@ class MyProgressCommonViewModel(
                                 correctCount = exerciseState.correctCount,
                                 wrongCount = exerciseState.wrongCount,
                                 totalAnswered = exerciseState.totalAnswered,
-                                questions = exerciseState.questions.map {questions-> questions.toDomain() }
+                                questions = exerciseState.questions.map { questions -> questions.toDomain() }
                             )
                         },
                         event = MyProgressEvents.Loaded

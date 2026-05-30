@@ -20,5 +20,12 @@ data class ChatProgressDomain(
     val messagesSentCount: Int = 0,
     val availableExercisesCount: Int = 0,
     val lastActivityEpochMillis: Long = 0L,
-    val progressPercent: Int = 0
+    val progressPercent: Int = 0,
+    val units: List<UnitReadProgressDomain> = emptyList()
+)
+
+data class UnitReadProgressDomain(
+    val unitIndex: Int = 0,
+    val unitTitle: String = "",
+    val isRead: Boolean = false
 )

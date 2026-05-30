@@ -139,7 +139,7 @@ object SmartTutorStrings {
 
     //progress
 //    const val my_progress_title =  "My Progress"
-    const val my_progress_title = "Η Πρόοδός μου"
+    const val my_progress_title = "Η Πρόοδος μου"
 
     //tutor
 //    const val waiting_for_response = "Waiting for a response...."
@@ -198,12 +198,17 @@ object SmartTutorStrings {
     const val progress_streak_days = "ημερών "
 //    const val study_stats = "Study Stats"
     const val study_stats = "Στατιστικά μελέτης"
-//    const val progress_chat = "Chats"
-    const val progress_chat = "Συνομιλίες"
+//    const val progress_chat = "How many times have you asked something in the chat?"
+    const val progress_chat = "Πόσες φορές ρώτησες κάτι το chat"
 //    const val progress_question = "Questions"
     const val progress_question = "Ερωτήσεις"
 //    const val progress_exercises = "Exercises"
     const val progress_exercises = "Ασκήσεις"
+//    const val current_learning = "Current Learning"
+    const val current_learning = "Τρέχουσα Μάθηση"
+
+//    const val recent_chats = "Recent Chats"
+    const val recent_chats = "Πρόσφατες συνομιλίες"
 
 
 

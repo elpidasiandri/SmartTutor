@@ -25,7 +25,10 @@ class FirestoreProgressRepository(
             .document("chats")
             .collection("items")
             .document(progress.chatId)
-
+        val calculatedProgressPercent = calculateRealProgressPercent(
+            userId = userId,
+            progress = progress
+        )
         docRef.set(
             mapOf(
                 "chatId" to progress.chatId,
@@ -38,7 +41,7 @@ class FirestoreProgressRepository(
                 "messagesSentCount" to progress.messagesSentCount,
                 "availableExercisesCount" to progress.availableExercisesCount,
                 "lastActivityEpochMillis" to progress.lastActivityEpochMillis,
-                "progressPercent" to progress.progressPercent,
+                "progressPercent" to calculatedProgressPercent,
                 "units" to progress.units.map {
                     mapOf(
                         "unitIndex" to it.unitIndex,
@@ -49,7 +52,51 @@ class FirestoreProgressRepository(
             )
         ).get()
     }
+    private fun calculateRealProgressPercent(
+        userId: String,
+        progress: ChatProgressDto,
+    ): Int {
+        val totalUnits = progress.totalUnits
+        if (totalUnits <= 0) return 0
 
+        val answersSnap = usersCol.document(userId)
+            .collection("progress")
+            .document("exerciseAnswers")
+            .collection("items")
+            .get()
+            .get()
+
+        val answersForChat = answersSnap.documents.filter { doc ->
+            doc.getString("chatId") == progress.chatId
+        }
+
+        val completedUnits = progress.units.count { unit ->
+            val unitRead = unit.isRead
+
+            val answeredUniqueExercises = answersForChat
+                .filter { doc ->
+                    (doc.getLong("unitIndex") ?: -1L).toInt() == unit.unitIndex
+                }
+                .map { doc ->
+                    (doc.getLong("exerciseIndex") ?: -1L).toInt()
+                }
+                .filter { it >= 0 }
+                .distinct()
+                .count()
+
+            val unitExercisesCount = progress.availableExercisesCount / totalUnits
+
+            unitRead && answeredUniqueExercises >= unitExercisesCount
+        }
+
+        val rawPercent = (completedUnits * 100) / totalUnits
+
+        return if (completedUnits == totalUnits) {
+            100
+        } else {
+            rawPercent.coerceAtMost(99)
+        }
+    }
 
     override fun incrementMessageCount(
         userId: String,
