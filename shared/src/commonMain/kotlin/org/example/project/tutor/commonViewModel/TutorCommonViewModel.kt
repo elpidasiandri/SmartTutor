@@ -522,6 +522,7 @@ class TutorCommonViewModel(
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
         val startedAt = Clock.System.now().toEpochMilliseconds()
+        _state.update { it.copy(loading = true,  askTutor = true,) }
 
         track(
             name = EXERCISE_ANSWERED,
@@ -538,7 +539,6 @@ class TutorCommonViewModel(
             )
         )
 
-        _state.update { it.copy(loading = true) }
 
         if (chatId.isBlank()) return
         if (event.userAnswer.isBlank()) return
@@ -637,6 +637,7 @@ class TutorCommonViewModel(
                     state.copy(
                         answeredExerciseKeys = state.answeredExerciseKeys + key,
                         loading = false,
+                        askTutor = false,
                         exerciseTutorAnswers = state.exerciseTutorAnswers +
                                 (event.exerciseIndex to aiText)
                     )
@@ -645,6 +646,7 @@ class TutorCommonViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
+                        askTutor = false,
                         showCustomMessage = true,
                         isError = true,
                         message = "Failed to check your answer"
