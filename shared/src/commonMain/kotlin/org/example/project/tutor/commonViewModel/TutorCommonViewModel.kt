@@ -9,6 +9,7 @@ import kotlinx.datetime.Clock
 import org.example.project.myProgress.mappers.toDto
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
@@ -87,8 +88,8 @@ class TutorCommonViewModel(
     private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
-
-    ) {
+    private val getExerciseStateUseCase: GetExerciseStatsUseCase,
+) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
     private fun userId(): String = userIdProvider()
@@ -145,6 +146,28 @@ class TutorCommonViewModel(
         }
     }
 
+    private fun exerciseKey(unitIndex: Int, exerciseIndex: Int): String {
+        return "$unitIndex-$exerciseIndex"
+    }
+
+    private fun loadAnsweredExercises() {
+        scope.launch {
+            runCatching {
+                val stats = getExerciseStateUseCase(userId())
+
+                val answeredKeys = stats.flatMap { unit ->
+                    unit.questions.map { question ->
+                        exerciseKey(unit.unitIndex, question.exerciseIndex)
+                    }
+                }.toSet()
+
+                _state.update {
+                    it.copy(answeredExerciseKeys = answeredKeys)
+                }
+            }
+        }
+    }
+
     private fun saveExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
         val current = _state.value
         val unit = current.currentUnit
@@ -162,6 +185,10 @@ class TutorCommonViewModel(
                 "isCorrect" to event.isCorrect.toString(),
                 "timeToAnswerMs" to event.timeToAnswerMs.toString()
             )
+        )
+        val key = exerciseKey(
+            unitIndex = current.currentIndex,
+            exerciseIndex = event.exerciseIndex
         )
 
         scope.launch {
@@ -186,6 +213,12 @@ class TutorCommonViewModel(
                         answeredAtEpochMillis = event.timeToAnswerMs
                     )
                 )
+            }.onSuccess {
+                _state.update {
+                    it.copy(
+                        answeredExerciseKeys = it.answeredExerciseKeys + key
+                    )
+                }
             }.onFailure {
                 platform.log("Progress", "Failed to save exercise answer", it)
             }
@@ -441,6 +474,7 @@ class TutorCommonViewModel(
                 }
                 markUnitAsRead(index)
                 saveProgress()
+                loadAnsweredExercises()
 
             } catch (t: Throwable) {
                 _state.update {
@@ -595,9 +629,13 @@ class TutorCommonViewModel(
                         answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds()
                     )
                 )
-
+                val key = exerciseKey(
+                    unitIndex = unitIndex,
+                    exerciseIndex = event.exerciseIndex
+                )
                 _state.update { state ->
                     state.copy(
+                        answeredExerciseKeys = state.answeredExerciseKeys + key,
                         loading = false,
                         exerciseTutorAnswers = state.exerciseTutorAnswers +
                                 (event.exerciseIndex to aiText)
@@ -725,7 +763,7 @@ class TutorCommonViewModel(
                 }
 
                 saveProgress()
-
+                loadAnsweredExercises()
             } catch (t: Throwable) {
                 track(
                     name = PDF_UPLOAD_FAILED,
@@ -1047,6 +1085,7 @@ class TutorCommonViewModel(
                     )
                 }
                 markUnitAsRead(activeIndex)
+                loadAnsweredExercises()
                 return@launch
             }
 
@@ -1195,6 +1234,7 @@ class TutorCommonViewModel(
                         canGoNext = domainUnits.size > 1
                     )
                 }
+                loadAnsweredExercises()
 
             } catch (t: Throwable) {
 

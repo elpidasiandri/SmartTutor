@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,6 +62,8 @@ fun ExercisesTab(
         userAnswer: String,
         suggestedSolution: String,
     ) -> Unit,
+    currentUnitIndex: Int,
+    answeredExerciseKeys: Set<String>,
 ) {
     if (exercises.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -84,7 +88,9 @@ fun ExercisesTab(
                 exercise = ex,
                 tutorAnswer = exerciseTutorAnswers[index],
                 onExerciseAnswered = onExerciseAnswered,
-                onAskTutorForOpenExercise = onAskTutorForOpenExercise
+                onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                answeredExerciseKeys = answeredExerciseKeys,
+                currentUnitIndex = currentUnitIndex,
             )
         }
     }
@@ -102,11 +108,15 @@ private fun ExerciseCard(
         userAnswer: String,
         suggestedSolution: String,
     ) -> Unit,
-) {
+    answeredExerciseKeys: Set<String>,
+    currentUnitIndex: Int,
+
+    ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
     var showSolution by remember { mutableStateOf(false) }
-
+    val exerciseKey = "$currentUnitIndex-$index"
+    val answered = answeredExerciseKeys.contains(exerciseKey)
     var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
     var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
@@ -127,6 +137,15 @@ private fun ExerciseCard(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (!answered) {
+                Box(
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(8.dp)
+                        .background(Color.Red, CircleShape)
+                )
+            }
+
             Text(
                 text = "$excercise ${index + 1}",
                 fontWeight = FontWeight.Bold,
@@ -376,7 +395,7 @@ private fun HintExplainSolutionRow(
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         SmallToggleChip(
-            text =hint_tab,
+            text = hint_tab,
             selected = showHint,
             onClick = onToggleHint
         )

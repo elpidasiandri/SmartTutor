@@ -5,6 +5,7 @@ import org.example.project.AppConfig
 import org.example.project.myProgress.repo.IProgressRepo
 import org.example.project.myProgress.repo.WebProgressRepoImpl
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.network.createWebHttpClient
 import org.example.project.registration.AuthUserHolder
@@ -86,6 +87,7 @@ val tutorModule = module {
         }
     }
     single { GetIdTokenSuspendUseCase(get()) }
+    factory { GetExerciseStatsUseCase(get()) }
 
     single {
         TutorController(
@@ -103,7 +105,8 @@ val tutorModule = module {
             get(),
             userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() },
             saveExerciseAnswerUseCase = get(),
-            get()
+            get(),
+            get(),
         )
     }
     includes(logoutModule)

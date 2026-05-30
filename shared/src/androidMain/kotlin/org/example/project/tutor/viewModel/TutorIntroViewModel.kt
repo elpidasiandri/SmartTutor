@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.StateFlow
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
@@ -38,6 +39,7 @@ class TutorIntroViewModel(
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
     private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
+    private val getExerciseStateUseCase: GetExerciseStatsUseCase,
 
     ) : ViewModel() {
 
@@ -57,7 +59,8 @@ class TutorIntroViewModel(
         upsertChatProgressUseCase = upsertChatProgressUseCase,
         deleteChatProgressUseCase = deleteChatProgressUseCase,
         saveExerciseAnswerUseCase = saveExerciseAnswerUseCase,
-        markUnitAsReadUseCase = markUnitAsReadUseCase
+        markUnitAsReadUseCase = markUnitAsReadUseCase,
+        getExerciseStateUseCase = getExerciseStateUseCase
     )
 
     init {

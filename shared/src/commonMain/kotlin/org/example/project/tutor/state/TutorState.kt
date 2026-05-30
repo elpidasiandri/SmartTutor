@@ -34,7 +34,8 @@ data class TutorState(
     val activeChatId: String = EmptyValues.EMPTY_STRING,
     val savedChats: List<UserChatDto> = emptyList(),
     val allChatMessages: List<ChatMessageDomain> = emptyList(),
-    val exerciseTutorAnswers: Map<Int, String> = emptyMap()
+    val exerciseTutorAnswers: Map<Int, String> = emptyMap(),
+    val answeredExerciseKeys: Set<String> = emptySet(),
 )
 
 sealed class TutorUiEvents {

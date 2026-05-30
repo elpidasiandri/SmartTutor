@@ -113,8 +113,9 @@ fun TutorScreen(
         suggestedSolution: String,
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
-
-    ) {
+    answeredExerciseKeys: Set<String>,
+    currentIndex: Int,
+) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
@@ -166,7 +167,9 @@ fun TutorScreen(
             askTutor = askTutor,
             onExerciseAnswered = onExerciseAnswered,
             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-            exerciseTutorAnswers = exerciseTutorAnswers
+            exerciseTutorAnswers = exerciseTutorAnswers,
+            answeredExerciseKeys = answeredExerciseKeys,
+            currentIndex = currentIndex
         )
     }
 }
@@ -208,7 +211,8 @@ fun TutorChatUI(
         suggestedSolution: String,
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
-
+    answeredExerciseKeys: Set<String>,
+    currentIndex: Int,
     ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -288,7 +292,9 @@ fun TutorChatUI(
                             canGoNext = canGoNext,
                             onExerciseAnswered = onExerciseAnswered,
                             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                            exerciseTutorAnswers = exerciseTutorAnswers
+                            exerciseTutorAnswers = exerciseTutorAnswers,
+                            answeredExerciseKeys = answeredExerciseKeys,
+                            currentIndex = currentIndex
                         )
 
                         TutorToastHost(
@@ -435,7 +441,8 @@ private fun TutorChatContent(
         suggestedSolution: String,
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
-
+    answeredExerciseKeys: Set<String>,
+    currentIndex :Int,
     ) {
     Column(
         modifier = Modifier
@@ -477,7 +484,9 @@ private fun TutorChatContent(
                     exercises = currentUnit.exercises,
                     onExerciseAnswered = onExerciseAnswered,
                     onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                    exerciseTutorAnswers = exerciseTutorAnswers
+                    exerciseTutorAnswers = exerciseTutorAnswers,
+                    answeredExerciseKeys = answeredExerciseKeys,
+                    currentUnitIndex = currentIndex,
                 )
             }
         }

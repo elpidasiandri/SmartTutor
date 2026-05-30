@@ -9,6 +9,7 @@ import org.example.project.AppConfig
 import org.example.project.myProgress.repo.IProgressRepo
 import org.example.project.myProgress.repo.ProgressRepoImpl
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
+import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.module.logoutModule
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
@@ -66,6 +67,7 @@ val tutorModule = module {
     single { GetChatByIdUseCase(get()) }
     single { AskTutorUseCase(get()) }
     single { DeleteChatUseCase(get()) }
+    factory { GetExerciseStatsUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
 
     factory {
@@ -100,6 +102,7 @@ val tutorModule = module {
             get(),
             get(),
             FirebaseAuth.getInstance(),
+            get(),
             get(),
             get(),
             get(),

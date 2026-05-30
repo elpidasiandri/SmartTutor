@@ -125,9 +125,10 @@ class TutorIntroFragment : Fragment() {
                             )
                         )
                     },
-                    exerciseTutorAnswers = state.exerciseTutorAnswers
-
-                )
+                    exerciseTutorAnswers = state.exerciseTutorAnswers,
+                    answeredExerciseKeys = state.answeredExerciseKeys,
+                    currentIndex = state.currentIndex,
+                    )
             }
         }
     }
