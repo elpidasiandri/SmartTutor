@@ -16,27 +16,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DrawerState
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,9 +41,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.example.project.AppConfig
 import org.example.project.colors.AppColors
 import org.example.project.colors.AppColors.GrayLightBoard
@@ -242,59 +234,33 @@ fun TutorChatUI(
         )
     }
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
     BoxWithConstraints {
-        val drawerWidth = maxWidth / widthDividerMenu
+        val drawerWidth = when {
+            maxWidth < 600.dp -> maxWidth * 0.85f      // mobile
+            maxWidth < 900.dp -> 320.dp               // tablet
+            else -> 360.dp                            // desktop
+        }
 
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            drawerContent = {
-                TutorDrawerContent(
-                    drawerWidth = drawerWidth,
-                    chatHistory = chatHistory,
-                    drawerState = drawerState,
-                    scope = scope,
-                    onSettingsClick = onSettingsClick,
-                    onLogoutClick = onLogoutClick,
-                    onLearningUnitClick = { title, subjectId ->
-                        selectLearningUnit(
-                            title,
-                            subjectId
-                        )
-                    },
-                    onNewChatClick = {
-                        scope.launch {
-                            startNewChat()
-                            drawerState.close()
-                        }
-                    },
-                    onDeleteSubject = { subjectId ->
-                        deleteSubject(subjectId)
-                    },
-                    onExistingChatClick = { chatId ->
-                        scope.launch {
-                            onExistingChatClick(chatId)
-                            drawerState.close()
-                        }
-                    },
-                    navigateToMyProgress = {
-                        navigateToMyProgress()
-                    }
-                )
-            }
-        ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+
+            TutorDrawerContent(
+                drawerWidth = drawerWidth,
+                chatHistory = chatHistory,
+                onSettingsClick = onSettingsClick,
+                onLogoutClick = onLogoutClick,
+                onLearningUnitClick = { title, subjectId ->
+                    selectLearningUnit(title, subjectId)
+                },
+                onNewChatClick = startNewChat,
+                onDeleteSubject = deleteSubject,
+                onExistingChatClick = onExistingChatClick,
+                navigateToMyProgress = navigateToMyProgress
+            )
+
             TutorScaffold(
                 chatData = chatData,
-                onToggleDrawer = {
-                    scope.launch {
-                        if (drawerState.isClosed) drawerState.open() else drawerState.close()
-                    }
-                },
                 content = { padding ->
                     Box(modifier = Modifier.fillMaxSize()) {
-
                         TutorChatContent(
                             padding = padding,
                             chatData = chatData,
@@ -312,7 +278,7 @@ fun TutorChatUI(
                                 }
                             },
                             selectedTab = selectedTab,
-                            onChangeTab = { onChangeTab(it) },
+                            onChangeTab = onChangeTab,
                             tabInfoMessage = tabInfoMessage,
                             currentUnit = currentUnit,
                             isLoading = isLoading,
@@ -320,7 +286,6 @@ fun TutorChatUI(
                             onExerciseAnswered = onExerciseAnswered,
                             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
                             exerciseTutorAnswers = exerciseTutorAnswers
-
                         )
 
                         TutorToastHost(
@@ -394,8 +359,6 @@ private fun TutorToastHost(
 private fun TutorDrawerContent(
     drawerWidth: Dp,
     chatHistory: ChatHistoryDomain,
-    drawerState: DrawerState,
-    scope: CoroutineScope,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onLearningUnitClick: (String, String) -> Unit,
@@ -413,8 +376,6 @@ private fun TutorDrawerContent(
     ) {
         MenuAndChatHistory(
             chatHistory = chatHistory,
-            drawerState = drawerState,
-            scope = scope,
             onSettingsClick = onSettingsClick,
             onLogoutClick = onLogoutClick,
             onLearningUnitClick = onLearningUnitClick,
@@ -433,7 +394,6 @@ private fun TutorDrawerContent(
 @Composable
 private fun TutorScaffold(
     chatData: ChatSessionStartDomain,
-    onToggleDrawer: () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
@@ -441,7 +401,6 @@ private fun TutorScaffold(
             TopBarTabs(
                 material = chatData.material,
                 learningUnit = chatData.learningUnit,
-                changeHistoryVisibleStatus = onToggleDrawer
             )
         },
         content = content
@@ -643,20 +602,11 @@ private fun TutorHandleSend(
 fun TopBarTabs(
     material: MaterialDomain,
     learningUnit: LearningUnitDomain,
-    changeHistoryVisibleStatus: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().background(GrayLightBoard)
             .padding(top = spacing16, start = spacing8), horizontalArrangement = Arrangement.Start
     ) {
-        IconButton(
-            modifier = Modifier.align(Alignment.CenterVertically),
-            onClick = { changeHistoryVisibleStatus() }) {
-            Icon(
-                Icons.Default.Menu,
-                contentDescription = "Toggle History"
-            )
-        }
         ChatUiHeader(
             material,
             learningUnit,

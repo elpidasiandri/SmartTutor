@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -44,7 +43,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import org.example.project.colors.AppColors.GrayUltraDark
 import org.example.project.colors.AppColors.GrayUltraLight
 import org.example.project.dimens.Dimens.spacing12
@@ -61,8 +59,6 @@ import org.example.project.utils.UtilsComposable.noRippleClickable
 @Composable
 fun MenuAndChatHistory(
     chatHistory: ChatHistoryDomain,
-    drawerState: DrawerState,
-    scope: CoroutineScope,
     onSettingsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     onLearningUnitClick: (String, String) -> Unit,
@@ -85,8 +81,6 @@ fun MenuAndChatHistory(
 
         ChatHistoryList(
             chatHistory = chatHistory,
-            drawerState = drawerState,
-            scope = scope,
             onLearningUnitClick = onLearningUnitClick,
             onDeleteSubject = onDeleteSubject,
             modifier = Modifier
@@ -138,8 +132,6 @@ private fun ChatHistoryHeader() {
 @Composable
 private fun ChatHistoryList(
     chatHistory: ChatHistoryDomain,
-    drawerState: DrawerState,
-    scope: CoroutineScope,
     onLearningUnitClick: (String, String) -> Unit,
     onDeleteSubject: (String) -> Unit,
     modifier: Modifier,
@@ -152,11 +144,9 @@ private fun ChatHistoryList(
                 subject = subject,
                 onLearningUnitClick = { title, subjectId ->
                     onLearningUnitClick(title, subjectId)
-                    scope.launch { drawerState.close() }
                 },
                 onDeleteSubject = { subjectId ->
                     onDeleteSubject(subjectId)
-                    scope.launch { drawerState.close() }
                 },
                 onExistingChatClick = { chatId ->
                     onExistingChatClick(chatId)
