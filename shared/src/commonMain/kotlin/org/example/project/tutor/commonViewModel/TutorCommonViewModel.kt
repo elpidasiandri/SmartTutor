@@ -44,6 +44,7 @@ import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOADED
 import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOAD_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
 import org.example.project.tutor.models.AnalyticsEvents.TUTOR_SCREEN_OPENED
+import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.models.domainModels.myProgress.ChatProgressUpsertDomain
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorEvents
@@ -486,6 +487,24 @@ class TutorCommonViewModel(
         val current = _state.value
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
+        val startedAt = Clock.System.now().toEpochMilliseconds()
+
+        track(
+            name = EXERCISE_ANSWERED,
+            params = mapOf(
+                "chatId" to chatId,
+                "unitIndex" to unitIndex.toString(),
+                "unitTitle" to current.currentUnit.title,
+                "exerciseIndex" to event.exerciseIndex.toString(),
+                "exerciseType" to ExerciseType.OPEN.name,
+                "selectedAnswer" to event.userAnswer,
+                "correctAnswer" to event.suggestedSolution,
+                "isCorrect" to "false",
+                "isOpenAnswer" to "true"
+            )
+        )
+
+        _state.update { it.copy(loading = true) }
 
         if (chatId.isBlank()) return
         if (event.userAnswer.isBlank()) return
@@ -513,6 +532,18 @@ class TutorCommonViewModel(
     ```
         
     Μορφή απάντησης:
+    ΠΡΩΤΗ ΓΡΑΜΜΗ ΥΠΟΧΡΕΩΤΙΚΑ:
+    Η απάντηση σου είναι : Σωστή
+    ή
+    Η απάντηση σου είναι: Μερικώς σωστή
+    ή
+    Η απάντηση σου είναι: Λάθος
+    Ορισμοί:
+    - CORRECT = η απάντηση είναι ουσιαστικά σωστή.
+    - PARTIAL = η απάντηση είναι μερικώς σωστή αλλά λείπουν σημαντικά στοιχεία.
+    - WRONG = η απάντηση είναι λανθασμένη.
+
+    Μετά συνέχισε με:
         1. Αν είναι σωστή ή όχι η απάντησή μου.
         2. Τι λείπει, αν λείπει κάτι.
         3. Πώς μπορώ να τη βελτιώσω.
@@ -536,6 +567,34 @@ class TutorCommonViewModel(
                 )
 
                 val aiText = response.aiMessage?.text.orEmpty()
+
+                val verdict = aiText
+                    .lineSequence()
+                    .firstOrNull()
+                    ?.trim()
+                    .orEmpty()
+
+                val isCorrect =
+                    verdict.contains("Η απάντηση σου είναι: Σωστή", ignoreCase = true)
+
+                saveExerciseAnswerUseCase(
+                    userId = userId(),
+                    token = token,
+                    answer = ExerciseAnswerProgressDto(
+                        chatId = chatId,
+                        userId = userId(),
+                        unitIndex = unitIndex,
+                        unitTitle = current.currentUnit.title,
+                        exerciseIndex = event.exerciseIndex,
+                        exerciseType = ExerciseType.OPEN.name,
+                        question = event.question,
+                        selectedAnswer = event.userAnswer,
+                        correctAnswer = event.suggestedSolution,
+                        isCorrect = isCorrect,
+                        timeToAnswerMs = Clock.System.now().toEpochMilliseconds() - startedAt,
+                        answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds()
+                    )
+                )
 
                 _state.update { state ->
                     state.copy(

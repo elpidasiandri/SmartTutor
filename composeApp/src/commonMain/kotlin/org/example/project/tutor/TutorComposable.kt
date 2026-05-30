@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,15 +69,12 @@ import org.example.project.tutor.models.domainModels.tutorChat.ChatSessionStartD
 import org.example.project.tutor.models.domainModels.tutorChat.ChatUiMessage
 import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitDomain
 import org.example.project.tutor.models.domainModels.tutorChat.MaterialDomain
-import org.example.project.tutor.models.domainModels.tutorChat.SenderType
 import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.excercise.ExercisesTab
 import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.koin.compose.koinInject
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 @Composable
 fun TutorScreen(

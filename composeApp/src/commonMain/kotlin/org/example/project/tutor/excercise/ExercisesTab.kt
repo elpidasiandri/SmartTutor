@@ -387,13 +387,13 @@ private fun HintExplainSolutionRow(
             onClick = onToggleExplanation
         )
 
-        if (type == ExerciseType.OPEN) {
-            SmallToggleChip(
-                text = solution_tab,
-                selected = showSolution,
-                onClick = onToggleSolution
-            )
-        }
+//        if (type == ExerciseType.OPEN) {
+//            SmallToggleChip(
+//                text = solution_tab,
+//                selected = showSolution,
+//                onClick = onToggleSolution
+//            )
+//        }
     }
 }
 
