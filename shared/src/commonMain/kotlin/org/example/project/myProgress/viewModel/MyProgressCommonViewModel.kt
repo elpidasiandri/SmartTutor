@@ -116,16 +116,6 @@ class MyProgressCommonViewModel(
                         lastActivityEpochMillis = overview.lastActivityEpochMillis,
                         lastActivityLabel = formatLastActivity(overview.lastActivityEpochMillis),
                         streakDays = overview.streakDays,
-//                        recentChats = chatProgressList.flatMap { chat ->
-//                            chat.units.map { unit ->
-//                                MyProgressChatItem(
-//                                    chatId = chat.chatId,
-//                                    title = "Unit ${unit.unitIndex + 1}: ${unit.unitTitle}",
-//                                    progressPercent = chat.progressPercent,
-//                                    lastActivityEpochMillis = chat.lastActivityEpochMillis
-//                                )
-//                            }
-//                        },
                         totalCorrectAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.correctCount },
                         totalWrongAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.wrongCount },
                         unitExerciseStats = exerciseStats.map { exerciseState ->

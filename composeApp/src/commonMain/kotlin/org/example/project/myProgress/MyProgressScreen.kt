@@ -48,6 +48,7 @@ import org.example.project.strings.SmartTutorStrings.recent_chats
 import org.example.project.strings.SmartTutorStrings.study_stats
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.strings.SmartTutorStrings.wrong_answer
+import org.example.project.tutor.learningList.LearningRichMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,8 +136,10 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                     Text("$progress_attempts: ${question.attemptsCount}")
                     Text("$correct_answer: ${question.correctCount} | $wrong_answer: ${question.wrongCount}")
                     Text("$last_answer: ${question.lastSelectedAnswer}")
-                    Text("$correct_answer_: ${question.correctAnswer}")
-
+                    LearningRichMessage(
+                        text = "$correct_answer_: ${question.correctAnswer}",
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Spacer(Modifier.height(12.dp))
                 }
 
@@ -151,28 +154,6 @@ fun StatItem(title: String, value: String) {
     Column {
         Text(title, style = MaterialTheme.typography.bodySmall)
         Text(value, style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-@Composable
-fun RecentChatCard(chat: MyProgressChatItem) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Text(chat.title, style = MaterialTheme.typography.titleSmall)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LinearProgressIndicator(
-                progress = { chat.progressPercent / 100f },
-                modifier = Modifier.fillMaxWidth(),
-                color = ProgressIndicatorDefaults.linearColor,
-                trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-            )
-
-            Text("${chat.progressPercent}%")
-        }
     }
 }
 
