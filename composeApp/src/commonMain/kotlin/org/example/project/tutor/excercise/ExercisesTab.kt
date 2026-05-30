@@ -36,6 +36,14 @@ import org.example.project.colors.AppColors
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
+import org.example.project.strings.SmartTutorStrings.ask_tutor_about_my_answer
+import org.example.project.strings.SmartTutorStrings.excercise
+import org.example.project.strings.SmartTutorStrings.excercise_write_your_answer
+import org.example.project.strings.SmartTutorStrings.excersize_not_found
+import org.example.project.strings.SmartTutorStrings.explanation_tab
+import org.example.project.strings.SmartTutorStrings.hint_tab
+import org.example.project.strings.SmartTutorStrings.solution_tab
+import org.example.project.strings.SmartTutorStrings.tutor_answer
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import kotlin.time.TimeSource
@@ -55,7 +63,7 @@ fun ExercisesTab(
 ) {
     if (exercises.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text("No exercises found.")
+            Text(excersize_not_found)
         }
         return
     }
@@ -120,7 +128,7 @@ private fun ExerciseCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Exercise ${index + 1}",
+                text = "$excercise ${index + 1}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1f)
@@ -232,7 +240,7 @@ private fun ExerciseCard(
                     value = openAnswer,
                     onValueChange = { openAnswer = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Write your answer...") }
+                    placeholder = { Text(excercise_write_your_answer) }
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -249,7 +257,7 @@ private fun ExerciseCard(
                     },
                     enabled = openAnswer.isNotBlank()
                 ) {
-                    Text("Ask tutor about my answer")
+                    Text(ask_tutor_about_my_answer)
                 }
 
                 if (!tutorAnswer.isNullOrBlank()) {
@@ -265,7 +273,7 @@ private fun ExerciseCard(
                             .padding(12.dp)
                     ) {
                         Text(
-                            text = "Tutor Answer",
+                            text = tutor_answer,
                             fontWeight = FontWeight.Bold
                         )
 
@@ -307,17 +315,17 @@ private fun ExerciseCard(
 
         if (showHint && exercise.hint.isNotBlank()) {
             Spacer(Modifier.height(spacing8))
-            ExpandSection(title = "Hint", text = exercise.hint)
+            ExpandSection(title = hint_tab, text = exercise.hint)
         }
 
         if (showExplanation && exercise.explanation.isNotBlank()) {
             Spacer(Modifier.height(spacing8))
-            ExpandSection(title = "Explanation", text = exercise.explanation)
+            ExpandSection(title = explanation_tab, text = exercise.explanation)
         }
 
         if (showSolution && exercise.solution.isNotBlank() && exercise.type == ExerciseType.OPEN) {
             Spacer(Modifier.height(spacing8))
-            ExpandSection(title = "Solution", text = exercise.solution)
+            ExpandSection(title = solution_tab, text = exercise.solution)
         }
     }
 }
@@ -368,20 +376,20 @@ private fun HintExplainSolutionRow(
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         SmallToggleChip(
-            text = "Hint",
+            text =hint_tab,
             selected = showHint,
             onClick = onToggleHint
         )
 
         SmallToggleChip(
-            text = "Explain",
+            text = explanation_tab,
             selected = showExplanation,
             onClick = onToggleExplanation
         )
 
         if (type == ExerciseType.OPEN) {
             SmallToggleChip(
-                text = "Solution",
+                text = solution_tab,
                 selected = showSolution,
                 onClick = onToggleSolution
             )

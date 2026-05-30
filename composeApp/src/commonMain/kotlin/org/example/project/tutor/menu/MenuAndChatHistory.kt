@@ -51,7 +51,10 @@ import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.chat_history_title
+import org.example.project.strings.SmartTutorStrings.delete_button
+import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.new_chat
+import org.example.project.strings.SmartTutorStrings.settings_title
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
@@ -168,7 +171,7 @@ private fun SettingsRow(onSettingsClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            "Settings",
+            settings_title,
             modifier = Modifier.padding(end = spacing8),
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp
@@ -194,7 +197,7 @@ private fun BottomRow(
             }
         ) {
             Text(
-                "My Progress",
+                my_progress_title,
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
             )
@@ -338,7 +341,7 @@ private fun SubjectOverflowMenu(
         onDismissRequest = onDismiss
     ) {
         DropdownMenuItem(
-            text = { Text("Delete") },
+            text = { Text(delete_button) },
             onClick = onDeleteClick
         )
     }

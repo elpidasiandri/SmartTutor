@@ -54,12 +54,16 @@ import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.spacing80
+import org.example.project.strings.SmartTutorStrings.exercises_tab
+import org.example.project.strings.SmartTutorStrings.learning_tab
 import org.example.project.strings.SmartTutorStrings.learning_unit_title
 import org.example.project.strings.SmartTutorStrings.material_title
+import org.example.project.strings.SmartTutorStrings.next_tab
 import org.example.project.strings.SmartTutorStrings.type_your_message
 import org.example.project.strings.SmartTutorStrings.uploaded_file_failure_title
 import org.example.project.strings.SmartTutorStrings.uploaded_file_success_title
 import org.example.project.strings.SmartTutorStrings.waiting_for_answer
+import org.example.project.strings.SmartTutorStrings.waiting_for_response
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
 import org.example.project.tutor.models.domainModels.tutorChat.ChatSessionStartDomain
@@ -318,7 +322,7 @@ fun TutorChatUI(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 CircularProgressIndicator()
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Text("Waiting for a response...", color = Color.White)
+                                Text(waiting_for_response, color = Color.White)
                             }
                         }
                     }
@@ -511,21 +515,21 @@ private fun TutorTopActionsRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         TutorActionButton(
-            text = "Learning",
+            text = learning_tab,
             enabled = fileUploaded && !isLoading,
             onClick = { onTabChange(TutorTab.Learning) },
             selectedTab = selectedTab == TutorTab.Learning,
         )
 
         TutorActionButton(
-            text = "Exercises",
+            text = exercises_tab,
             enabled = fileUploaded && !isLoading,
             onClick = { onTabChange(TutorTab.Exercises) },
             selectedTab = selectedTab == TutorTab.Exercises,
         )
 
         TutorActionButton(
-            text = "Next ",
+            text = next_tab,
             enabled = fileUploaded && !isLoading && canGoNext,
             onClick = onNextUnitClick,
             selectedTab = false,
@@ -576,32 +580,6 @@ private fun TutorInputSection(
         onUploadPdfClick = onUploadPdfClick,
         isLoading = isLoading,
     )
-}
-
-@OptIn(ExperimentalUuidApi::class)
-private fun TutorHandleSend(
-    userMessageState: String,
-    onClearUserMessage: () -> Unit,
-    chatMessages: MutableList<ChatUiMessage>,
-) {
-    if (userMessageState.isNotBlank()) {
-        chatMessages.add(
-            ChatUiMessage(
-                sender = SenderType.USER.name,
-                text = userMessageState,
-                id = Uuid.random().toString()
-            )
-        )
-        chatMessages.add(
-            ChatUiMessage(
-                sender = SenderType.AI.name,
-                text = "This is a fake AI reply",
-                imagePath = emptyList(),
-                id = Uuid.random().toString()
-            )
-        )
-        onClearUserMessage()
-    }
 }
 
 @Composable

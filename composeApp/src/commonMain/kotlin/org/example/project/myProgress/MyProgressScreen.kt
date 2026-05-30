@@ -28,6 +28,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressState
+import org.example.project.strings.SmartTutorStrings.correct_answer
+import org.example.project.strings.SmartTutorStrings.correct_answer_
+import org.example.project.strings.SmartTutorStrings.excercise
+import org.example.project.strings.SmartTutorStrings.exerscize_answers
+import org.example.project.strings.SmartTutorStrings.last_answer
+import org.example.project.strings.SmartTutorStrings.progress_activity
+import org.example.project.strings.SmartTutorStrings.progress_attempts
+import org.example.project.strings.SmartTutorStrings.progress_chat
+import org.example.project.strings.SmartTutorStrings.progress_exercises
+import org.example.project.strings.SmartTutorStrings.progress_last_activity
+import org.example.project.strings.SmartTutorStrings.progress_question
+import org.example.project.strings.SmartTutorStrings.progress_streak
+import org.example.project.strings.SmartTutorStrings.progress_streak_days
+import org.example.project.strings.SmartTutorStrings.study_stats
+import org.example.project.strings.SmartTutorStrings.unit_title
+import org.example.project.strings.SmartTutorStrings.wrong_answer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +105,7 @@ fun MyProgressScreen(
 fun ExerciseAnswersCard(state: MyProgressState) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Exercise Answers", style = MaterialTheme.typography.titleMedium)
+            Text(exerscize_answers, style = MaterialTheme.typography.titleMedium)
 
             Spacer(Modifier.height(12.dp))
 
@@ -97,37 +113,37 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start
             ) {
-                StatItem("Correct", state.totalCorrectAnswers.toString())
+                StatItem(correct_answer, state.totalCorrectAnswers.toString())
                 Spacer(modifier = Modifier.padding(start = 24.dp))
-                StatItem("Wrong", state.totalWrongAnswers.toString())
+                StatItem(wrong_answer, state.totalWrongAnswers.toString())
             }
 
             Spacer(Modifier.height(16.dp))
 
             state.unitExerciseStats.forEach { unit ->
                 Text(
-                    text = "Unit ${unit.unitIndex + 1}: ${unit.unitTitle}",
+                    text = "$unit_title ${unit.unitIndex + 1}: ${unit.unitTitle}",
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "Attempts: ${unit.totalAnswered} | Correct: ${unit.correctCount} | Wrong: ${unit.wrongCount}"
+                    text = "$progress_attempts: ${unit.totalAnswered} | $correct_answer: ${unit.correctCount} | $wrong_answer: ${unit.wrongCount}"
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 unit.questions.forEach { question ->
                     Text(
-                        text = "Exercise ${question.exerciseIndex + 1}",
+                        text = "$excercise ${question.exerciseIndex + 1}",
                         fontWeight = FontWeight.Bold
                     )
 
                     Text(question.question)
 
-                    Text("Attempts: ${question.attemptsCount}")
-                    Text("Correct: ${question.correctCount} | Wrong: ${question.wrongCount}")
-                    Text("Last answer: ${question.lastSelectedAnswer}")
-                    Text("Correct answer: ${question.correctAnswer}")
+                    Text("$progress_attempts: ${question.attemptsCount}")
+                    Text("$correct_answer: ${question.correctCount} | $wrong_answer: ${question.wrongCount}")
+                    Text("$last_answer: ${question.lastSelectedAnswer}")
+                    Text("$correct_answer_: ${question.correctAnswer}")
 
                     Spacer(Modifier.height(12.dp))
                 }
@@ -202,7 +218,7 @@ fun RecentChatCard(chat: MyProgressChatItem) {
 fun ActivityCard(state: MyProgressState) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Activity", style = MaterialTheme.typography.titleMedium)
+            Text(progress_activity, style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -210,8 +226,8 @@ fun ActivityCard(state: MyProgressState) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatItem("Streak", "${state.streakDays} days")
-                StatItem("Last Activity", state.lastActivityLabel)
+                StatItem(progress_streak, "${state.streakDays} $progress_streak_days")
+                StatItem(progress_last_activity, state.lastActivityLabel)
             }
         }
     }
@@ -223,7 +239,7 @@ private fun ProgressOverviewCard(state: MyProgressState) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Study Stats", style = MaterialTheme.typography.titleMedium)
+            Text(study_stats, style = MaterialTheme.typography.titleMedium)
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -231,7 +247,7 @@ private fun ProgressOverviewCard(state: MyProgressState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                StatItem("Chats", state.totalChats.toString())
+                StatItem(progress_chat, state.totalChats.toString())
                 StatItem("PDFs", state.totalUploadedPdfs.toString())
             }
 
@@ -241,8 +257,8 @@ private fun ProgressOverviewCard(state: MyProgressState) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                StatItem("Questions", state.totalQuestionsAsked.toString())
-                StatItem("Exercises", state.totalExercisesCount.toString())
+                StatItem(progress_question, state.totalQuestionsAsked.toString())
+                StatItem(progress_exercises, state.totalExercisesCount.toString())
             }
         }
     }

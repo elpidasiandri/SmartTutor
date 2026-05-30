@@ -26,7 +26,7 @@ fun CustomToastComposable(
     message: String,
     modifier: Modifier = Modifier,
     position: Alignment = Alignment.BottomCenter,
-    duration: Long = 2000L,
+    duration: Long = 2500L,
     initializeMessage: (() -> Unit)? = {},
 ) {
     val isVisible = remember { mutableStateOf(true) }
