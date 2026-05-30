@@ -49,26 +49,27 @@ class WebRegistrationController(
     }
 
     private fun login(email: String, password: String) {
-        scope.launch {
-            registrationUseCases.logIn(email, password) { success, message ->
-                if (success) {
-                    WebStorageHelper.saveTokenExpiry()
-                    navigateToTutorScreen()
-                } else {
-                    when (message) {
-                        "EMAIL_NOT_VERIFIED" -> {
-                            stateForErrorMessage(
-                                "Please verify your email first. Check your inbox and then log in again."
-                            )
-                        }
-
-                        else -> {
-                            stateForErrorMessage()
-                        }
-                    }
-                }
-            }
-        }
+        stateForErrorMessage("Παρακαλώ προσπαθήστε σε λίγες ώρες. Αυτή την στιγμή γίνονται κάποιες αλλαγές στον server μας")
+//        scope.launch {
+//            registrationUseCases.logIn(email, password) { success, message ->
+//                if (success) {
+//                    WebStorageHelper.saveTokenExpiry()
+//                    navigateToTutorScreen()
+//                } else {
+//                    when (message) {
+//                        "EMAIL_NOT_VERIFIED" -> {
+//                            stateForErrorMessage(
+//                                "Please verify your email first. Check your inbox and then log in again."
+//                            )
+//                        }
+//
+//                        else -> {
+//                            stateForErrorMessage()
+//                        }
+//                    }
+//                }
+//            }
+//        }
     }
 
     private fun navigateToTutorScreen() {

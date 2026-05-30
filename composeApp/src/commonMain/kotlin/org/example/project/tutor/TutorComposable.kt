@@ -1,5 +1,6 @@
 package org.example.project.tutor
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,9 +15,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.UploadFile
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -537,18 +540,21 @@ private fun TutorActionButton(
     onClick: () -> Unit,
     selectedTab: Boolean,
 ) {
-    TextButton(
+    Button(
         onClick = onClick,
         enabled = enabled,
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = AppColors.Purple,
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selectedTab) AppColors.Purple else Color.White,
+            contentColor = if (selectedTab) Color.White else AppColors.Purple,
+            disabledContainerColor = AppColors.GrayLight,
             disabledContentColor = AppColors.GrayDark
-        )
+        ),
+        border = BorderStroke(1.dp, AppColors.Purple)
     ) {
         Text(
             text = text,
-            fontWeight = if (selectedTab) FontWeight.Bold else FontWeight.Normal,
-            color = if (enabled) AppColors.Purple else AppColors.GrayDark
+            fontWeight = if (selectedTab) FontWeight.Bold else FontWeight.Medium
         )
     }
 }
