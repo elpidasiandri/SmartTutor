@@ -32,6 +32,7 @@ class WebProgressRepoImpl(
         }.body()
     }
 
+
     override suspend fun upsertChatProgress(
         progress: ChatProgressDto,
         userId: String,

@@ -29,6 +29,9 @@ class FirestoreProgressRepository(
             userId = userId,
             progress = progress
         )
+        println("Q12345 Saving progress")
+        println("Q12345 " +progress.units)
+        println("Q12345 Progress percent = $calculatedProgressPercent")
         docRef.set(
             mapOf(
                 "chatId" to progress.chatId,
@@ -203,7 +206,7 @@ class FirestoreProgressRepository(
                         unitTitle = unit["unitTitle"] as? String ?: "",
                         isRead = unit["isRead"] as? Boolean ?: false
                     )
-                } ?: emptyList()
+                } ?: emptyList(),
             )
         }.sortedByDescending { it.lastActivityEpochMillis }
     }

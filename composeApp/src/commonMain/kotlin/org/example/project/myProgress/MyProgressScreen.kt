@@ -191,20 +191,19 @@ private fun ProgressOverviewCard(state: MyProgressState) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "$overall_progress${state.progressPercent}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                LinearProgressIndicator(
-                    progress = { state.progressPercent / 100f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                )
             }
+            Text(
+                text = "$overall_progress${state.progressPercent}%",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
 
+            LinearProgressIndicator(
+                progress = { state.progressPercent / 100f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
         }
     }
 }
