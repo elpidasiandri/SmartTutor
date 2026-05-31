@@ -75,8 +75,8 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
             }
 
             repo.oneTimeReplaceResultJson(
-                documentId = "doc_41462a5d6a2149e6ab79756fd0c4de78",
-                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialGreek_firestore_20_exercises_each_plus_review_minified.json",
+                documentId = "doc_5ed7ff3aae764cff8f771bff08bf9567",
+                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialEnglish_firestore_20_exercises_each_plus_review_minified.json",
                 totalUnits = 50
             )
 
@@ -98,8 +98,8 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
 
         get("/{documentId}") {
             repo.oneTimeReplaceResultJson(
-                documentId = "doc_41462a5d6a2149e6ab79756fd0c4de78",
-                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialGreek_firestore_20_exercises_each_plus_review_minified.json",
+                documentId = "doc_5ed7ff3aae764cff8f771bff08bf9567",
+                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialEnglish_firestore_20_exercises_each_plus_review_minified.json",
                 totalUnits = 50
             )
             val documentId = call.parameters["documentId"]
