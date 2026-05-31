@@ -459,16 +459,45 @@ class PromptLlmClient(
 
             GOAL:
             - Use CURRENT_CHUNK (attached PDF) + CARRY_FROM_PREVIOUS.
-            - Create AT MOST 1 learning unit OR return unit=null if not enough substance.
+            - Create EXACTLY 1 small learning unit for ONE distinct concept from CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+
+            Do NOT merge multiple concepts into one unit.
+            
+            If the chunk contains multiple concepts, choose the next uncovered concept and put the remaining concepts in carry.
+            
+            ONE CONCEPT = ONE UNIT.
+            
+            Examples:
+            - byte = separate unit
+            - short = separate unit
+            - int = separate unit
+            - long = separate unit
+            - float = separate unit
+            - double = separate unit
+            - char = separate unit
+            - boolean = separate unit
+            - if = separate unit
+            - if...else = separate unit
+            - switch = separate unit
+            - while = separate unit
+            - do-while = separate unit
+            - for = separate unit
+            
             - If not enough for a full unit, return unit=null and put dense notes in carry (<=8000 chars).
 
             TEXT:
             - Greek (if language=el), exam-focused, no fluff.
-            - 3–7 paragraphs separated by \n.
-            - 180–900 words.
+            - Do NOT summarize.
+            - Teach the concept in depth.
+            - Include definitions, rules, warnings, edge cases, and examples from the PDF.
+            - Include at least 2 examples.
+            - Include at least 1 Java code block when the concept supports code.
+            - Never say "according to the author", "in the table", "in figure", "on page", or "in this chapter".
+            - Rewrite as standalone learning material.
+            - 5-10 paragraphs separated by \n.
+            - 350–1200 words.
             - Prefer at least 2 fenced Java code blocks when the topic supports code examples.
             - For theory-heavy topics, 1 fenced Java code block is enough.
-            - Add 1 diagram image only if it clearly improves understanding and can be rendered clearly, fully, and accurately.
             - Do not add an image just to satisfy formatting.
 
             IMAGES:

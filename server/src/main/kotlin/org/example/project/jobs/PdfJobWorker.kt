@@ -56,7 +56,7 @@ class PdfJobWorker(
                 tocEndPageInclusive = 6,
                 pageNumberOffset = 0,
                 overlapPages = 1,
-                fallbackPagesPerChunk = 8
+                fallbackPagesPerChunk = 3
             )
 
             if (chunks.isEmpty()) {
