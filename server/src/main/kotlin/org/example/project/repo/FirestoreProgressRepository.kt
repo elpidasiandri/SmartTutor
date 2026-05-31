@@ -56,8 +56,13 @@ class FirestoreProgressRepository(
         userId: String,
         progress: ChatProgressDto,
     ): Int {
-        val totalUnits = progress.totalUnits
-        if (totalUnits <= 0) return 0
+        val totalUnits = progress.totalUnits.coerceAtLeast(0)
+        val totalExercises = progress.availableExercisesCount.coerceAtLeast(0)
+
+        val totalTasks = totalUnits + totalExercises
+        if (totalTasks == 0) return 0
+
+        val readUnits = progress.units.count { it.isRead }
 
         val answersSnap = usersCol.document(userId)
             .collection("progress")
@@ -66,36 +71,19 @@ class FirestoreProgressRepository(
             .get()
             .get()
 
-        val answersForChat = answersSnap.documents.filter { doc ->
-            doc.getString("chatId") == progress.chatId
-        }
+        val answeredUniqueExercises = answersSnap.documents
+            .filter { it.getString("chatId") == progress.chatId }
+            .map {
+                val unitIndex = (it.getLong("unitIndex") ?: -1L).toInt()
+                val exerciseIndex = (it.getLong("exerciseIndex") ?: -1L).toInt()
+                "$unitIndex-$exerciseIndex"
+            }
+            .distinct()
+            .count()
 
-        val completedUnits = progress.units.count { unit ->
-            val unitRead = unit.isRead
+        val completedTasks = readUnits + answeredUniqueExercises.coerceAtMost(totalExercises)
 
-            val answeredUniqueExercises = answersForChat
-                .filter { doc ->
-                    (doc.getLong("unitIndex") ?: -1L).toInt() == unit.unitIndex
-                }
-                .map { doc ->
-                    (doc.getLong("exerciseIndex") ?: -1L).toInt()
-                }
-                .filter { it >= 0 }
-                .distinct()
-                .count()
-
-            val unitExercisesCount = progress.availableExercisesCount / totalUnits
-
-            unitRead && answeredUniqueExercises >= unitExercisesCount
-        }
-
-        val rawPercent = (completedUnits * 100) / totalUnits
-
-        return if (completedUnits == totalUnits) {
-            100
-        } else {
-            rawPercent.coerceAtMost(99)
-        }
+        return ((completedTasks * 100) / totalTasks).coerceIn(0, 100)
     }
 
     override fun incrementMessageCount(

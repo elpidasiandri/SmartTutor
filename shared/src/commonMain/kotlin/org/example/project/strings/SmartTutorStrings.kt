@@ -201,14 +201,9 @@ object SmartTutorStrings {
 //    const val progress_chat = "How many times have you asked something in the chat?"
     const val progress_chat = "Πόσες φορές ρώτησες κάτι το chat"
 //    const val progress_question = "Questions"
-    const val progress_question = "Ερωτήσεις"
-//    const val progress_exercises = "Exercises"
-    const val progress_exercises = "Ασκήσεις"
-//    const val current_learning = "Current Learning"
-    const val current_learning = "Τρέχουσα Μάθηση"
+    const val overall_progress = "Συνολική πρόοδος: "
+//    const val overall_progress = "Overall progress: "
 
-//    const val recent_chats = "Recent Chats"
-    const val recent_chats = "Πρόσφατες συνομιλίες"
 
 
 

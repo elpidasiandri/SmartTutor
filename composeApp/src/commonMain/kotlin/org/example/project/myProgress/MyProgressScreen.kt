@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
@@ -19,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -27,24 +25,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.strings.SmartTutorStrings.correct_answer
 import org.example.project.strings.SmartTutorStrings.correct_answer_
-import org.example.project.strings.SmartTutorStrings.current_learning
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.exerscize_answers
 import org.example.project.strings.SmartTutorStrings.last_answer
 import org.example.project.strings.SmartTutorStrings.my_progress_title
+import org.example.project.strings.SmartTutorStrings.overall_progress
 import org.example.project.strings.SmartTutorStrings.progress_activity
 import org.example.project.strings.SmartTutorStrings.progress_attempts
 import org.example.project.strings.SmartTutorStrings.progress_chat
-import org.example.project.strings.SmartTutorStrings.progress_exercises
 import org.example.project.strings.SmartTutorStrings.progress_last_activity
-import org.example.project.strings.SmartTutorStrings.progress_question
 import org.example.project.strings.SmartTutorStrings.progress_streak
 import org.example.project.strings.SmartTutorStrings.progress_streak_days
-import org.example.project.strings.SmartTutorStrings.recent_chats
 import org.example.project.strings.SmartTutorStrings.study_stats
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.strings.SmartTutorStrings.wrong_answer
@@ -194,6 +188,21 @@ private fun ProgressOverviewCard(state: MyProgressState) {
                 Spacer(modifier = Modifier.width(24.dp))
 
                 StatItem("PDFs", state.totalUploadedPdfs.toString())
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "$overall_progress${state.progressPercent}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                LinearProgressIndicator(
+                    progress = { state.progressPercent / 100f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                )
             }
 
         }

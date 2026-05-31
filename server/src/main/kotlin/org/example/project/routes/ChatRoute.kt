@@ -18,7 +18,7 @@ import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
 import java.util.UUID
 
-fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient,repo: PdfJobRepository) {
+fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
     route("/v1/chats") {
         post("/{chatId}/units/{unitIndex}/read") {
             val userId = call.request.queryParameters["userId"]
