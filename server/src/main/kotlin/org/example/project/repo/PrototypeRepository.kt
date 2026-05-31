@@ -11,7 +11,11 @@ interface PdfJobRepository {
         language: String,
         storagePath: String
     )
-
+    fun oneTimeReplaceResultJson(
+        documentId: String,
+        jsonFilePath: String,
+        totalUnits: Int
+    )
     fun claimNextJob(workerId: String): PdfJob?
 
     fun heartbeat(documentId: String, workerId: String)

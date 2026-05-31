@@ -10,7 +10,6 @@ import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.repo.IChatRepository
 import java.util.UUID
-import com.google.cloud.Timestamp
 
 class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
 
@@ -32,8 +31,6 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             .document(userId)
             .collection("chats")
             .document(chatId)
-
-        val now = Timestamp.now()
 
         return db.runTransaction { tx ->
             val snap = tx.get(chatRef).get()

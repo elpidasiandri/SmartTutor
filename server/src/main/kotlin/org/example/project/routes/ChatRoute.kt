@@ -11,13 +11,14 @@ import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocument
 import org.example.project.tutor.repo.IChatRepository
 import io.ktor.server.routing.*
 import org.example.project.pdf.PromptLlmClient
+import org.example.project.repo.PdfJobRepository
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
 import java.util.UUID
 
-fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
+fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient,repo: PdfJobRepository) {
     route("/v1/chats") {
         post("/{chatId}/units/{unitIndex}/read") {
             val userId = call.request.queryParameters["userId"]
@@ -56,7 +57,11 @@ fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
 
         post("/from-document") {
             val req = call.receive<CreateChatFromDocumentRequest>()
-
+            repo.oneTimeReplaceResultJson(
+                documentId = "doc_41462a5d6a2149e6ab79756fd0c4de78",
+                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialGreek_firestore_20_exercises_each_plus_review_minified.json",
+                totalUnits = 50
+            )
             val chat = chatRepo.createOrGetChatFromDocument(
                 userId = req.userId,
                 documentId = req.documentId,
