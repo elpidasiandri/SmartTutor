@@ -74,12 +74,6 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
                 return@post
             }
 
-            repo.oneTimeReplaceResultJson(
-                documentId = "doc_5ed7ff3aae764cff8f771bff08bf9567",
-                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialEnglish_firestore_20_exercises_each_plus_review_minified.json",
-                totalUnits = 50
-            )
-
             repo.createAndEnqueue(
                 documentId = documentId,
                 fileName = fileName,
@@ -97,11 +91,7 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
         }
 
         get("/{documentId}") {
-            repo.oneTimeReplaceResultJson(
-                documentId = "doc_5ed7ff3aae764cff8f771bff08bf9567",
-                jsonFilePath = "C:/Users/iti74/Downloads/newMaterialEnglish_firestore_20_exercises_each_plus_review_minified.json",
-                totalUnits = 50
-            )
+
             val documentId = call.parameters["documentId"]
                 ?: return@get call.respond(
                     HttpStatusCode.BadRequest,
