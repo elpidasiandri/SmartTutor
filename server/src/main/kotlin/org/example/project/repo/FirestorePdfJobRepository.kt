@@ -227,7 +227,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
                         "error" to null,
                         "totalUnits" to totalUnits,
                         "partialTotalUnits" to totalUnits,
-                        "resultJson" to "TEST123",
+                        "resultJson" to jsonText,
                         "partialResultJson" to jsonText,
                         "updatedAt" to now
                     )
