@@ -29,9 +29,7 @@ class FirestoreProgressRepository(
             userId = userId,
             progress = progress
         )
-        println("Q12345 Saving progress")
-        println("Q12345 " +progress.units)
-        println("Q12345 Progress percent = $calculatedProgressPercent")
+
         docRef.set(
             mapOf(
                 "chatId" to progress.chatId,
@@ -59,8 +57,8 @@ class FirestoreProgressRepository(
         userId: String,
         progress: ChatProgressDto,
     ): Int {
-        val totalUnits = progress.totalUnits.coerceAtLeast(0)
-        val totalExercises = progress.availableExercisesCount.coerceAtLeast(0)
+        val totalUnits = progress.totalUnits
+        val totalExercises = progress.availableExercisesCount
 
         val totalTasks = totalUnits + totalExercises
         if (totalTasks == 0) return 0

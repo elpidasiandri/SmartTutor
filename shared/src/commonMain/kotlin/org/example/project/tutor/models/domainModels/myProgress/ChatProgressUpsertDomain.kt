@@ -1,5 +1,7 @@
 package org.example.project.tutor.models.domainModels.myProgress
 
+import org.example.project.myProgress.models.UnitReadProgressDomain
+
 data class ChatProgressUpsertDomain(
     val chatId: String,
     val userId: String,
@@ -11,5 +13,6 @@ data class ChatProgressUpsertDomain(
     val messagesSentCount: Int,
     val availableExercisesCount: Int,
     val lastActivityEpochMillis: Long,
-    val progressPercent: Int
+    val progressPercent: Int,
+    val units: List<UnitReadProgressDomain> = emptyList()
 )

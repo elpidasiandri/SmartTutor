@@ -4,6 +4,7 @@ import org.example.project.myProgress.models.ChatProgressDomain
 import org.example.project.myProgress.models.ProgressOverviewDomain
 import org.example.project.myProgress.models.UnitReadProgressDomain
 import org.example.project.myProgress.networkModel.ChatProgressDto
+import org.example.project.myProgress.networkModel.UnitReadProgressDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 import org.example.project.tutor.models.domainModels.myProgress.ChatProgressUpsertDomain
 
@@ -49,6 +50,13 @@ fun ChatProgressUpsertDomain.toDto(): ChatProgressDto {
         messagesSentCount = messagesSentCount,
         availableExercisesCount = availableExercisesCount,
         lastActivityEpochMillis = lastActivityEpochMillis,
-        progressPercent = progressPercent
+        progressPercent = progressPercent,
+        units = units.mapIndexed { index, unit ->
+            UnitReadProgressDto(
+                unitIndex = index,
+                unitTitle = unit.unitTitle,
+                isRead = unit.isRead
+            )
+        }
     )
 }

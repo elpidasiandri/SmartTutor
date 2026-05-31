@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.example.project.myProgress.mappers.toDto
+import org.example.project.myProgress.models.UnitReadProgressDomain
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
@@ -972,7 +973,14 @@ class TutorCommonViewModel(
             messagesSentCount = _state.value.allChatMessages.count { it.sender == SenderType.USER.name },
             availableExercisesCount = _state.value.allUnits.sumOf { it.exercises.size },
             lastActivityEpochMillis = Clock.System.now().toEpochMilliseconds(),
-            progressPercent = progressPercent
+            progressPercent = progressPercent,
+            units = _state.value.allUnits.mapIndexed { index, unit ->
+                UnitReadProgressDomain(
+                    unitIndex = index,
+                    unitTitle = unit.title,
+                    isRead = unit.isRead
+                )
+            }
         )
     }
 
