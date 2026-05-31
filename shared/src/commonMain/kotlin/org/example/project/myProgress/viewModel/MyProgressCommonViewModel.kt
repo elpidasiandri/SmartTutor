@@ -100,7 +100,28 @@ class MyProgressCommonViewModel(
 
                 val latestChat = chatProgressList.maxByOrNull { it.lastActivityEpochMillis }
                 val exerciseStats = getExerciseStateUseCase(userId)
+                val readUnits = latestChat?.units?.count { it.isRead } ?: 0
 
+                val answeredExercises = exerciseStats
+                    .flatMap { unit ->
+                        unit.questions.map { question ->
+                            "${unit.unitIndex}-${question.exerciseIndex}"
+                        }
+                    }
+                    .distinct()
+                    .size
+
+                val totalUnits = latestChat?.totalUnits ?: 0
+                val totalExercises = latestChat?.availableExercisesCount ?: 0
+
+                val totalTasks = totalUnits + totalExercises
+
+                val calculatedProgressPercent =
+                    if (totalTasks == 0) {
+                        0
+                    } else {
+                        ((readUnits + answeredExercises) * 100) / totalTasks
+                    }
                 _state.update {
                     it.copy(
                         loading = false,
@@ -112,7 +133,7 @@ class MyProgressCommonViewModel(
                         currentUnitIndex = latestChat?.currentUnitIndex ?: 0,
                         totalUnits = latestChat?.totalUnits ?: 0,
                         selectedTab = latestChat?.selectedTab.orEmpty(),
-                        progressPercent = latestChat?.progressPercent ?: 0,
+                        progressPercent = calculatedProgressPercent,
                         lastActivityEpochMillis = overview.lastActivityEpochMillis,
                         lastActivityLabel = formatLastActivity(overview.lastActivityEpochMillis),
                         streakDays = overview.streakDays,

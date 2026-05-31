@@ -250,6 +250,21 @@ class FirestoreProgressRepository(
             )
             .get()
 
+        val chatProgress = getChatProgressList(userId)
+            .firstOrNull { it.chatId == answer.chatId }
+
+        if (chatProgress != null) {
+            val percent = calculateRealProgressPercent(userId, chatProgress)
+
+            usersCol.document(userId)
+                .collection("progress")
+                .document("chats")
+                .collection("items")
+                .document(answer.chatId)
+                .update("progressPercent", percent)
+                .get()
+        }
+
         updateOverview(userId)
     }
 
