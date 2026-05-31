@@ -1049,8 +1049,10 @@ class TutorCommonViewModel(
                     ?: latestChat.partialResult?.learningUnits
                     ?: emptyList()
 
-                val domainUnits = units.map { it.toDomain() }
-
+                val domainUnits = units.mapIndexed { index, unit ->
+                    val domain = unit.toDomain()
+                    if (index == 0) domain.copy(isRead = true) else domain
+                }
                 val activeIndex = 0
 
                 val activeUnit = domainUnits.firstOrNull()
