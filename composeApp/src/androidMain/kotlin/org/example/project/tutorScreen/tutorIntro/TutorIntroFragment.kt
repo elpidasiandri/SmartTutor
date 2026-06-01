@@ -23,6 +23,7 @@ import org.example.project.settings.SettingsActivity
 import org.example.project.storage.StorageHelper.clearToken
 import org.example.project.tutor.AndroidPdfPicker
 import org.example.project.tutor.TutorScreen
+import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.module.tutorModule
@@ -122,6 +123,28 @@ class TutorIntroFragment : Fragment() {
                                 question = question,
                                 userAnswer = userAnswer,
                                 suggestedSolution = suggestedSolution,
+                            )
+                        )
+                    },
+                    selectedExerciseIndex = state.selectedExerciseIndex,
+                    onLearningClick = { title, subjectId ->
+                        viewModel.onEvent(
+                            TutorUiEvents.OpenUnitSection(
+                                exerciseIndex = null,
+                                title = title,
+                                subjectId = subjectId,
+                                tab = TutorTab.Learning,
+                            )
+                        )
+
+                    },
+                    onExercisesMenuTabClick = { title, subjectId, exerciseIndex ->
+                        viewModel.onEvent(
+                            TutorUiEvents.OpenUnitSection(
+                                exerciseIndex = exerciseIndex,
+                                title = title,
+                                subjectId = subjectId,
+                                tab = TutorTab.Exercises,
                             )
                         )
                     },

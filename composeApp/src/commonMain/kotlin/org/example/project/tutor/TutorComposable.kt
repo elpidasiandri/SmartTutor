@@ -75,6 +75,7 @@ import org.example.project.tutor.learningList.LearningMessagesList
 import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.koin.compose.koinInject
+import kotlin.String
 
 @Composable
 fun TutorScreen(
@@ -115,8 +116,11 @@ fun TutorScreen(
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
     currentIndex: Int,
+    selectedExerciseIndex: Int,
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
+    onLearningClick: (String, String) -> Unit,
+    onExercisesMenuTabClick: (String, String, Int) -> Unit,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -172,10 +176,16 @@ fun TutorScreen(
             exerciseTutorAnswers = exerciseTutorAnswers,
             answeredExerciseKeys = answeredExerciseKeys,
             currentIndex = currentIndex,
+            selectedExerciseIndex = selectedExerciseIndex,
             onMoreExercisesClick = onMoreExercisesClick,
             isLoadingMoreExercises = isLoadingMoreExercises,
-
-            )
+            onLearningClick = { title, subjectId ->
+                onLearningClick(title, subjectId)
+            },
+            onExercisesMenuTabClick = { title, subjectId, index ->
+                onExercisesMenuTabClick(title, subjectId, index)
+            },
+        )
     }
 }
 
@@ -218,9 +228,13 @@ fun TutorChatUI(
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
     currentIndex: Int,
+    selectedExerciseIndex: Int,
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
-) {
+    onLearningClick: (String, String) -> Unit,
+    onExercisesMenuTabClick: (String, String, Int) -> Unit,
+
+    ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -268,7 +282,15 @@ fun TutorChatUI(
                 onNewChatClick = startNewChat,
                 onDeleteSubject = deleteSubject,
                 onExistingChatClick = onExistingChatClick,
-                navigateToMyProgress = navigateToMyProgress
+                navigateToMyProgress = navigateToMyProgress,
+                onLearningClick = { title, subjectId ->
+                    onLearningClick(title, subjectId)
+                },
+                onExercisesClick = { title, subjectId, index ->
+                    onExercisesMenuTabClick(title, subjectId, index)
+                },
+                answeredExerciseKeys = answeredExerciseKeys,
+
             )
 
             TutorScaffold(
@@ -304,6 +326,7 @@ fun TutorChatUI(
                             currentIndex = currentIndex,
                             onMoreExercisesClick = onMoreExercisesClick,
                             isLoadingMoreExercises = isLoadingMoreExercises,
+                            selectedExerciseIndex = selectedExerciseIndex,
                         )
 
                         TutorToastHost(
@@ -384,6 +407,9 @@ private fun TutorDrawerContent(
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
+    onLearningClick: (String, String) -> Unit,
+    onExercisesClick: (String, String, Int) -> Unit,
+    answeredExerciseKeys: Set<String>,
 
     ) {
     Box(
@@ -404,7 +430,14 @@ private fun TutorDrawerContent(
             },
             navigateToMyProgress = {
                 navigateToMyProgress()
-            }
+            },
+            onLearningClick = { title, subjectId ->
+                onLearningClick(title, subjectId)
+            },
+            onExercisesClick = { title, subjectId,index ->
+                onExercisesClick(title, subjectId,index)
+            },
+            answeredExerciseKeys = answeredExerciseKeys,
         )
     }
 }
@@ -452,6 +485,7 @@ private fun TutorChatContent(
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
     currentIndex: Int,
+    selectedExerciseIndex: Int,
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
 ) {
@@ -460,15 +494,19 @@ private fun TutorChatContent(
             .fillMaxSize()
             .padding(padding)
     ) {
-        TutorTopActionsRow(
-            fileUploaded = chatData.material.fileUploaded,
-            selectedTab = selectedTab,
-            onTabChange = { onChangeTab(it) },
-            onNextUnitClick = onNextUnitClick,
-            isLoading = isLoading,
-            canGoNext = canGoNext,
-        )
-
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing8),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TutorActionButton(
+                text = next_tab,
+                enabled = chatData.material.fileUploaded && !isLoading,
+                onClick = onNextUnitClick,
+                selectedTab = false
+            )
+        }
         Spacer(modifier = Modifier.height(spacing8))
 
         when (selectedTab) {
@@ -493,6 +531,7 @@ private fun TutorChatContent(
                         .fillMaxWidth()
                         .padding(horizontal = spacing8),
                     exercises = currentUnit.exercises,
+                    selectedExerciseIndex = selectedExerciseIndex,
                     onExerciseAnswered = onExerciseAnswered,
                     onAskTutorForOpenExercise = onAskTutorForOpenExercise,
                     exerciseTutorAnswers = exerciseTutorAnswers,

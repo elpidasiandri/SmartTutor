@@ -208,6 +208,9 @@ object SmartTutorStrings {
     const val overall_progress = "Συνολική πρόοδος: "
 //    const val overall_progress = "Overall progress: "
 
+    const val excersize_title = "Άσκηση"
+//    const val excersize_title = "Exercise"
+
 
 
 

@@ -117,8 +117,10 @@ fun buildLearningTabMessage(unit: LearningUnitContentDomain): String {
     }
     return sb.toString().trim()
 }
-
-fun buildExercisesTabMessage(unit: LearningUnitContentDomain): String {
+fun buildExercisesTabMessage(
+    unit: LearningUnitContentDomain,
+    selectedExerciseIndex: Int = 0
+): String {
     val sb = StringBuilder()
 
     sb.append("Exercises — ${unit.numbering}. ${unit.title}\n\n")
@@ -128,44 +130,25 @@ fun buildExercisesTabMessage(unit: LearningUnitContentDomain): String {
         return sb.toString()
     }
 
-    unit.exercises.forEachIndexed { i, ex ->
-        sb.append("Exercise ${i + 1} (${ex.type}, ${ex.difficulty}, ~${ex.estimatedMinutes} min)\n")
-        sb.append(ex.question.trim()).append("\n\n")
+    val safeIndex = selectedExerciseIndex.coerceIn(0, unit.exercises.lastIndex)
+    val ex = unit.exercises[safeIndex]
 
-        if (ex.options.isNotEmpty()) {
-            ex.options.forEachIndexed { idx, opt ->
-                val letter = ('A' + idx)
-                sb.append("$letter) ").append(opt).append("\n")
-            }
-            sb.append("\n")
+    sb.append("Exercise ${safeIndex + 1}/${unit.exercises.size} (${ex.type}, ${ex.difficulty}, ~${ex.estimatedMinutes} min)\n")
+    sb.append(ex.question.trim()).append("\n\n")
+
+    if (ex.options.isNotEmpty()) {
+        ex.options.forEachIndexed { idx, opt ->
+            val letter = ('A' + idx)
+            sb.append("$letter) ").append(opt).append("\n")
         }
-
-        if (ex.hint.isNotBlank()) sb.append("Hint: ").append(ex.hint.trim()).append("\n")
-        if (ex.explanation.isNotBlank()) sb.append("Explanation: ").append(ex.explanation.trim())
-            .append("\n")
-        if (ex.solution.isNotBlank()) sb.append("Solution: ").append(ex.solution.trim())
-            .append("\n")
-
-        sb.append("\n---\n\n")
+        sb.append("\n")
     }
 
-    return sb.toString().trim()
-}
+    if (ex.hint.isNotBlank()) sb.append("Hint: ").append(ex.hint.trim()).append("\n")
+    if (ex.explanation.isNotBlank()) sb.append("Explanation: ").append(ex.explanation.trim()).append("\n")
+    if (ex.solution.isNotBlank()) sb.append("Solution: ").append(ex.solution.trim()).append("\n")
 
-fun buildChatHistoryFromUnits(
-    chatId: String,
-    units: List<LearningUnitContentDomain>,
-    subjectTitle: String,
-): ChatHistoryDomain {
-    return ChatHistoryDomain(
-        subjects = listOf(
-            SubjectHistoryDomain(
-                subjectId = chatId,
-                title = subjectTitle.ifBlank { "Material" },
-                learningUnits = units
-            )
-        )
-    )
+    return sb.toString().trim()
 }
 
 @OptIn(ExperimentalUuidApi::class)

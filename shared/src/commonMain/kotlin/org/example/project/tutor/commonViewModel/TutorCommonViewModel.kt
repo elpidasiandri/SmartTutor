@@ -25,7 +25,6 @@ import org.example.project.tutor.mappers.chatHistory.buildChatSessionForSelected
 import org.example.project.tutor.mappers.chatHistory.buildChatSessionFromStoredChat
 import org.example.project.tutor.mappers.chatHistory.toChatHistoryDomain
 import org.example.project.tutor.mappers.chatHistory.toDomain
-import org.example.project.tutor.mappers.learningUnits.buildChatHistoryFromUnits
 import org.example.project.tutor.mappers.learningUnits.buildChatSessionStart
 import org.example.project.tutor.mappers.learningUnits.buildEmptyChatSessionStart
 import org.example.project.tutor.mappers.learningUnits.buildExercisesTabMessage
@@ -41,7 +40,6 @@ import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SEND_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.MESSAGE_SENT
 import org.example.project.tutor.models.AnalyticsEvents.MY_PROGRESS_OPENED
 import org.example.project.tutor.models.AnalyticsEvents.NEW_CHAT_STARTED
-import org.example.project.tutor.models.AnalyticsEvents.NEXT_UNIT_CLICKED
 import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOADED
 import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOAD_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
@@ -118,6 +116,7 @@ class TutorCommonViewModel(
                 event.title,
                 event.subjectId
             )
+
             TutorUiEvents.LoadMoreExercises -> loadMoreExercises()
             TutorUiEvents.NextUnit -> goNext()
             is TutorUiEvents.ExerciseAnswered -> {
@@ -131,8 +130,67 @@ class TutorCommonViewModel(
                 refreshTabInfoMessage(event.tab)
             }
 
+            is TutorUiEvents.OpenUnitSection -> {
+                openUnitSection(
+                    title = event.title,
+                    subjectId = event.subjectId,
+                    tab = event.tab,
+                    exerciseIndex = event.exerciseIndex
+                )
+            }
+
             else -> {}
         }
+    }
+
+    private fun openUnitSection(
+        title: String,
+        subjectId: String,
+        tab: TutorTab,
+        exerciseIndex: Int? = null,
+    ) {
+        if (_state.value.activeChatId != subjectId) {
+            loadExistingChatAtUnitSection(
+                chatId = subjectId,
+                unitTitle = title,
+                tab = tab,
+                exerciseIndex = exerciseIndex
+            )
+            return
+        }
+
+        val units = _state.value.allUnits
+        val index = units.indexOfFirst {
+            it.title.trim().equals(title.trim(), ignoreCase = true)
+        }
+        if (index == -1) return
+
+        val selected = units[index]
+
+        val newSession = buildChatSessionForSelectedUnit(
+            fileName = _state.value.session.material.fileName,
+            unit = selected,
+            allStoredMessages = _state.value.allChatMessages
+        )
+
+        _state.update {
+            it.copy(
+                currentIndex = index,
+                currentUnit = selected,
+                session = newSession,
+                selectedTab = tab,
+                selectedExerciseIndex = exerciseIndex ?: 0,
+                tabInfoMessage = if (tab == TutorTab.Learning) {
+                    buildLearningTabMessage(selected)
+                } else {
+                    buildExercisesTabMessage(selected, exerciseIndex ?: 0)
+                },
+                canGoNext = index < units.lastIndex
+            )
+        }
+
+        markUnitAsRead(index)
+        saveProgress()
     }
 
     private fun loadMoreExercises() {
@@ -180,6 +238,7 @@ class TutorCommonViewModel(
             }
         }
     }
+
     private fun track(
         name: String,
         params: Map<String, String> = emptyMap(),
@@ -465,6 +524,88 @@ class TutorCommonViewModel(
         saveProgress()
     }
 
+    private fun loadExistingChatAtUnitSection(
+        chatId: String,
+        unitTitle: String,
+        tab: TutorTab = TutorTab.Learning,
+        exerciseIndex: Int? = null
+    ) {
+
+        scope.launch {
+            try {
+                _state.update { it.copy(loading = true) }
+
+                val fullChat = getChatByIdUseCase(chatId, userId())
+
+                val units = fullChat.result?.learningUnits
+                    ?: fullChat.partialResult?.learningUnits
+                    ?: emptyList()
+
+                val domainUnits = units.map { it.toDomain() }
+
+                val index = domainUnits.indexOfFirst {
+                    it.title.trim().equals(unitTitle.trim(), ignoreCase = true)
+                }
+                if (index == -1) {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            showCustomMessage = true,
+                            isError = true,
+                            message = "Unit not found: $unitTitle"
+                        )
+                    }
+                    return@launch
+                }
+                val selected = domainUnits.getOrNull(index) ?: LearningUnitContentDomain()
+
+                val fullMessages = fullChat.messages
+                    .sortedBy { it.createdAtEpochMillis }
+                    .map { it.toDomain() }
+
+                val session = buildChatSessionForSelectedUnit(
+                    fileName = fullChat.title,
+                    unit = selected,
+                    allStoredMessages = fullMessages
+                )
+                val targetExerciseIndex = exerciseIndex ?: 0
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        activeChatId = fullChat.chatId,
+                        activeDocumentId = fullChat.documentId,
+                        subjectTitle = fullChat.title,
+                        allUnits = domainUnits,
+                        currentIndex = index,
+                        currentUnit = selected,
+                        session = session,
+                        allChatMessages = fullMessages,
+                        canGoNext = index < domainUnits.lastIndex,
+                        selectedTab = tab,
+                        selectedExerciseIndex = targetExerciseIndex,
+                        tabInfoMessage = when (tab) {
+                            TutorTab.Learning -> buildLearningTabMessage(selected)
+                            TutorTab.Exercises -> buildExercisesTabMessage(selected, targetExerciseIndex)
+                        },
+                    )
+                }
+                markUnitAsRead(index)
+                saveProgress()
+                loadAnsweredExercises()
+
+            } catch (t: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = "Failed to load chat unit"
+                    )
+                }
+            }
+        }
+    }
     private fun loadExistingChatAtUnit(chatId: String, unitTitle: String) {
         scope.launch {
             try {
@@ -570,7 +711,7 @@ class TutorCommonViewModel(
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
         val startedAt = Clock.System.now().toEpochMilliseconds()
-        _state.update { it.copy(loading = true,  askTutor = true,) }
+        _state.update { it.copy(loading = true, askTutor = true) }
 
         track(
             name = EXERCISE_ANSWERED,
@@ -634,7 +775,7 @@ class TutorCommonViewModel(
         - Μην απαιτείς `public class`, `main()` ή imports εκτός αν είναι απαραίτητα για αυτό που ζητά η άσκηση.
 
     Μετά συνέχισε με:
-        1. Αν είναι σωστή ή όχι η απάντησή μου.
+        1. Αν είναι σωστή ή όχι η απάντησή μου(μην δειξεις στον χρηστη CORRECT = ή PARTIAL = ή WRONG = . Πες του απλα αν ειναι σωστή, μερικώς σωστή ή λάθος).
         2. Τι λείπει, αν λείπει κάτι.
         3. Πώς μπορώ να τη βελτιώσω.
         4. Δώσε καλύτερη ενδεικτική απάντηση μόνο αν χρειάζεται.
@@ -946,52 +1087,62 @@ class TutorCommonViewModel(
     }
 
     private fun goNext() {
-        val units = _state.value.allUnits
-        val subjectTitle = _state.value.subjectTitle
+        val current = _state.value
+        val units = current.allUnits
+        if (units.isEmpty()) return
 
-        val nextIndex = (_state.value.currentIndex + 1).coerceAtMost(units.lastIndex)
-        if (nextIndex == _state.value.currentIndex) return
+        val currentUnit = current.currentUnit
+        val exercises = currentUnit.exercises
 
-        val newUnlocked = maxOf(_state.value.unlockedCount, nextIndex + 1)
+        if (current.selectedTab == TutorTab.Learning && exercises.isNotEmpty()) {
+            _state.update {
+                it.copy(
+                    selectedTab = TutorTab.Exercises,
+                    selectedExerciseIndex = 0,
+                    tabInfoMessage = buildExercisesTabMessage(currentUnit)
+                )
+            }
+            saveProgress()
+            return
+        }
 
-        track(
-            name = NEXT_UNIT_CLICKED,
-            params = mapOf(
-                "chatId" to _state.value.activeChatId,
-                "fromIndex" to _state.value.currentIndex.toString(),
-                "toIndex" to nextIndex.toString(),
-                "subjectTitle" to subjectTitle,
-                "userId" to userId()
-            )
-        )
+        if (current.selectedTab == TutorTab.Exercises) {
+            val nextExerciseIndex = current.selectedExerciseIndex + 1
 
-        val selectedUnit = units.getOrNull(nextIndex) ?: LearningUnitContentDomain()
+            if (nextExerciseIndex < exercises.size) {
+                _state.update {
+                    it.copy(selectedExerciseIndex = nextExerciseIndex)
+                }
+                saveProgress()
+                return
+            }
+        }
+
+        val nextUnitIndex = current.currentIndex + 1
+        if (nextUnitIndex > units.lastIndex) return
+
+        val selectedUnit = units[nextUnitIndex]
 
         val session = buildChatSessionForSelectedUnit(
-            fileName = _state.value.session.material.fileName,
+            fileName = current.session.material.fileName,
             unit = selectedUnit,
-            allStoredMessages = _state.value.allChatMessages
-        )
-
-        val history = buildChatHistoryFromUnits(
-            chatId = _state.value.activeChatId,
-            units = units,
-            subjectTitle = subjectTitle
+            allStoredMessages = current.allChatMessages
         )
 
         _state.update {
             it.copy(
-                currentIndex = nextIndex,
-                unlockedCount = newUnlocked,
+                currentIndex = nextUnitIndex,
+                unlockedCount = maxOf(current.unlockedCount, nextUnitIndex + 1),
                 currentUnit = selectedUnit,
                 session = session,
-                chatHistory = history,
                 selectedTab = TutorTab.Learning,
+                selectedExerciseIndex = 0,
                 tabInfoMessage = buildLearningTabMessage(selectedUnit),
-                canGoNext = nextIndex < units.lastIndex
+                canGoNext = nextUnitIndex < units.lastIndex
             )
         }
-        markUnitAsRead(nextIndex)
+
+        markUnitAsRead(nextUnitIndex)
         saveProgress()
     }
 
@@ -1374,3 +1525,4 @@ class TutorCommonViewModel(
         text.replace("-", "").replace(Regex("\\s+"), " ").trim()
 
 }
+

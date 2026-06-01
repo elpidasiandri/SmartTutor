@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,10 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,11 +32,11 @@ import androidx.compose.ui.unit.sp
 import org.example.project.colors.AppColors
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
+import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.ask_tutor_about_my_answer
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.excercise_write_your_answer
-import org.example.project.strings.SmartTutorStrings.excersize_not_found
 import org.example.project.strings.SmartTutorStrings.exercises_more_button
 import org.example.project.strings.SmartTutorStrings.exercises_more_loading
 import org.example.project.strings.SmartTutorStrings.explanation_tab
@@ -65,45 +60,45 @@ fun ExercisesTab(
         suggestedSolution: String,
     ) -> Unit,
     currentUnitIndex: Int,
+    selectedExerciseIndex: Int,
     answeredExerciseKeys: Set<String>,
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
 ) {
-    if (exercises.isEmpty()) {
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            Text(excersize_not_found)
-        }
-        return
-    }
-
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(bottom = spacing16),
+    val safeIndex = selectedExerciseIndex.coerceIn(0, exercises.lastIndex)
+    val exercise = exercises[safeIndex]
+    val isLastExercise = safeIndex == exercises.lastIndex
+    Column(
+        modifier = modifier.padding(horizontal = spacing8),
         verticalArrangement = Arrangement.spacedBy(spacing12)
     ) {
-        itemsIndexed(exercises) { index, ex ->
-            ExerciseCard(
-                index = index,
-                exercise = ex,
-                tutorAnswer = exerciseTutorAnswers[index],
-                onExerciseAnswered = onExerciseAnswered,
-                onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                answeredExerciseKeys = answeredExerciseKeys,
-                currentUnitIndex = currentUnitIndex
-            )
-        }
+        Text(
+            text = "$excercise ${safeIndex + 1}/${exercises.size}",
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
 
-        item {
-            Button(
-                onClick = onMoreExercisesClick,
-                enabled = !isLoadingMoreExercises,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    if (isLoadingMoreExercises) exercises_more_loading
-                    else exercises_more_button
-                )
-            }
+        ExerciseCard(
+            index = safeIndex,
+            exercise = exercise,
+            tutorAnswer = exerciseTutorAnswers[safeIndex],
+            onExerciseAnswered = onExerciseAnswered,
+            onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+            answeredExerciseKeys = answeredExerciseKeys,
+            currentUnitIndex = currentUnitIndex
+        )
+
+    }
+    if (isLastExercise) {
+        Button(
+            onClick = onMoreExercisesClick,
+            enabled = !isLoadingMoreExercises,
+            modifier = Modifier.fillMaxWidth().padding(bottom = spacing24)
+        ) {
+            Text(
+                if (isLoadingMoreExercises) exercises_more_loading
+                else exercises_more_button
+            )
         }
     }
 }
@@ -149,15 +144,6 @@ private fun ExerciseCard(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (!answered) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .size(8.dp)
-                        .background(Color.Red, CircleShape)
-                )
-            }
-
             Text(
                 text = "$excercise ${index + 1}",
                 fontWeight = FontWeight.Bold,
@@ -426,14 +412,6 @@ private fun HintExplainSolutionRow(
             selected = showExplanation,
             onClick = onToggleExplanation
         )
-
-//        if (type == ExerciseType.OPEN) {
-//            SmallToggleChip(
-//                text = solution_tab,
-//                selected = showSolution,
-//                onClick = onToggleSolution
-//            )
-//        }
     }
 }
 

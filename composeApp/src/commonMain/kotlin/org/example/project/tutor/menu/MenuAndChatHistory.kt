@@ -1,7 +1,7 @@
 package org.example.project.tutor.menu
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
@@ -52,12 +52,16 @@ import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.chat_history_title
 import org.example.project.strings.SmartTutorStrings.delete_button
+import org.example.project.strings.SmartTutorStrings.excersize_title
+import org.example.project.strings.SmartTutorStrings.exercises_tab
+import org.example.project.strings.SmartTutorStrings.learning_tab
 import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.new_chat
 import org.example.project.strings.SmartTutorStrings.settings_title
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
+import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
@@ -70,6 +74,9 @@ fun MenuAndChatHistory(
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
     navigateToMyProgress: () -> Unit,
+    onLearningClick: (String, String) -> Unit,
+    onExercisesClick: (String, String, Int) -> Unit,
+    answeredExerciseKeys: Set<String>,
 
     ) {
     Column(
@@ -93,6 +100,13 @@ fun MenuAndChatHistory(
             onExistingChatClick = { chatId ->
                 onExistingChatClick(chatId)
             },
+            onLearningClick = { title, subjectId ->
+                onLearningClick(title, subjectId)
+            },
+            onExercisesClick = { title, subjectId, index ->
+                onExercisesClick(title, subjectId, index)
+            },
+            answeredExerciseKeys = answeredExerciseKeys,
         )
 
         Spacer(modifier = Modifier.height(spacing12))
@@ -140,8 +154,10 @@ private fun ChatHistoryList(
     onDeleteSubject: (String) -> Unit,
     modifier: Modifier,
     onExistingChatClick: (String) -> Unit,
-
-    ) {
+    onLearningClick: (String, String) -> Unit,
+    onExercisesClick: (String, String, Int) -> Unit,
+    answeredExerciseKeys: Set<String>,
+) {
     Column(modifier = modifier) {
         chatHistory.subjects.forEach { subject ->
             SubjectHistoryItem(
@@ -154,7 +170,14 @@ private fun ChatHistoryList(
                 },
                 onExistingChatClick = { chatId ->
                     onExistingChatClick(chatId)
-                }
+                },
+                onLearningClick = { title, subjectId ->
+                    onLearningClick(title, subjectId)
+                },
+                onExercisesClick = { title, subjectId, index ->
+                    onExercisesClick(title, subjectId, index)
+                },
+                answeredExerciseKeys = answeredExerciseKeys,
             )
             Spacer(modifier = Modifier.height(spacing12))
         }
@@ -227,9 +250,11 @@ fun SubjectHistoryItem(
     onLearningUnitClick: (String, String) -> Unit,
     onDeleteSubject: (String) -> Unit,
     onExistingChatClick: (String) -> Unit,
-
-    ) {
-    var expanded by remember { mutableStateOf(false) }
+    onLearningClick: (String, String) -> Unit,
+    onExercisesClick: (String, String, Int) -> Unit,
+    answeredExerciseKeys: Set<String>,
+) {
+    var expanded by remember { mutableStateOf(true) }
     var menuOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -269,7 +294,15 @@ fun SubjectHistoryItem(
                 LearningUnitRow(
                     title = "${unit_title} ${index + 1}: ${lu.title}",
                     isRead = lu.isRead,
-                    onClick = { onLearningUnitClick(lu.title, subject.subjectId) }
+                    unitIndex = index,
+                    exercises = lu.exercises,
+                    answeredExerciseKeys = answeredExerciseKeys,
+                    onLearningClick = {
+                        onLearningClick(lu.title, subject.subjectId)
+                    },
+                    onExerciseClick = { exerciseIndex ->
+                        onExercisesClick(lu.title, subject.subjectId, exerciseIndex)
+                    }
                 )
             }
         }
@@ -371,33 +404,169 @@ private fun DeleteSubjectDialog(
 private fun LearningUnitRow(
     title: String,
     isRead: Boolean,
-    onClick: () -> Unit,
+    unitIndex: Int,
+    exercises: List<ExerciseDomain>,
+    answeredExerciseKeys: Set<String>,
+    onLearningClick: () -> Unit,
+    onExerciseClick: (Int) -> Unit,
 ) {
-    Row(
+    var expanded by remember { mutableStateOf(true) }
+    var exercisesExpanded by remember { mutableStateOf(false) }
+
+    val learningCompleted = isRead
+
+    val exercisesCompleted = exercises.isNotEmpty() &&
+            exercises.indices.all { exerciseIndex ->
+                answeredExerciseKeys.contains("$unitIndex-$exerciseIndex")
+            }
+
+    val unitCompleted = learningCompleted && exercisesCompleted
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = spacing24, top = spacing8, end = spacing12)
             .background(GrayUltraLight, RoundedCornerShape(spacing12))
-            .noRippleClickable { onClick() }
-            .padding(spacing12),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(spacing12)
     ) {
-        Text(
-            title,
-            fontSize = 12.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        if (!isRead) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .size(8.dp)
-                    .background(Color.Red, CircleShape)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    if (unitCompleted) Color(0xFFEAF6EE) else GrayUltraLight,
+                    RoundedCornerShape(spacing12)
+                )
+                .noRippleClickable { expanded = !expanded },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                title,
+                fontSize = 12.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            if (unitCompleted) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "unit completed",
+                    tint = Color(0xFF2E7D32),
+                    modifier = Modifier
+
+                        .padding(end = 6.dp)
+                        .size(18.dp)
+                )
+            }
+
+            Icon(
+                imageVector = if (expanded) Icons.Default.KeyboardArrowUp
+                else Icons.Default.KeyboardArrowDown,
+                contentDescription = "expand unit"
+            )
+        }
+
+        if (expanded) {
+            Spacer(Modifier.height(spacing8))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        if (learningCompleted) Color(0xFFEAF6EE) else Color.Transparent,
+                        RoundedCornerShape(spacing8)
+                    )
+                    .clickable { onLearningClick() }
+                    .padding(vertical = spacing8, horizontal = spacing8),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = learning_tab,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (learningCompleted) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "learning completed",
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { exercisesExpanded = !exercisesExpanded }
+                    .background(
+                        if (exercisesCompleted) Color(0xFFEAF6EE) else Color.Transparent,
+                        RoundedCornerShape(spacing8)
+                    )
+                    .padding(vertical = spacing8, horizontal = spacing8),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = exercises_tab,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (exercisesCompleted) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "exercises completed",
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier
+                            .padding(end = 6.dp)
+                            .size(18.dp)
+                    )
+                }
+
+                Icon(
+                    imageVector = if (exercisesExpanded) Icons.Default.KeyboardArrowUp
+                    else Icons.Default.KeyboardArrowDown,
+                    contentDescription = "expand exercises"
+                )
+            }
+
+            if (exercisesExpanded) {
+                exercises.forEachIndexed { exerciseIndex, _ ->
+                    val exerciseCompleted =
+                        answeredExerciseKeys.contains("$unitIndex-$exerciseIndex")
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onExerciseClick(exerciseIndex) }
+                            .padding(
+                                start = spacing24,
+                                top = spacing8,
+                                bottom = spacing8
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$excersize_title ${exerciseIndex + 1}",
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        if (exerciseCompleted) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "exercise completed",
+                                tint = Color(0xFF2E7D32),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
+

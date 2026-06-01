@@ -29,6 +29,7 @@ data class TutorState(
     val subjectTitle: String = "",
     val unlockedCount: Int = 1,
     val selectedTab: TutorTab = TutorTab.Learning,
+    val selectedExerciseIndex: Int = 0,
     val tabInfoMessage: String = "",
     val activeDocumentId: String = EmptyValues.EMPTY_STRING,
     val activeChatId: String = EmptyValues.EMPTY_STRING,
@@ -54,6 +55,12 @@ sealed class TutorUiEvents {
         val question: String,
         val userAnswer: String,
         val suggestedSolution: String,
+    ) : TutorUiEvents()
+    data class OpenUnitSection(
+        val title: String,
+        val subjectId: String,
+        val tab: TutorTab,
+        val exerciseIndex: Int? = null
     ) : TutorUiEvents()
     data class ExerciseAnswered(
         val exerciseIndex: Int,
