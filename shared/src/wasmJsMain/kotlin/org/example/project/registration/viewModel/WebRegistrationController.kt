@@ -50,7 +50,7 @@ class WebRegistrationController(
 
     private fun login(email: String, password: String) {
         //todo elpida fix
-        if (email == "elpisian1@cs.duth.gr")
+        if (email == "elpisian1@cs.duth.gr" ||email=="lmous@cs.duth.gr" )
         {
             scope.launch {
                 registrationUseCases.logIn(email, password) { success, message ->

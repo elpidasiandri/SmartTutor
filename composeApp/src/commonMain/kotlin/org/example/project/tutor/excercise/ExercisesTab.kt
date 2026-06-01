@@ -184,10 +184,19 @@ private fun ExerciseCard(
 
         when (type) {
             ExerciseType.MCQ -> {
-                exercise.options.forEachIndexed { optIndex, opt ->
+                val shuffledOptions = remember(exercise.question) {
+                    exercise.options
+                        .mapIndexed { originalIndex, text -> originalIndex to text }
+                        .shuffled()
+                }
+
+                shuffledOptions.forEachIndexed { optIndex, option ->
+                    val originalIndex = option.first
+                    val opt = option.second
+
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
-                    val clickedIsCorrect = isCorrectOption(exercise, optIndex, opt)
+                    val clickedIsCorrect = originalIndex == exercise.answerIndex
 
                     OptionRow(
                         label = "$letter)",

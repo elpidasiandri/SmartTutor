@@ -1119,13 +1119,23 @@ class TutorCommonViewModel(
                     it.copy(
                         loading = false,
                         savedChats = chats,
-                        chatHistory = chats.toChatHistoryDomain(),
-
+                        chatHistory = chats.toChatHistoryDomain().copy(
+                            subjects = chats.toChatHistoryDomain().subjects.map { subject ->
+                                if (subject.subjectId != latestChat.chatId) subject
+                                else subject.copy(
+                                    learningUnits = subject.learningUnits.mapIndexed { i, lu ->
+                                        if (i == 0) lu.copy(isRead = true) else lu
+                                    }
+                                )
+                            }
+                        ),
                         activeChatId = latestChat.chatId,
                         activeDocumentId = latestChat.documentId,
                         subjectTitle = latestChat.title,
 
-                        allUnits = domainUnits,
+                        allUnits = domainUnits.mapIndexed { i, item ->
+                            if (i == 0) item.copy(isRead = true) else item
+                        },
 
                         currentIndex = activeIndex,
                         unlockedCount = maxOf(1, domainUnits.size),
@@ -1143,7 +1153,7 @@ class TutorCommonViewModel(
                         event = TutorEvents.Loaded
                     )
                 }
-                markUnitAsRead(activeIndex)
+                markUnitAsRead(0)
                 loadAnsweredExercises()
                 return@launch
             }
@@ -1209,8 +1219,6 @@ class TutorCommonViewModel(
                     session = session,
                     savedChats = refreshedChats,
                     chatHistory = refreshedChats.toChatHistoryDomain(),
-                    showCustomMessage = true,
-                    message = "Chat loaded",
                     isError = false,
                     tabInfoMessage = buildLearningTabMessage(
                         units.firstOrNull() ?: LearningUnitContentDomain()

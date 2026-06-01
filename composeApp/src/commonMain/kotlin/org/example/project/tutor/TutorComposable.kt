@@ -250,9 +250,9 @@ fun TutorChatUI(
 
     BoxWithConstraints {
         val drawerWidth = when {
-            maxWidth < 600.dp -> maxWidth * 0.85f      // mobile
-            maxWidth < 900.dp -> 320.dp               // tablet
-            else -> 360.dp                            // desktop
+            maxWidth < 600.dp -> maxWidth * 0.86f      // mobile
+            maxWidth < 900.dp -> 340.dp               // tablet
+            else -> 380.dp                            // desktop
         }
 
         Row(modifier = Modifier.fillMaxSize()) {
