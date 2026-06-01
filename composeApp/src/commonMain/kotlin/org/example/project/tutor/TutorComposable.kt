@@ -115,6 +115,8 @@ fun TutorScreen(
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
     currentIndex: Int,
+    onMoreExercisesClick: () -> Unit,
+    isLoadingMoreExercises: Boolean,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -169,8 +171,11 @@ fun TutorScreen(
             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
             exerciseTutorAnswers = exerciseTutorAnswers,
             answeredExerciseKeys = answeredExerciseKeys,
-            currentIndex = currentIndex
-        )
+            currentIndex = currentIndex,
+            onMoreExercisesClick = onMoreExercisesClick,
+            isLoadingMoreExercises = isLoadingMoreExercises,
+
+            )
     }
 }
 
@@ -213,7 +218,9 @@ fun TutorChatUI(
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
     currentIndex: Int,
-    ) {
+    onMoreExercisesClick: () -> Unit,
+    isLoadingMoreExercises: Boolean,
+) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
@@ -294,7 +301,9 @@ fun TutorChatUI(
                             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
                             exerciseTutorAnswers = exerciseTutorAnswers,
                             answeredExerciseKeys = answeredExerciseKeys,
-                            currentIndex = currentIndex
+                            currentIndex = currentIndex,
+                            onMoreExercisesClick = onMoreExercisesClick,
+                            isLoadingMoreExercises = isLoadingMoreExercises,
                         )
 
                         TutorToastHost(
@@ -442,8 +451,10 @@ private fun TutorChatContent(
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
-    currentIndex :Int,
-    ) {
+    currentIndex: Int,
+    onMoreExercisesClick: () -> Unit,
+    isLoadingMoreExercises: Boolean,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -487,6 +498,8 @@ private fun TutorChatContent(
                     exerciseTutorAnswers = exerciseTutorAnswers,
                     answeredExerciseKeys = answeredExerciseKeys,
                     currentUnitIndex = currentIndex,
+                    onMoreExercisesClick = onMoreExercisesClick,
+                    isLoadingMoreExercises = isLoadingMoreExercises,
                 )
             }
         }

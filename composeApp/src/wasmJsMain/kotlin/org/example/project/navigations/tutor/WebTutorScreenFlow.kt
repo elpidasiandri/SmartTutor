@@ -1,6 +1,5 @@
 package org.example.project.navigations.tutor
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -145,6 +144,12 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         exerciseTutorAnswers = state.exerciseTutorAnswers,
         answeredExerciseKeys = state.answeredExerciseKeys,
-        currentIndex = state.currentIndex
+        currentIndex = state.currentIndex,
+        onMoreExercisesClick = {
+            controller.onEvent(
+                TutorUiEvents.LoadMoreExercises
+            )
+        },
+        isLoadingMoreExercises = state.askTutor
     )
 }

@@ -142,7 +142,7 @@ class TutorCommonViewModel(
 
         scope.launch {
             runCatching {
-                _state.update { it.copy(loading = true) }
+                _state.update { it.copy(askTutor = true) }
 
                 val token = getIdTokenSuspendUseCase()
 
@@ -161,7 +161,7 @@ class TutorCommonViewModel(
                     )
 
                     state.copy(
-                        loading = false,
+                        askTutor = false,
                         currentUnit = updatedUnit,
                         allUnits = state.allUnits.mapIndexed { i, unit ->
                             if (i == unitIndex) updatedUnit else unit
@@ -171,7 +171,7 @@ class TutorCommonViewModel(
             }.onFailure {
                 _state.update {
                     it.copy(
-                        loading = false,
+                        askTutor = false,
                         showCustomMessage = true,
                         isError = true,
                         message = "Failed to load more exercises"

@@ -128,7 +128,13 @@ class TutorIntroFragment : Fragment() {
                     exerciseTutorAnswers = state.exerciseTutorAnswers,
                     answeredExerciseKeys = state.answeredExerciseKeys,
                     currentIndex = state.currentIndex,
-                    )
+                    onMoreExercisesClick = {
+                        viewModel.onEvent(
+                            TutorUiEvents.LoadMoreExercises
+                        )
+                    },
+                    isLoadingMoreExercises = state.askTutor
+                )
             }
         }
     }
