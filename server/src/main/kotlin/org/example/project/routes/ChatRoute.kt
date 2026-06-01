@@ -11,6 +11,7 @@ import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocument
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentResponse
 import org.example.project.tutor.repo.IChatRepository
 import io.ktor.server.routing.*
+import org.example.project.myProgress.repo.IProgressRepository
 import org.example.project.pdf.PromptLlmClient
 import org.example.project.tutor.networkModel.chatHistory.AddMoreExercisesResponse
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
@@ -19,7 +20,11 @@ import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
 import java.util.UUID
 
-fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
+fun Route.chatRoutes(
+    chatRepo: IChatRepository,
+    llm: PromptLlmClient,
+    progressRepo: IProgressRepository
+) {
     route("/v1/chats") {
         post("/{chatId}/units/{unitIndex}/read") {
             val userId = call.request.queryParameters["userId"]
@@ -102,10 +107,33 @@ fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
 
                 application.log.info("UNIT=${unit.title}")
 
-                val extraExercises = llm.generateExercisesForUnit(
+                val stats = progressRepo.getExerciseStats(userId)
+
+                val currentUnitStats = stats.firstOrNull {
+                    it.unitIndex == unitIndex
+                }
+
+                val wrongQuestions = currentUnitStats
+                    ?.questions
+                    ?.filter { it.wrongCount > 0 }
+                    .orEmpty()
+
+                val adaptiveFocus = wrongQuestions.joinToString("\n\n") { q ->
+                    """
+    Exercise index: ${q.exerciseIndex}
+    Question: ${q.question}
+    Correct answer: ${q.correctAnswer}
+    Last selected answer: ${q.lastSelectedAnswer}
+    Wrong attempts: ${q.wrongCount}
+    Correct attempts: ${q.correctCount}
+    """.trimIndent()
+                }
+
+                val extraExercises = llm.generateAdaptiveExercisesForUnit(
                     unit = unit,
                     language = chat.language ?: "el",
                     fileName = chat.title,
+                    adaptiveFocus = adaptiveFocus,
                     targetMinutes = 55
                 )
 

@@ -44,6 +44,97 @@ class PromptLlmClient(
         engine { requestTimeout = 180_000 }
     }
 
+    suspend fun generateAdaptiveExercisesForUnit(
+        unit: LearningUnitDto,
+        language: String,
+        fileName: String,
+        adaptiveFocus: String,
+        targetMinutes: Int = 55,
+    ): List<ExerciseDto> {
+        val schema = unitExercisesOnlySchemaJson()
+        val unitText = buildString {
+            appendLine("UNIT_TITLE: ${unit.title}")
+            appendLine("UNIT_TEXT:")
+            appendLine(unit.textInfo ?: "")
+            appendLine()
+            appendLine("EXISTING_EXERCISES:")
+            unit.exercises.forEachIndexed { index, ex ->
+                appendLine("Exercise $index: ${ex.question}")
+                appendLine("Solution: ${ex.solution}")
+            }
+            appendLine()
+            appendLine("STUDENT_WEAKNESSES:")
+            appendLine(adaptiveFocus.ifBlank { "No specific wrong answers found. Generate balanced extra practice." })
+        }.take(30_000)
+
+        val system = """
+        MODE: ADAPTIVE_UNIT_EXERCISES
+        Return ONLY JSON matching schema.
+
+        GOAL:
+        Generate extra exercises for this unit based on the student's mistakes.
+
+        RULES:
+        - Use ONLY the provided UNIT_TEXT and EXISTING_EXERCISES.
+        - Prioritize concepts where STUDENT_WEAKNESSES shows wrong attempts.
+        - Do NOT repeat the same questions.
+        - Create similar but not identical exercises.
+        - If the student made mistakes in code/scope/syntax, generate exercises that target that misconception.
+        - Exercises must be self-contained.
+        - If code is needed, include the full Java code block inside the question.
+
+        REQUIRED OUTPUT:
+        - Exactly 8 exercises total.
+        - 3 mcq
+        - 3 true_false
+        - 6 open
+        - At least 5 open exercise must ask for Java code.
+        - Use medium difficulty unless the student has many incorrect attempts; then include 1 difficult exercise. If the student has answered all correctly, output only difficult exercises.
+
+        FORMAT:
+        - mcq: options length 3..6, answerIndex valid.
+        - true_false: options exactly ["Σωστό","Λάθος"], answerIndex 0 or 1.
+        - open: options exactly ["(Ελεύθερη απάντηση)"], answerIndex null.
+        - Every exercise must include hint, explanation, solution.
+        -  Αν γράψεις κώδικα, βάλ' τον ΠΑΝΤΑ μέσα σε markdown code block με γλώσσα.
+            Παράδειγμα:
+            ```java
+            int counter = 0;
+            while (counter < 5) {
+                counter++;
+            }
+            
+        LANGUAGE:
+        - Generate exercises in $language.
+    """.trimIndent()
+
+        val user = """
+        Filename: $fileName
+        Language: $language
+
+        $unitText
+    """.trimIndent()
+
+        val req = buildResponsesRequest(
+            model = "gpt-4o-2024-08-06",
+            system = system,
+            user = user,
+            schemaOnly = schema,
+            maxOutputTokens = 3200
+        )
+
+        val resp = callOpenAIResponsesWithRetry(req)
+        ensureCompleted(resp)
+
+        val raw = extractOutputJson(resp)
+        val out = coerceToJsonObjectString(raw)
+
+        return json.decodeFromString(
+            UnitExercisesOnlyDto.serializer(),
+            out
+        ).exercises
+    }
+
     suspend fun generateExercisesForUnit(
         unit: LearningUnitDto,
         language: String,
