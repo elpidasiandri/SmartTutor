@@ -1,6 +1,7 @@
 package org.example.project.routes
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.log
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -78,39 +79,57 @@ fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
         }
 
         post("/{chatId}/units/{unitIndex}/exercises/more") {
-            val userId = call.request.queryParameters["userId"]
-                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId"))
+            try {
+                val userId = call.request.queryParameters["userId"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId"))
 
-            val chatId = call.parameters["chatId"]
-                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing chatId"))
+                val chatId = call.parameters["chatId"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing chatId"))
 
-            val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
-                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing unitIndex"))
+                val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing unitIndex"))
 
-            val chat = chatRepo.getChat(userId, chatId)
-                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Chat not found"))
+                application.log.info("MORE EXERCISES userId=$userId chatId=$chatId unitIndex=$unitIndex")
 
-            val prototype = chat.result ?: chat.partialResult
-            ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "No content found"))
+                val chat = chatRepo.getChat(userId, chatId)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Chat not found"))
 
-            val unit = prototype.learningUnits.getOrNull(unitIndex)
-                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid unitIndex"))
+                val prototype = chat.result ?: chat.partialResult
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "No content found"))
 
-            val extraExercises = llm.generateExercisesForUnit(
-                unit = unit,
-                language = chat.language ?: "el",
-                fileName = chat.title,
-                targetMinutes = 25
-            )
+                val unit = prototype.learningUnits.getOrNull(unitIndex)
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid unitIndex"))
 
-            chatRepo.appendExercisesToUnit(
-                userId = userId,
-                chatId = chatId,
-                unitIndex = unitIndex,
-                exercises = extraExercises
-            )
+                application.log.info("UNIT=${unit.title}")
 
-            call.respond(AddMoreExercisesResponse(exercises = extraExercises))
+                val extraExercises = llm.generateExercisesForUnit(
+                    unit = unit,
+                    language = chat.language ?: "el",
+                    fileName = chat.title,
+                    targetMinutes = 55
+                )
+
+                application.log.info("GENERATED=${extraExercises.size}")
+
+                val saved = chatRepo.appendExercisesToUnit(
+                    userId = userId,
+                    chatId = chatId,
+                    unitIndex = unitIndex,
+                    exercises = extraExercises
+                )
+
+                application.log.info("SAVED=$saved")
+
+                call.respond(AddMoreExercisesResponse(exercises = extraExercises))
+
+            } catch (t: Throwable) {
+                application.log.error("Add more exercises failed", t)
+
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (t.message ?: "Unknown server error"))
+                )
+            }
         }
 
         post("/{chatId}/messages") {
