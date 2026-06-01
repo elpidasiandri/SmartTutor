@@ -14,6 +14,7 @@ import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.AddMoreExercisesUseCase
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
@@ -40,6 +41,7 @@ class TutorIntroViewModel(
     private val saveExerciseAnswerUseCase: SaveExerciseAnswerUseCase,
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
+    private val addMoreExercisesUseCase: AddMoreExercisesUseCase,
 
     ) : ViewModel() {
 
@@ -60,7 +62,8 @@ class TutorIntroViewModel(
         deleteChatProgressUseCase = deleteChatProgressUseCase,
         saveExerciseAnswerUseCase = saveExerciseAnswerUseCase,
         markUnitAsReadUseCase = markUnitAsReadUseCase,
-        getExerciseStateUseCase = getExerciseStateUseCase
+        getExerciseStateUseCase = getExerciseStateUseCase,
+        addMoreExercisesUseCase = addMoreExercisesUseCase,
     )
 
     init {

@@ -6,6 +6,7 @@ import kotlinx.serialization.json.Json
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.repo.IChatRepository
@@ -182,6 +183,85 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
         return snap.documents.mapNotNull { doc ->
             runCatching { doc.toChatMessageDto() }.getOrNull()
         }
+    }
+
+    override suspend fun appendExercisesToUnit(
+        userId: String,
+        chatId: String,
+        unitIndex: Int,
+        exercises: List<ExerciseDto>,
+    ): Boolean {
+
+        val chatRef = usersCol
+            .document(userId)
+            .collection("chats")
+            .document(chatId)
+
+        return db.runTransaction { tx ->
+
+            val snap = tx.get(chatRef).get()
+
+            if (!snap.exists()) {
+                return@runTransaction false
+            }
+
+            fun updatePrototype(field: String): String? {
+
+                val raw = snap.getString(field).orEmpty()
+
+                if (raw.isBlank()) return null
+
+                val prototype = json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    raw
+                )
+
+                if (unitIndex !in prototype.learningUnits.indices) {
+                    return null
+                }
+
+                val updatedUnits =
+                    prototype.learningUnits.mapIndexed { index, unit ->
+
+                        if (index == unitIndex) {
+                            unit.copy(
+                                exercises = unit.exercises + exercises
+                            )
+                        } else {
+                            unit
+                        }
+                    }
+
+                val updatedPrototype =
+                    prototype.copy(
+                        learningUnits = updatedUnits
+                    )
+
+                return json.encodeToString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    updatedPrototype
+                )
+            }
+            val updates = mutableMapOf<String, Any>(
+                "updatedAtEpochMillis" to System.currentTimeMillis()
+            )
+
+            updatePrototype("resultJson")?.let {
+                updates["resultJson"] = it
+            }
+
+            updatePrototype("partialResultJson")?.let {
+                updates["partialResultJson"] = it
+            }
+
+            if (updates.size == 1) {
+                return@runTransaction false
+            }
+
+            tx.update(chatRef, updates)
+
+            true
+        }.get()
     }
 
     override fun addMessage(

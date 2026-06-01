@@ -22,6 +22,7 @@ import org.example.project.tutor.repo.WebTutorRepoImpl
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.repo.loadResource.ILoadResourceRepo
 import org.example.project.tutor.repo.loadResource.LocalLearningUnitsRepositoryImpl
+import org.example.project.tutor.useCases.AddMoreExercisesUseCase
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
@@ -59,6 +60,7 @@ val tutorModule = module {
     factory { SaveExerciseAnswerUseCase(get()) }
     factory { GetAllHistoryChatUseCase(get()) }
     factory { AskTutorUseCase(get()) }
+    factory { AddMoreExercisesUseCase(get()) }
     factory { GetChatByIdUseCase(get()) }
     factory { DeleteChatUseCase(get()) }
     factory { LoadTutorFromPdfUseCase(get(), get()) }
@@ -105,6 +107,7 @@ val tutorModule = module {
             get(),
             userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() },
             saveExerciseAnswerUseCase = get(),
+            get(),
             get(),
             get(),
         )

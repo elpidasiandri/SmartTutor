@@ -48,6 +48,7 @@ sealed class TutorUiEvents {
     data object NextUnit : TutorUiEvents()
     data object OpenMyProgress : TutorUiEvents()
     data class ShowErrorMessage(val message: String) : TutorUiEvents()
+    data object LoadMoreExercises : TutorUiEvents()
     data class AskTutorForOpenExercise(
         val exerciseIndex: Int,
         val question: String,

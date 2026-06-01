@@ -32,6 +32,7 @@ import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.signOut
 import org.example.project.tutor.models.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.AddMoreExercisesResponse
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
@@ -147,6 +148,21 @@ class WebTutorRepoImpl(
             header("Authorization", "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(request)
+        }.body()
+    }
+
+    override suspend fun addMoreExercises(
+        chatId: String,
+        userId: String,
+        unitIndex: Int,
+        token: String
+    ): AddMoreExercisesResponse {
+        return httpClient.post("$baseUrl/v1/chats/$chatId/units/$unitIndex/exercises/more") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            parameter("userId", userId)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            expectSuccess = false
         }.body()
     }
 

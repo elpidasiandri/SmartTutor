@@ -52,6 +52,7 @@ import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
 import org.example.project.tutor.state.TutorUiEvents
+import org.example.project.tutor.useCases.AddMoreExercisesUseCase
 import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
@@ -90,6 +91,7 @@ class TutorCommonViewModel(
     private val deleteChatProgressUseCase: DeleteChatProgressUseCase,
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
+    private val addMoreExercisesUseCase: AddMoreExercisesUseCase,
 ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -116,7 +118,7 @@ class TutorCommonViewModel(
                 event.title,
                 event.subjectId
             )
-
+            TutorUiEvents.LoadMoreExercises -> loadMoreExercises()
             TutorUiEvents.NextUnit -> goNext()
             is TutorUiEvents.ExerciseAnswered -> {
                 trackExerciseAnswered(event)
@@ -133,6 +135,51 @@ class TutorCommonViewModel(
         }
     }
 
+    private fun loadMoreExercises() {
+        val current = _state.value
+        val chatId = current.activeChatId
+        val unitIndex = current.currentIndex
+
+        scope.launch {
+            runCatching {
+                _state.update { it.copy(loading = true) }
+
+                val token = getIdTokenSuspendUseCase()
+
+                val response = addMoreExercisesUseCase(
+                    chatId = chatId,
+                    userId = userId(),
+                    unitIndex = unitIndex,
+                    token = token
+                )
+
+                val extra = response.exercises.map { it.toDomain() }
+
+                _state.update { state ->
+                    val updatedUnit = state.currentUnit.copy(
+                        exercises = state.currentUnit.exercises + extra
+                    )
+
+                    state.copy(
+                        loading = false,
+                        currentUnit = updatedUnit,
+                        allUnits = state.allUnits.mapIndexed { i, unit ->
+                            if (i == unitIndex) updatedUnit else unit
+                        }
+                    )
+                }
+            }.onFailure {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = "Failed to load more exercises"
+                    )
+                }
+            }
+        }
+    }
     private fun track(
         name: String,
         params: Map<String, String> = emptyMap(),

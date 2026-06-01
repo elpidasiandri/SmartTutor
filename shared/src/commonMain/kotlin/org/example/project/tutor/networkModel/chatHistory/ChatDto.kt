@@ -2,6 +2,7 @@ package org.example.project.tutor.networkModel.chatHistory
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 
 enum class ChatSender(val value: String) {
@@ -62,5 +63,11 @@ data class AskTutorRequest(
 data class AskTutorResponse(
     @SerialName("userMessage") val userMessage: ChatMessageDto?,
     @SerialName("aiMessage") val aiMessage: ChatMessageDto?,
+)
+
+@Serializable
+data class AddMoreExercisesResponse(
+    @SerialName("exercises")
+    val exercises: List<ExerciseDto>
 )
 

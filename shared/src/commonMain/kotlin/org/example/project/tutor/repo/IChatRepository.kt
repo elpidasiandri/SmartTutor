@@ -2,6 +2,7 @@ package org.example.project.tutor.repo
 
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 
 interface IChatRepository {
     fun createOrGetChatFromDocument(
@@ -15,6 +16,12 @@ interface IChatRepository {
     fun getChat(userId: String, chatId: String): UserChatDto?
 
     fun getMessages(userId: String, chatId: String): List<ChatMessageDto>
+    suspend fun appendExercisesToUnit(
+        userId: String,
+        chatId: String,
+        unitIndex: Int,
+        exercises: List<ExerciseDto>
+    ): Boolean
 
     fun addMessage(
         userId: String,

@@ -42,6 +42,8 @@ import org.example.project.strings.SmartTutorStrings.ask_tutor_about_my_answer
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.excercise_write_your_answer
 import org.example.project.strings.SmartTutorStrings.excersize_not_found
+import org.example.project.strings.SmartTutorStrings.exercises_more_button
+import org.example.project.strings.SmartTutorStrings.exercises_more_loading
 import org.example.project.strings.SmartTutorStrings.explanation_tab
 import org.example.project.strings.SmartTutorStrings.hint_tab
 import org.example.project.strings.SmartTutorStrings.solution_tab
@@ -64,6 +66,8 @@ fun ExercisesTab(
     ) -> Unit,
     currentUnitIndex: Int,
     answeredExerciseKeys: Set<String>,
+    onMoreExercisesClick: () -> Unit,
+    isLoadingMoreExercises: Boolean,
 ) {
     if (exercises.isEmpty()) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -77,12 +81,7 @@ fun ExercisesTab(
         contentPadding = PaddingValues(bottom = spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing12)
     ) {
-        itemsIndexed(
-            exercises,
-            key = { index, ex ->
-                ex.question.ifBlank { index.toString() }
-            }
-        ) { index, ex ->
+        itemsIndexed(exercises) { index, ex ->
             ExerciseCard(
                 index = index,
                 exercise = ex,
@@ -90,8 +89,21 @@ fun ExercisesTab(
                 onExerciseAnswered = onExerciseAnswered,
                 onAskTutorForOpenExercise = onAskTutorForOpenExercise,
                 answeredExerciseKeys = answeredExerciseKeys,
-                currentUnitIndex = currentUnitIndex,
+                currentUnitIndex = currentUnitIndex
             )
+        }
+
+        item {
+            Button(
+                onClick = onMoreExercisesClick,
+                enabled = !isLoadingMoreExercises,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (isLoadingMoreExercises) exercises_more_loading
+                    else exercises_more_button
+                )
+            }
         }
     }
 }

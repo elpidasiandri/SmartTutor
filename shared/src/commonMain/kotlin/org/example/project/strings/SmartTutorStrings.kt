@@ -149,6 +149,10 @@ object SmartTutorStrings {
     const val learning_tab = "Learning"
 
     //    const val exercises_tab = "Exercises"
+//    const val exercises_more_button = "I want more exercises"
+    const val exercises_more_button = "θέλω και άλλες ασκήσεις"
+    const val exercises_more_loading = "Φόρτωση..."
+//    const val exercises_more_loading = "Loading"
     const val exercises_tab = "Ασκήσεις"
 //    const val next_tab = "Next "
     const val next_tab = "Επόμενο "

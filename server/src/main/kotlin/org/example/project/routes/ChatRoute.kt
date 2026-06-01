@@ -11,7 +11,7 @@ import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocument
 import org.example.project.tutor.repo.IChatRepository
 import io.ktor.server.routing.*
 import org.example.project.pdf.PromptLlmClient
-import org.example.project.repo.PdfJobRepository
+import org.example.project.tutor.networkModel.chatHistory.AddMoreExercisesResponse
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
@@ -75,6 +75,42 @@ fun Route.chatRoutes(chatRepo: IChatRepository, llm: PromptLlmClient) {
                 )
 
             call.respond(chatRepo.getChats(userId))
+        }
+
+        post("/{chatId}/units/{unitIndex}/exercises/more") {
+            val userId = call.request.queryParameters["userId"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId"))
+
+            val chatId = call.parameters["chatId"]
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing chatId"))
+
+            val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing unitIndex"))
+
+            val chat = chatRepo.getChat(userId, chatId)
+                ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Chat not found"))
+
+            val prototype = chat.result ?: chat.partialResult
+            ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "No content found"))
+
+            val unit = prototype.learningUnits.getOrNull(unitIndex)
+                ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid unitIndex"))
+
+            val extraExercises = llm.generateExercisesForUnit(
+                unit = unit,
+                language = chat.language ?: "el",
+                fileName = chat.title,
+                targetMinutes = 25
+            )
+
+            chatRepo.appendExercisesToUnit(
+                userId = userId,
+                chatId = chatId,
+                unitIndex = unitIndex,
+                exercises = extraExercises
+            )
+
+            call.respond(AddMoreExercisesResponse(exercises = extraExercises))
         }
 
         post("/{chatId}/messages") {

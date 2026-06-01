@@ -2,6 +2,7 @@ package org.example.project.tutor.repo
 
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.tutor.models.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.AddMoreExercisesResponse
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
@@ -22,7 +23,12 @@ interface ITutorRepo {
         request: CreateChatFromDocumentRequest,
         token: String,
     ): CreateChatFromDocumentResponse
-
+    suspend fun addMoreExercises(
+        chatId: String,
+        userId: String,
+        unitIndex: Int,
+        token: String
+    ): AddMoreExercisesResponse
 
     suspend fun getChats(userId: String): List<UserChatDto>
 
