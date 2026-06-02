@@ -28,13 +28,14 @@ import kotlin.uuid.ExperimentalUuidApi
 fun List<UserChatDto>.toChatHistoryDomain(): ChatHistoryDomain {
     return ChatHistoryDomain(
         subjects = this.map { chat ->
+
             val units = chat.result?.learningUnits
                 ?: chat.partialResult?.learningUnits
                 ?: emptyList()
 
             SubjectHistoryDomain(
                 subjectId = chat.chatId,
-                title = chat.title,
+                title = chat.partialResult?.prototypeTitle?:"",
                 learningUnits = units.map { it.toDomain() }
             )
         }

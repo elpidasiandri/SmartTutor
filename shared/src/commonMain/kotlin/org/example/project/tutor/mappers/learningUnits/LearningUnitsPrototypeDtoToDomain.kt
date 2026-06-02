@@ -9,8 +9,6 @@ import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitDomai
 import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitInstanceDomain
 import org.example.project.tutor.models.domainModels.tutorChat.MaterialDomain
 import kotlinx.datetime.Clock
-import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
-import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.models.domainModels.learningUnits.QuotationDomain
