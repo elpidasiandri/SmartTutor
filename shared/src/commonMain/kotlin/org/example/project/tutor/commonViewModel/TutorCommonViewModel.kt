@@ -223,7 +223,30 @@ class TutorCommonViewModel(
                         currentUnit = updatedUnit,
                         allUnits = state.allUnits.mapIndexed { i, unit ->
                             if (i == unitIndex) updatedUnit else unit
-                        }
+                        },
+                        session = buildChatSessionForSelectedUnit(
+                            fileName = state.session.material.fileName,
+                            unit = updatedUnit,
+                            allStoredMessages = state.allChatMessages
+                        ),
+                        chatHistory = state.chatHistory.copy(
+                            subjects = state.chatHistory.subjects.map { subject ->
+                                if (subject.subjectId != chatId) {
+                                    subject
+                                } else {
+                                    subject.copy(
+                                        learningUnits = subject.learningUnits.mapIndexed { i, menuUnit ->
+                                            if (i == unitIndex) {
+                                                menuUnit.copy(
+                                                    exercises = menuUnit.exercises + extra
+                                                )
+                                            } else {
+                                                menuUnit
+                                            }
+                                        }
+                                    )
+                                }
+                            })
                     )
                 }
             }.onFailure {
