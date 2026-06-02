@@ -1,5 +1,6 @@
 package org.example.project.myProgress
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,26 +25,30 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressState
-import org.example.project.strings.SmartTutorStrings.correct_answer
+import org.example.project.strings.SmartTutorStrings.correct_and
 import org.example.project.strings.SmartTutorStrings.correct_answer_
 import org.example.project.strings.SmartTutorStrings.excercise
-import org.example.project.strings.SmartTutorStrings.exerscize_answers
+import org.example.project.strings.SmartTutorStrings.exerscize_answer
+import org.example.project.strings.SmartTutorStrings.exerscize_answers_info
+import org.example.project.strings.SmartTutorStrings.exerscize_answers_sum
+import org.example.project.strings.SmartTutorStrings.exerscize_sum_total
 import org.example.project.strings.SmartTutorStrings.last_answer
 import org.example.project.strings.SmartTutorStrings.my_progress_title
+import org.example.project.strings.SmartTutorStrings.of_which
 import org.example.project.strings.SmartTutorStrings.overall_progress
-import org.example.project.strings.SmartTutorStrings.progress_activity
-import org.example.project.strings.SmartTutorStrings.progress_attempts
 import org.example.project.strings.SmartTutorStrings.progress_chat
-import org.example.project.strings.SmartTutorStrings.progress_last_activity
-import org.example.project.strings.SmartTutorStrings.progress_streak
-import org.example.project.strings.SmartTutorStrings.progress_streak_days
 import org.example.project.strings.SmartTutorStrings.study_stats
 import org.example.project.strings.SmartTutorStrings.unit_title
-import org.example.project.strings.SmartTutorStrings.wrong_answer
+import org.example.project.strings.SmartTutorStrings.wrong_
+import org.example.project.strings.SmartTutorStrings.you_answered
+import org.example.project.strings.SmartTutorStrings.you_answered_times
 import org.example.project.tutor.learningList.LearningRichMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,12 +84,10 @@ fun MyProgressScreen(
             item {
                 ProgressOverviewCard(state)
             }
-
             item {
-                ActivityCard(state)
-            }
-            item {
-                ExerciseAnswersCard(state)
+                if (state.totalCorrectAnswers + state.totalWrongAnswers > 0) {
+                    ExerciseAnswersCard(state)
+                }
             }
         }
     }
@@ -92,49 +97,89 @@ fun MyProgressScreen(
 fun ExerciseAnswersCard(state: MyProgressState) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(exerscize_answers, style = MaterialTheme.typography.titleMedium)
 
-            Spacer(Modifier.height(12.dp))
+            Text(
+                text = exerscize_answers_info,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold
+            )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
-            ) {
-                StatItem(correct_answer, state.totalCorrectAnswers.toString())
-                Spacer(modifier = Modifier.padding(start = 24.dp))
-                StatItem(wrong_answer, state.totalWrongAnswers.toString())
-            }
+            Spacer(Modifier.height(2.dp))
 
-            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "$exerscize_sum_total ${state.totalCorrectAnswers + state.totalWrongAnswers} $exerscize_answer, " +
+                        "$of_which ${state.totalCorrectAnswers} $correct_and ${state.totalWrongAnswers} $wrong_.",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = exerscize_answers_sum,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(Modifier.height(24.dp))
+
+            val expandedUnits = remember { mutableStateMapOf<Int, Boolean>() }
 
             state.unitExerciseStats.forEach { unit ->
-                Text(
-                    text = "$unit_title ${unit.unitIndex + 1}: ${unit.unitTitle}",
-                    fontWeight = FontWeight.Bold
-                )
+                val isExpanded = expandedUnits[unit.unitIndex] ?: false
 
-                Text(
-                    text = "$progress_attempts: ${unit.totalAnswered} | $correct_answer: ${unit.correctCount} | $wrong_answer: ${unit.wrongCount}"
-                )
-
-                Spacer(Modifier.height(8.dp))
-
-                unit.questions.forEach { question ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            expandedUnits[unit.unitIndex] = !isExpanded
+                        }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "$excercise ${question.exerciseIndex + 1}",
-                        fontWeight = FontWeight.Bold
+                        text = "$unit_title ${unit.unitIndex + 1}: ${unit.unitTitle}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
                     )
 
-                    Text(question.question)
-
-                    Text("$progress_attempts: ${question.attemptsCount}")
-                    Text("$correct_answer: ${question.correctCount} | $wrong_answer: ${question.wrongCount}")
-                    Text("$last_answer: ${question.lastSelectedAnswer}")
-                    LearningRichMessage(
-                        text = "$correct_answer_: ${question.correctAnswer}",
-                        modifier = Modifier.fillMaxWidth()
+                    Icon(
+                        imageVector = if (isExpanded) {
+                            Icons.Filled.KeyboardArrowDown
+                        } else {
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight
+                        },
+                        contentDescription = null
                     )
-                    Spacer(Modifier.height(12.dp))
+                }
+
+                if (isExpanded) {
+                    Spacer(Modifier.height(8.dp))
+
+                    unit.questions.forEach { question ->
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp)
+                        ) {
+                            Text(
+                                text = "$excercise ${question.exerciseIndex + 1}",
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Text(question.question)
+
+                            Text(
+                                text = "$you_answered ${question.attemptsCount} $you_answered_times: " +
+                                        "${question.correctCount} $correct_and ${question.wrongCount} $wrong_."
+                            )
+
+                            Text("$last_answer: ${question.lastSelectedAnswer}")
+
+                            LearningRichMessage(
+                                text = "$correct_answer_: ${question.correctAnswer}",
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -152,31 +197,16 @@ fun StatItem(title: String, value: String) {
 }
 
 @Composable
-fun ActivityCard(state: MyProgressState) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(progress_activity, style = MaterialTheme.typography.titleMedium)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                StatItem(progress_streak, "${state.streakDays} $progress_streak_days")
-                StatItem(progress_last_activity, state.lastActivityLabel)
-            }
-        }
-    }
-}
-
-@Composable
 private fun ProgressOverviewCard(state: MyProgressState) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(study_stats, style = MaterialTheme.typography.titleMedium)
+            Text(
+                study_stats,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -187,11 +217,8 @@ private fun ProgressOverviewCard(state: MyProgressState) {
                 StatItem(progress_chat, state.totalQuestionsAsked.toString())
                 Spacer(modifier = Modifier.width(24.dp))
 
-                StatItem("PDFs", state.totalUploadedPdfs.toString())
-
-                Spacer(modifier = Modifier.height(16.dp))
-
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "$overall_progress${state.progressPercent}%",
                 style = MaterialTheme.typography.titleMedium,

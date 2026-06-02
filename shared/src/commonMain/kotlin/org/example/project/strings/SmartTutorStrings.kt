@@ -179,13 +179,16 @@ object SmartTutorStrings {
     //my progress
 //    const val exerscize_answers = "Exercise Answers"
     const val exerscize_answers = "Απαντήσεις ασκήσεων"
-//    const val correct_answer = "Correct"
-    const val correct_answer = "Σωστή"
-    const val wrong_answer = "Λάθος"
-//    const val wrong_answer = "Wrong"
+    const val exerscize_answer = "απαντήσεις"
+//    const val exerscize_answer = "answers"
+//    const val exerscize_sum_total = "In total, they have been"
+    const val exerscize_sum_total = "Συνολικά έχουν γίνει"
 
-    const val progress_attempts = "Προσπάθειες"
-//    const val progress_attempts = "Attempts"
+//    const val exerscize_answers_info = "The following information only concerns the exercises you have already answered."
+    const val exerscize_answers_info = "Τα παρακάτω στοιχεία αφορούν μόνο τις ασκήσεις που έχεις ήδη απαντήσει."
+    const val exerscize_answers_sum = "Σύνοψη απαντημένων ασκήσεων :"
+    //    const val exerscize_answers_sum = "Summary of answered exercises :"
+
 
 //    const val last_answer = "Last answer"
     const val last_answer = "Τελευταία απάντηση"
@@ -193,26 +196,29 @@ object SmartTutorStrings {
 //    const val correct_answer_ = "Correct answer"
     const val correct_answer_ = "Σωστή απάντηση"
 //    const val progress_activity = "Activity"
-    const val progress_activity = "Δραστηριότητα"
-//    const val progress_last_activity = "Last Activity"
-    const val progress_last_activity = "Τελευταία δραστηριότητα"
-//    const val progress_streak = "Streak "
-    const val progress_streak = "Σερί "
-//    const val progress_streak_days = "days "
-    const val progress_streak_days = "ημερών "
-//    const val study_stats = "Study Stats"
+
+
     const val study_stats = "Στατιστικά μελέτης"
 //    const val progress_chat = "How many times did you ask something in the chat on the Learning tab?"
     const val progress_chat = "Πόσες φορές ρώτησες κάτι το chat στην καρτέλα της Μάθησης"
 //    const val progress_question = "Questions"
-    const val overall_progress = "Συνολική πρόοδος: "
-//    const val overall_progress = "Overall progress: "
+    const val overall_progress = "Έχεις ολοκληρώσει το: "
+//    const val overall_progress = "You have completed: "
 
     const val excersize_title = "Άσκηση"
 //    const val excersize_title = "Exercise"
+//    const val of_which = "of which are "
+    const val of_which = "εκ των οποίων είναι "
+//    const val correct_and = "correct and"
+    const val correct_and = "σωστές και"
+    const val wrong_ = "λάθος"
+//    const val wrong_ = "wrong"
 
 
-
+//    const val you_answered = "You answered"
+    const val you_answered = "Απάντησες"
+//    const val you_answered_times = "times"
+    const val you_answered_times = "φορές"
 
 
 }
