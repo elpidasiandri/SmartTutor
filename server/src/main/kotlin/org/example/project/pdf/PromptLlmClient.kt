@@ -82,9 +82,12 @@ class PromptLlmClient(
         - If the student made mistakes in code/scope/syntax, generate exercises that target that misconception.
         - Exercises must be self-contained.
         - If code is needed, include the full Java code block inside the question.
-
-        REQUIRED OUTPUT:
-        - Exactly 8 exercises total.
+        - If STUDENT_WEAKNESSES is empty, missing, or does not show wrong attempts, still generate new useful exercises based on UNIT_TEXT and EXISTING_EXERCISES.
+        - If the student has no answered exercises yet, do not fail and do not mention that there is no history; generate general practice exercises for this unit.
+        - If there are no mistakes, focus on deeper practice, variations, and slightly more challenging exercises from the same unit.
+    
+       REQUIRED OUTPUT:
+        - Exactly 12 exercises total.
         - 3 mcq
         - 3 true_false
         - 6 open
