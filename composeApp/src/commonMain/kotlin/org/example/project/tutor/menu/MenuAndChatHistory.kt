@@ -62,6 +62,7 @@ import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDomain
 import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
+import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
@@ -77,8 +78,11 @@ fun MenuAndChatHistory(
     onLearningClick: (String, String) -> Unit,
     onExercisesClick: (String, String, Int) -> Unit,
     answeredExerciseKeys: Set<String>,
-
-    ) {
+    currentIndex: Int,
+    selectedTab: TutorTab,
+    selectedExerciseIndex: Int,
+    activeChatId: String,
+) {
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -107,6 +111,10 @@ fun MenuAndChatHistory(
                 onExercisesClick(title, subjectId, index)
             },
             answeredExerciseKeys = answeredExerciseKeys,
+            currentIndex = currentIndex,
+            selectedTab = selectedTab,
+            selectedExerciseIndex = selectedExerciseIndex,
+            activeChatId = activeChatId,
         )
 
         Spacer(modifier = Modifier.height(spacing12))
@@ -157,6 +165,10 @@ private fun ChatHistoryList(
     onLearningClick: (String, String) -> Unit,
     onExercisesClick: (String, String, Int) -> Unit,
     answeredExerciseKeys: Set<String>,
+    currentIndex: Int,
+    selectedTab: TutorTab,
+    selectedExerciseIndex: Int,
+    activeChatId: String,
 ) {
     Column(modifier = modifier) {
         chatHistory.subjects.forEach { subject ->
@@ -178,6 +190,10 @@ private fun ChatHistoryList(
                     onExercisesClick(title, subjectId, index)
                 },
                 answeredExerciseKeys = answeredExerciseKeys,
+                currentIndex = currentIndex,
+                selectedTab = selectedTab,
+                selectedExerciseIndex = selectedExerciseIndex,
+                activeChatId = activeChatId,
             )
             Spacer(modifier = Modifier.height(spacing12))
         }
@@ -253,6 +269,10 @@ fun SubjectHistoryItem(
     onLearningClick: (String, String) -> Unit,
     onExercisesClick: (String, String, Int) -> Unit,
     answeredExerciseKeys: Set<String>,
+    currentIndex: Int,
+    selectedTab: TutorTab,
+    selectedExerciseIndex: Int,
+    activeChatId: String,
 ) {
     var expanded by remember { mutableStateOf(true) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -302,7 +322,10 @@ fun SubjectHistoryItem(
                     },
                     onExerciseClick = { exerciseIndex ->
                         onExercisesClick(lu.title, subject.subjectId, exerciseIndex)
-                    }
+                    },
+                    isCurrentUnit  = index == currentIndex,
+                    selectedTab = selectedTab,
+                    selectedExerciseIndex = selectedExerciseIndex,
                 )
             }
         }
@@ -409,10 +432,20 @@ private fun LearningUnitRow(
     answeredExerciseKeys: Set<String>,
     onLearningClick: () -> Unit,
     onExerciseClick: (Int) -> Unit,
+    isCurrentUnit: Boolean,
+    selectedTab: TutorTab,
+    selectedExerciseIndex: Int,
 ) {
     var expanded by remember { mutableStateOf(true) }
-    var exercisesExpanded by remember { mutableStateOf(false) }
-
+    var exercisesExpanded by remember(
+        isCurrentUnit,
+        selectedTab
+    ) {
+        mutableStateOf(
+            isCurrentUnit &&
+                    selectedTab == TutorTab.Exercises
+        )
+    }
     val learningCompleted = isRead
 
     val exercisesCompleted = exercises.isNotEmpty() &&
@@ -421,6 +454,13 @@ private fun LearningUnitRow(
             }
 
     val unitCompleted = learningCompleted && exercisesCompleted
+    val isLearningSelected =
+        isCurrentUnit &&
+                selectedTab == TutorTab.Learning
+
+    val isExercisesSelected =
+        isCurrentUnit &&
+                selectedTab == TutorTab.Exercises
 
     Column(
         modifier = Modifier
@@ -473,7 +513,11 @@ private fun LearningUnitRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        if (learningCompleted) Color(0xFFEAF6EE) else Color.Transparent,
+                        when {
+                            isLearningSelected -> Color(0xFFEDE7F6)
+                            learningCompleted -> Color(0xFFEAF6EE)
+                            else -> Color.Transparent
+                        },
                         RoundedCornerShape(spacing8)
                     )
                     .clickable { onLearningClick() }
@@ -502,7 +546,11 @@ private fun LearningUnitRow(
                     .fillMaxWidth()
                     .clickable { exercisesExpanded = !exercisesExpanded }
                     .background(
-                        if (exercisesCompleted) Color(0xFFEAF6EE) else Color.Transparent,
+                        when {
+                            isExercisesSelected -> Color(0xFFEDE7F6)
+                            exercisesCompleted -> Color(0xFFEAF6EE)
+                            else -> Color.Transparent
+                        },
                         RoundedCornerShape(spacing8)
                     )
                     .padding(vertical = spacing8, horizontal = spacing8),
@@ -537,10 +585,21 @@ private fun LearningUnitRow(
                 exercises.forEachIndexed { exerciseIndex, _ ->
                     val exerciseCompleted =
                         answeredExerciseKeys.contains("$unitIndex-$exerciseIndex")
+                    val isExerciseSelected =
+                                selectedTab == TutorTab.Exercises &&
+                                selectedExerciseIndex == exerciseIndex
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .background(
+                                color = if (isExerciseSelected) {
+                                    Color(0xFFD1C4E9)
+                                } else {
+                                    Color.Transparent
+                                },
+                                shape = RoundedCornerShape(spacing8)
+                            )
                             .clickable { onExerciseClick(exerciseIndex) }
                             .padding(
                                 start = spacing24,
@@ -552,6 +611,7 @@ private fun LearningUnitRow(
                         Text(
                             text = "$excersize_title ${exerciseIndex + 1}",
                             fontSize = 12.sp,
+                            fontWeight = if (isExerciseSelected) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier.weight(1f)
                         )
 

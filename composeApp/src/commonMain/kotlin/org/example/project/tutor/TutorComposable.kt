@@ -290,7 +290,10 @@ fun TutorChatUI(
                     onExercisesMenuTabClick(title, subjectId, index)
                 },
                 answeredExerciseKeys = answeredExerciseKeys,
-
+                currentIndex = currentIndex,
+                selectedTab = selectedTab,
+                selectedExerciseIndex = selectedExerciseIndex,
+                activeChatId = chatData.chat.chatSessionId,
             )
 
             TutorScaffold(
@@ -410,8 +413,11 @@ private fun TutorDrawerContent(
     onLearningClick: (String, String) -> Unit,
     onExercisesClick: (String, String, Int) -> Unit,
     answeredExerciseKeys: Set<String>,
-
-    ) {
+    currentIndex: Int,
+    selectedTab: TutorTab,
+    selectedExerciseIndex: Int,
+    activeChatId: String,
+) {
     Box(
         modifier = Modifier
             .fillMaxHeight()
@@ -434,10 +440,14 @@ private fun TutorDrawerContent(
             onLearningClick = { title, subjectId ->
                 onLearningClick(title, subjectId)
             },
-            onExercisesClick = { title, subjectId,index ->
-                onExercisesClick(title, subjectId,index)
+            onExercisesClick = { title, subjectId, index ->
+                onExercisesClick(title, subjectId, index)
             },
             answeredExerciseKeys = answeredExerciseKeys,
+            currentIndex = currentIndex,
+            selectedTab = selectedTab,
+            selectedExerciseIndex = selectedExerciseIndex,
+            activeChatId = activeChatId,
         )
     }
 }
