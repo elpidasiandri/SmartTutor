@@ -160,21 +160,25 @@ kotlin {
                         val file = project.rootProject.file("local.properties")
                         if (file.exists()) load(file.inputStream())
                     }
-
+                    fun getValue(key: String): String {
+                        return System.getenv(key)
+                            ?: localProperties.getProperty(key)
+                            ?: ""
+                    }
                     val outputFile = outputDir.get().asFile.resolve("FirebaseConfig.kt")
                     outputFile.parentFile.mkdirs()
                     outputFile.writeText(
                         """
             package org.example.project.shared
 
-            object FirebaseConfig {
-             const val WEB_API_KEY = "${localProperties["WEB_API_KEY"] ?: ""}"
-             const val WEB_AUTH_DOMAIN = "${localProperties["WEB_AUTH_DOMAIN"] ?: ""}"
-             const val WEB_STORAGE_BUCKET = "${localProperties["WEB_STORAGE_BUCKET"] ?: ""}"
-             const val SENDER_ID = "${localProperties["SENDER_ID"] ?: ""}"
-             const val PROJECT_ID = "${localProperties["PROJECT_ID"] ?: ""}"
-             const val APP_ID = "${localProperties["APP_ID"] ?: ""}"
-           }
+             object FirebaseConfig {
+                     const val WEB_API_KEY = "${getValue("WEB_API_KEY")}"
+                     const val WEB_AUTH_DOMAIN = "${getValue("WEB_AUTH_DOMAIN")}"
+                     const val WEB_STORAGE_BUCKET = "${getValue("WEB_STORAGE_BUCKET")}"
+                     const val SENDER_ID = "${getValue("SENDER_ID")}"
+                     const val PROJECT_ID = "${getValue("PROJECT_ID")}"
+                     const val APP_ID = "${getValue("APP_ID")}"
+            }
            """.trimIndent()
                     )
                 }
