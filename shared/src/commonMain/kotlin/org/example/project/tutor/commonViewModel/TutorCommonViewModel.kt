@@ -982,8 +982,6 @@ class TutorCommonViewModel(
                         session = session,
                         savedChats = refreshedChats,
                         chatHistory = refreshedChats.toChatHistoryDomain(),
-                        showCustomMessage = true,
-                        message = "Chat loaded",
                         isError = false,
                         tabInfoMessage = buildLearningTabMessage(
                             units.firstOrNull() ?: LearningUnitContentDomain()
