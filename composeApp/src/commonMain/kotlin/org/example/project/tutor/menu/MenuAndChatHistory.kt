@@ -86,7 +86,7 @@ fun MenuAndChatHistory(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .wrapContentWidth()
+            .fillMaxWidth()
             .background(Color.White)
             .padding(spacing8)
     ) {
@@ -356,8 +356,6 @@ private fun SubjectHeaderRow(
         Text(
             subject.title,
             fontSize = 14.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
 
@@ -482,8 +480,6 @@ private fun LearningUnitRow(
             Text(
                 title,
                 fontSize = 12.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
 

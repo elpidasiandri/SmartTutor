@@ -76,6 +76,8 @@ import org.example.project.tutor.menu.MenuAndChatHistory
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.koin.compose.koinInject
 import kotlin.String
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.foundation.clickable
 
 @Composable
 fun TutorScreen(
@@ -233,13 +235,13 @@ fun TutorChatUI(
     isLoadingMoreExercises: Boolean,
     onLearningClick: (String, String) -> Unit,
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
-
-    ) {
+) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
-    val chatMessages = remember() { mutableStateListOf<ChatUiMessage>() }
+    val chatMessages = remember { mutableStateListOf<ChatUiMessage>() }
     var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
+    var isMobileMenuOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(
         chatData.chat.chatSessionId,
@@ -248,7 +250,6 @@ fun TutorChatUI(
         chatData.chat.messages.size
     ) {
         chatMessages.clear()
-
         chatMessages.addAll(
             chatData.chat.messages.map { msg ->
                 ChatUiMessage(
@@ -263,112 +264,199 @@ fun TutorChatUI(
     }
 
     BoxWithConstraints {
+        val isMobile = maxWidth < 600.dp
+
         val drawerWidth = when {
-            maxWidth < 600.dp -> maxWidth * 0.86f      // mobile
-            maxWidth < 900.dp -> 340.dp               // tablet
-            else -> 380.dp                            // desktop
+            isMobile -> maxWidth * 0.86f
+            maxWidth < 900.dp -> 340.dp
+            else -> 380.dp
         }
 
-        Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier.fillMaxSize()) {
 
-            TutorDrawerContent(
-                drawerWidth = drawerWidth,
-                chatHistory = chatHistory,
-                onSettingsClick = onSettingsClick,
-                onLogoutClick = onLogoutClick,
-                onLearningUnitClick = { title, subjectId ->
-                    selectLearningUnit(title, subjectId)
-                },
-                onNewChatClick = startNewChat,
-                onDeleteSubject = deleteSubject,
-                onExistingChatClick = onExistingChatClick,
-                navigateToMyProgress = navigateToMyProgress,
-                onLearningClick = { title, subjectId ->
-                    onLearningClick(title, subjectId)
-                },
-                onExercisesClick = { title, subjectId, index ->
-                    onExercisesMenuTabClick(title, subjectId, index)
-                },
-                answeredExerciseKeys = answeredExerciseKeys,
-                currentIndex = currentIndex,
-                selectedTab = selectedTab,
-                selectedExerciseIndex = selectedExerciseIndex,
-                activeChatId = chatData.chat.chatSessionId,
-            )
+                if (!isMobile) {
+                    TutorDrawerContent(
+                        drawerWidth = drawerWidth,
+                        chatHistory = chatHistory,
+                        onSettingsClick = onSettingsClick,
+                        onLogoutClick = onLogoutClick,
+                        onLearningUnitClick = { title, subjectId ->
+                            selectLearningUnit(title, subjectId)
+                        },
+                        onNewChatClick = startNewChat,
+                        onDeleteSubject = deleteSubject,
+                        onExistingChatClick = onExistingChatClick,
+                        navigateToMyProgress = navigateToMyProgress,
+                        onLearningClick = { title, subjectId ->
+                            onLearningClick(title, subjectId)
+                        },
+                        onExercisesClick = { title, subjectId, index ->
+                            onExercisesMenuTabClick(title, subjectId, index)
+                        },
+                        answeredExerciseKeys = answeredExerciseKeys,
+                        currentIndex = currentIndex,
+                        selectedTab = selectedTab,
+                        selectedExerciseIndex = selectedExerciseIndex,
+                        activeChatId = chatData.chat.chatSessionId,
+                    )
+                }
 
-            TutorScaffold(
-                chatData = chatData,
-                content = { padding ->
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        TutorChatContent(
-                            padding = padding,
-                            chatData = chatData,
-                            chatMessages = chatMessages,
-                            userMessageState = userMessageState,
-                            onUserMessageChangeLocal = { userMessageState = it },
-                            onExercisesClick = onExercisesClick,
-                            onNextUnitClick = onNextUnitClick,
-                            onUploadPdfClick = onUploadPdfClick,
-                            onSendClick = {
-                                val text = userMessageState.trim()
-                                if (text.isNotBlank()) {
-                                    onSendMessage(text)
-                                    userMessageState = ""
-                                }
-                            },
-                            selectedTab = selectedTab,
-                            onChangeTab = onChangeTab,
-                            tabInfoMessage = tabInfoMessage,
-                            currentUnit = currentUnit,
-                            isLoading = isLoading,
-                            canGoNext = canGoNext,
-                            onExerciseAnswered = onExerciseAnswered,
-                            onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                            exerciseTutorAnswers = exerciseTutorAnswers,
-                            answeredExerciseKeys = answeredExerciseKeys,
-                            currentIndex = currentIndex,
-                            onMoreExercisesClick = onMoreExercisesClick,
-                            isLoadingMoreExercises = isLoadingMoreExercises,
-                            selectedExerciseIndex = selectedExerciseIndex,
-                        )
-
-                        TutorToastHost(
-                            showErrorMessage = showErrorMessage,
-                            errorMessage = errorMessage,
-                            isError = isError,
-                            onMessageDismiss = onMessageDismiss
-                        )
-
-                    }
-
-                    if (isLoading || askTutor) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .zIndex(999f)
-                                .background(Color.Black.copy(alpha = 0.4f))
-                                .pointerInput(Unit) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            awaitPointerEvent()
-                                        }
+                TutorScaffold(
+                    chatData = chatData,
+                    content = { padding ->
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            TutorChatContent(
+                                padding = padding,
+                                chatData = chatData,
+                                chatMessages = chatMessages,
+                                userMessageState = userMessageState,
+                                onUserMessageChangeLocal = { userMessageState = it },
+                                onExercisesClick = onExercisesClick,
+                                onNextUnitClick = onNextUnitClick,
+                                onUploadPdfClick = onUploadPdfClick,
+                                onSendClick = {
+                                    val text = userMessageState.trim()
+                                    if (text.isNotBlank()) {
+                                        onSendMessage(text)
+                                        userMessageState = ""
                                     }
                                 },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator()
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(waiting_for_response, color = Color.White)
+                                selectedTab = selectedTab,
+                                onChangeTab = onChangeTab,
+                                tabInfoMessage = tabInfoMessage,
+                                currentUnit = currentUnit,
+                                isLoading = isLoading,
+                                canGoNext = canGoNext,
+                                onExerciseAnswered = onExerciseAnswered,
+                                onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                                exerciseTutorAnswers = exerciseTutorAnswers,
+                                answeredExerciseKeys = answeredExerciseKeys,
+                                currentIndex = currentIndex,
+                                onMoreExercisesClick = onMoreExercisesClick,
+                                isLoadingMoreExercises = isLoadingMoreExercises,
+                                selectedExerciseIndex = selectedExerciseIndex,
+                            )
+
+                            if (isMobile) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(top = 70.dp, start = 8.dp)
+                                        .zIndex(9999f)
+                                        .background(
+                                            Color.White,
+                                            RoundedCornerShape(50)
+                                        )
+                                ) {
+                                    IconButton(
+                                        onClick = { isMobileMenuOpen = true }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Menu,
+                                            contentDescription = "Open menu"
+                                        )
+                                    }
+                                }
+                            }
+
+                            TutorToastHost(
+                                showErrorMessage = showErrorMessage,
+                                errorMessage = errorMessage,
+                                isError = isError,
+                                onMessageDismiss = onMessageDismiss
+                            )
+                        }
+
+                        if (isLoading || askTutor) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .zIndex(999f)
+                                    .background(Color.Black.copy(alpha = 0.4f))
+                                    .pointerInput(Unit) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                awaitPointerEvent()
+                                            }
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator()
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(waiting_for_response, color = Color.White)
+                                }
                             }
                         }
                     }
+                )
+            }
+
+            if (isMobile && isMobileMenuOpen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(100f)
+                        .background(Color.Black.copy(alpha = 0.35f))
+                        .clickable { isMobileMenuOpen = false }
+                )
+
+                Box(
+                    modifier = Modifier
+                        .width(drawerWidth)
+                        .fillMaxHeight()
+                        .zIndex(101f)
+                        .background(Color.White)
+                ) {
+                    TutorDrawerContent(
+                        drawerWidth = drawerWidth,
+                        chatHistory = chatHistory,
+                        onSettingsClick = {
+                            isMobileMenuOpen = false
+                            onSettingsClick()
+                        },
+                        onLogoutClick = {
+                            isMobileMenuOpen = false
+                            onLogoutClick()
+                        },
+                        onLearningUnitClick = { title, subjectId ->
+                            isMobileMenuOpen = false
+                            selectLearningUnit(title, subjectId)
+                        },
+                        onNewChatClick = {
+                            isMobileMenuOpen = false
+                            startNewChat()
+                        },
+                        onDeleteSubject = deleteSubject,
+                        onExistingChatClick = { chatId ->
+                            isMobileMenuOpen = false
+                            onExistingChatClick(chatId)
+                        },
+                        navigateToMyProgress = {
+                            isMobileMenuOpen = false
+                            navigateToMyProgress()
+                        },
+                        onLearningClick = { title, subjectId ->
+                            isMobileMenuOpen = false
+                            onLearningClick(title, subjectId)
+                        },
+                        onExercisesClick = { title, subjectId, index ->
+                            isMobileMenuOpen = false
+                            onExercisesMenuTabClick(title, subjectId, index)
+                        },
+                        answeredExerciseKeys = answeredExerciseKeys,
+                        currentIndex = currentIndex,
+                        selectedTab = selectedTab,
+                        selectedExerciseIndex = selectedExerciseIndex,
+                        activeChatId = chatData.chat.chatSessionId,
+                    )
                 }
-            )
+            }
         }
     }
 }
-
 @Composable
 private fun TutorToastHost(
     showErrorMessage: Boolean,
