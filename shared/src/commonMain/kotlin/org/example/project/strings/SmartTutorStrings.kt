@@ -177,10 +177,10 @@ object SmartTutorStrings {
     const val solution_tab = "Λύση"
 
     //my progress
-//    const val exerscize_answers = "Exercise Answers"
-    const val exerscize_answers = "Απαντήσεις ασκήσεων"
+
     const val exerscize_answer = "απαντήσεις"
 //    const val exerscize_answer = "answers"
+
 //    const val exerscize_sum_total = "In total, they have been"
     const val exerscize_sum_total = "Συνολικά έχουν γίνει"
 
@@ -198,9 +198,8 @@ object SmartTutorStrings {
 //    const val progress_activity = "Activity"
 
 
-    const val study_stats = "Στατιστικά μελέτης"
-//    const val progress_chat = "How many times did you ask something in the chat on the Learning tab?"
-    const val progress_chat = "Πόσες φορές ρώτησες κάτι το chat στην καρτέλα της Μάθησης"
+//    const val progress_chat = "How many times did you ask something in the chat"
+    const val progress_chat = "Ερωτήσεις στο chat"
 //    const val progress_question = "Questions"
     const val overall_progress = "Έχεις ολοκληρώσει το: "
 //    const val overall_progress = "You have completed: "
@@ -211,14 +210,32 @@ object SmartTutorStrings {
     const val of_which = "εκ των οποίων είναι "
 //    const val correct_and = "correct and"
     const val correct_and = "σωστές και"
+    const val sum_answers = "Συνολικές απαντήσεις"
+//    const val sum_answers = "Total responses"
     const val wrong_ = "λάθος"
 //    const val wrong_ = "wrong"
+const val correct_ = "Σωστές"
+//const val correct_ = "Correct"
+const val where_ = "όπου"
+//const val where_ = "where"
 
 
 //    const val you_answered = "You answered"
     const val you_answered = "Απάντησες"
 //    const val you_answered_times = "times"
     const val you_answered_times = "φορές"
+
+    const val excersize_level = "Επίπεδο Δυσκολίας"
+//    const val excersize_level = "Difficulty Level"
+
+    const val excersize_easy = "Εύκολο"
+//    const val excersize_easy = "Easy"
+    const val excersize_medium = "Μέτριο"
+//    const val excersize_medium = "Medium"
+    const val excersize_hard = "Δύσκολο"
+//    const val excersize_hard = "Hard"
+    const val and_ = "και"
+//    const val and_ = "and"
 
 
 }

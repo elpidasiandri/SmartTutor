@@ -342,7 +342,7 @@ fun TutorChatUI(
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopStart)
-                                        .padding(top = 70.dp, start = 8.dp)
+                                        .padding(top = 90.dp, start = 8.dp)
                                         .zIndex(9999f)
                                         .background(
                                             Color.White,

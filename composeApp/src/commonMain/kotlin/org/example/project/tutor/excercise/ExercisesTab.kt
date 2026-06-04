@@ -37,6 +37,10 @@ import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.ask_tutor_about_my_answer
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.excercise_write_your_answer
+import org.example.project.strings.SmartTutorStrings.excersize_easy
+import org.example.project.strings.SmartTutorStrings.excersize_hard
+import org.example.project.strings.SmartTutorStrings.excersize_level
+import org.example.project.strings.SmartTutorStrings.excersize_medium
 import org.example.project.strings.SmartTutorStrings.exercises_more_button
 import org.example.project.strings.SmartTutorStrings.exercises_more_loading
 import org.example.project.strings.SmartTutorStrings.explanation_tab
@@ -149,6 +153,14 @@ private fun ExerciseCard(
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                modifier = Modifier.padding(end = 8.dp),
+                text = "$excersize_level : ${difficultyLabel(exercise.difficulty)}",
+                fontSize = 12.sp,
+                color = AppColors.GrayDark
             )
 
             HintExplainSolutionRow(
@@ -477,6 +489,14 @@ private fun OptionRow(
     Spacer(Modifier.height(8.dp))
 }
 
+private fun difficultyLabel(difficulty: String?): String {
+    return when (difficulty?.lowercase()) {
+        "easy" -> "$excersize_easy"
+        "medium" -> "$excersize_medium"
+        "hard" -> "$excersize_hard"
+        else -> "Άγνωστο"
+    }
+}
 @Composable
 private fun ExpandSection(
     title: String,
