@@ -46,6 +46,7 @@ import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
 import org.example.project.tutor.models.AnalyticsEvents.TUTOR_SCREEN_OPENED
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.models.domainModels.myProgress.ChatProgressUpsertDomain
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseAttemptDto
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorState
@@ -302,9 +303,24 @@ class TutorCommonViewModel(
         val current = _state.value
         val unit = current.currentUnit
         val exercise = unit.exercises.getOrNull(event.exerciseIndex)
-        val maxPoints = exercise?.maxPoints ?: exercise?.points ?: 1.0
+        val maxPoints = exercise?.maxPoints ?: 0.0
+
         val awardedPoints = if (event.isCorrect) maxPoints else 0.0
-        val gradingStatus = if (event.isCorrect) "correct" else "wrong"
+
+        val gradingStatus = if (event.isCorrect) {
+            "correct"
+        } else {
+            "wrong"
+        }
+
+        val attempt = ExerciseAttemptDto(
+            attemptNumber = 0, // server will replace
+            awardedPoints = awardedPoints,
+            gradingStatus = gradingStatus,
+            isCorrect = event.isCorrect,
+            selectedAnswer = event.selectedAnswer,
+            answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds()
+        )
 
         track(
             name = EXERCISE_ANSWERED,
@@ -313,6 +329,7 @@ class TutorCommonViewModel(
                 "unitIndex" to current.currentIndex.toString(),
                 "unitTitle" to unit.title,
                 "exerciseIndex" to event.exerciseIndex.toString(),
+                "exerciseType" to event.exerciseType.name,
                 "exerciseType" to event.exerciseType.name,
                 "selectedAnswer" to event.selectedAnswer,
                 "correctAnswer" to event.correctAnswer,
@@ -349,9 +366,7 @@ class TutorCommonViewModel(
                         timeToAnswerMs = event.timeToAnswerMs,
                         answeredAtEpochMillis = event.timeToAnswerMs,
                         maxPoints = maxPoints,
-                        awardedPoints = awardedPoints,
-                        gradingStatus =  if (event.isCorrect) "correct" else "wrong",
-                        attemptNumber = 1,
+                        attempts = listOf(attempt)
                     )
                 )
             }.onSuccess {
@@ -845,21 +860,10 @@ class TutorCommonViewModel(
                 )
 
                 val aiText = response.aiMessage?.text.orEmpty()
-                val maxPoints = current.currentUnit.exercises
+                val exercise = current.currentUnit.exercises
                     .getOrNull(event.exerciseIndex)
-                    ?.points ?: 0.0
 
-                val gradingStatus = when {
-                    aiText.contains("GRADE: correct", true) -> "correct"
-                    aiText.contains("GRADE: partial", true) -> "partial"
-                    else -> "wrong"
-                }
-
-                val awardedPoints = when (gradingStatus) {
-                    "correct" -> maxPoints
-                    "partial" -> maxPoints * 0.5
-                    else -> 0.0
-                }
+                val maxPoints = exercise?.maxPoints ?: 0.0
 
                 val verdict = aiText
                     .lineSequence()
@@ -887,8 +891,6 @@ class TutorCommonViewModel(
                         timeToAnswerMs = Clock.System.now().toEpochMilliseconds() - startedAt,
                         answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds(),
                         maxPoints = maxPoints,
-                        awardedPoints = awardedPoints,
-                        gradingStatus = gradingStatus,
                     )
                 )
                 val key = exerciseKey(

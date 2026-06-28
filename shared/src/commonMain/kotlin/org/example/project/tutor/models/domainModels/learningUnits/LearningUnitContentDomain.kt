@@ -31,10 +31,32 @@ data class ExerciseDomain(
     val hint: String,
     val explanation: String,
     val solution: String,
-    val points: Double,
     val maxPoints: Double,
+    val attempts: List<LearningUnitExerciseStatsDomain>,
+){
+    val latestAttempt: LearningUnitExerciseStatsDomain?
+        get() = attempts.maxByOrNull { it.attemptNumber }
+
+    val isAnswered: Boolean
+        get() = attempts.isNotEmpty()
+
+    val attemptsCount: Int
+        get() = attempts.size
+
+    val latestAwardedPoints: Double
+        get() = latestAttempt?.awardedPoints ?: 0.0
+
+    val latestGradingStatus: String
+        get() = latestAttempt?.gradingStatus.orEmpty()
+}
+
+data class LearningUnitExerciseStatsDomain(
+    val attemptNumber: Int,
     val awardedPoints: Double,
-    val gradingStatus: String,
+    val gradingStatus: String, // correct | partial | wrong
+    val isCorrect: Boolean,
+    val selectedAnswer: String,
+    val answeredAtEpochMillis: Long,
 )
 
 enum class ExerciseType {

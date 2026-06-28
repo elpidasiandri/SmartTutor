@@ -31,10 +31,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.example.project.colors.AppColors
 import org.example.project.dimens.Dimens.spacing12
-import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
+import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.ask_tutor_about_my_answer
+import org.example.project.strings.SmartTutorStrings.attemp_info_retry
+import org.example.project.strings.SmartTutorStrings.current_attemp
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.excercise_write_your_answer
 import org.example.project.strings.SmartTutorStrings.excersize_easy
@@ -43,9 +45,14 @@ import org.example.project.strings.SmartTutorStrings.excersize_level
 import org.example.project.strings.SmartTutorStrings.excersize_medium
 import org.example.project.strings.SmartTutorStrings.exercises_more_button
 import org.example.project.strings.SmartTutorStrings.exercises_more_loading
+import org.example.project.strings.SmartTutorStrings.exersize_has
+import org.example.project.strings.SmartTutorStrings.exersize_has_grades
 import org.example.project.strings.SmartTutorStrings.explanation_tab
+import org.example.project.strings.SmartTutorStrings.grade_
 import org.example.project.strings.SmartTutorStrings.hint_tab
+import org.example.project.strings.SmartTutorStrings.info_retry
 import org.example.project.strings.SmartTutorStrings.solution_tab
+import org.example.project.strings.SmartTutorStrings.sum_grade
 import org.example.project.strings.SmartTutorStrings.tutor_answer
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
@@ -56,7 +63,7 @@ fun ExercisesTab(
     modifier: Modifier = Modifier,
     exercises: List<ExerciseDomain>,
     exerciseTutorAnswers: Map<Int, String>,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -69,6 +76,7 @@ fun ExercisesTab(
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
 ) {
+    val hasAnsweredAllExercisesInUnit = exercises.all { it.isAnswered }
     val safeIndex = selectedExerciseIndex.coerceIn(0, exercises.lastIndex)
     val exercise = exercises[safeIndex]
     val isLastExercise = safeIndex == exercises.lastIndex
@@ -89,7 +97,8 @@ fun ExercisesTab(
             onExerciseAnswered = onExerciseAnswered,
             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
             answeredExerciseKeys = answeredExerciseKeys,
-            currentUnitIndex = currentUnitIndex
+            currentUnitIndex = currentUnitIndex,
+            hasAnsweredAllExercisesInUnit = hasAnsweredAllExercisesInUnit,
         )
 
     }
@@ -112,7 +121,7 @@ private fun ExerciseCard(
     index: Int,
     exercise: ExerciseDomain,
     tutorAnswer: String?,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -121,22 +130,26 @@ private fun ExerciseCard(
     ) -> Unit,
     answeredExerciseKeys: Set<String>,
     currentUnitIndex: Int,
+    hasAnsweredAllExercisesInUnit: Boolean,
 
     ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
     var showSolution by remember { mutableStateOf(false) }
     val exerciseKey = "$currentUnitIndex-$index"
-    val answered = answeredExerciseKeys.contains(exerciseKey)
+//    val answered = answeredExerciseKeys.contains(exerciseKey)
     var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
     var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
-
+    val latestAttempt = exercise.latestAttempt
+    val answered = latestAttempt != null
+    val canAnswerNow = !answered || hasAnsweredAllExercisesInUnit
     val type = exercise.type
 
     val startedAt = remember(exercise.question) {
         TimeSource.Monotonic.markNow()
     }
+    var retryError by rememberSaveable(index) { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -154,12 +167,10 @@ private fun ExerciseCard(
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1f)
             )
+            Spacer(Modifier.height(4.dp))
+
             Text(
-                text = if (answered) {
-                    "Βαθμός: ${exercise.awardedPoints}/${exercise.maxPoints} μονάδες"
-                } else {
-                    "Η άσκηση πιάνει: ${exercise.maxPoints} μονάδες"
-                },
+                text = "$exersize_has: ${exercise.maxPoints} $exersize_has_grades",
                 fontSize = 12.sp,
                 color = AppColors.GrayDark
             )
@@ -182,7 +193,39 @@ private fun ExerciseCard(
                 type = type
             )
         }
+        if (answered && latestAttempt != null) {
+            Spacer(Modifier.height(spacing4))
 
+            Text(
+                text = "$grade_: ${latestAttempt.awardedPoints}/${exercise.maxPoints} $exersize_has_grades",
+                fontSize = 12.sp,
+                color = AppColors.Purple
+            )
+
+            Text(
+                text = "$sum_grade ${exercise.attemptsCount}",
+                fontSize = 12.sp,
+                color = AppColors.GrayDark
+            )
+
+            exercise.attempts
+                .sortedBy { it.attemptNumber }
+                .forEach { attempt ->
+                    Text(
+                        text = "$current_attemp ${attempt.attemptNumber}: ${attempt.awardedPoints}/${exercise.maxPoints}",
+                        fontSize = 12.sp,
+                        color = AppColors.GrayDark
+                    )
+                }
+
+            if (!hasAnsweredAllExercisesInUnit) {
+                Text(
+                    text = attemp_info_retry,
+                    fontSize = 12.sp,
+                    color = AppColors.GrayDark
+                )
+            }
+        }
         Spacer(Modifier.height(spacing8))
 
         ExerciseRichItem(text = exercise.question)
@@ -212,19 +255,19 @@ private fun ExerciseCard(
                         isCorrect = isSelected && clickedIsCorrect,
                         isWrong = isSelected && !clickedIsCorrect,
                         onClick = {
-                            selectedIndex = optIndex
-                            onExerciseAnswered(
-                                index,
-                                ExerciseType.MCQ,
-                                opt,
-                                correctAnswerText(exercise),
-                                clickedIsCorrect,
-                                startedAt.elapsedNow().inWholeMilliseconds,
-                                exercise.question,
-                                exercise.maxPoints,
-                                exercise.awardedPoints,
-                                exercise.gradingStatus,
-                            )
+                            if (canAnswerNow) {
+                                selectedIndex = optIndex
+                                onExerciseAnswered(
+                                    index,
+                                    ExerciseType.MCQ,
+                                    opt,
+                                    correctAnswerText(exercise),
+                                    clickedIsCorrect,
+                                    startedAt.elapsedNow().inWholeMilliseconds,
+                                    exercise.question,
+                                    exercise.maxPoints,
+                                )
+                            }
                         }
                     )
                 }
@@ -251,19 +294,19 @@ private fun ExerciseCard(
                     isCorrect = tfSelected == true && trueCorrect,
                     isWrong = tfSelected == true && !trueCorrect,
                     onClick = {
-                        tfSelected = true
-                        onExerciseAnswered(
-                            index,
-                            ExerciseType.TRUE_FALSE,
-                            trueLabel,
-                            correctAnswer,
-                            trueCorrect,
-                            startedAt.elapsedNow().inWholeMilliseconds,
-                            exercise.question,
-                            exercise.maxPoints,
-                            exercise.awardedPoints,
-                            exercise.gradingStatus,
-                        )
+                        if (canAnswerNow) {
+                            tfSelected = true
+                            onExerciseAnswered(
+                                index,
+                                ExerciseType.TRUE_FALSE,
+                                trueLabel,
+                                correctAnswer,
+                                trueCorrect,
+                                startedAt.elapsedNow().inWholeMilliseconds,
+                                exercise.question,
+                                exercise.maxPoints,
+                            )
+                        }
                     }
                 )
 
@@ -274,19 +317,19 @@ private fun ExerciseCard(
                     isCorrect = tfSelected == false && falseCorrect,
                     isWrong = tfSelected == false && !falseCorrect,
                     onClick = {
-                        tfSelected = false
-                        onExerciseAnswered(
-                            index,
-                            ExerciseType.TRUE_FALSE,
-                            falseLabel,
-                            correctAnswer,
-                            falseCorrect,
-                            startedAt.elapsedNow().inWholeMilliseconds,
-                            exercise.question,
-                            exercise.maxPoints,
-                            exercise.awardedPoints,
-                            exercise.gradingStatus,
-                        )
+                        if (canAnswerNow) {
+                            tfSelected = false
+                            onExerciseAnswered(
+                                index,
+                                ExerciseType.TRUE_FALSE,
+                                falseLabel,
+                                correctAnswer,
+                                falseCorrect,
+                                startedAt.elapsedNow().inWholeMilliseconds,
+                                exercise.question,
+                                exercise.maxPoints,
+                            )
+                        }
                     }
                 )
             }
@@ -303,13 +346,15 @@ private fun ExerciseCard(
 
                 Button(
                     onClick = {
-                        onAskTutorForOpenExercise(
-                            index,
-                            exercise.question,
-                            openAnswer,
-                            exercise.solution
-                        )
-                        openAnswer = ""
+                        if (canAnswerNow) {
+                            onAskTutorForOpenExercise(
+                                index,
+                                exercise.question,
+                                openAnswer,
+                                exercise.solution
+                            )
+                            openAnswer = ""
+                        }
                     },
                     enabled = openAnswer.isNotBlank()
                 ) {
@@ -363,15 +408,20 @@ private fun ExerciseCard(
                                 startedAt.elapsedNow().inWholeMilliseconds,
                                 exercise.question,
                                 exercise.maxPoints,
-                                exercise.awardedPoints,
-                                exercise.gradingStatus,
                             )
                         }
                     )
                 }
             }
         }
-
+        if (retryError) {
+            Spacer(Modifier.height(spacing4))
+            Text(
+                text = info_retry,
+                fontSize = 12.sp,
+                color = Color.Red
+            )
+        }
         if (showHint && exercise.hint.isNotBlank()) {
             Spacer(Modifier.height(spacing8))
             ExpandSection(title = hint_tab, text = exercise.hint)

@@ -9,6 +9,7 @@ import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitDomai
 import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitInstanceDomain
 import org.example.project.tutor.models.domainModels.tutorChat.MaterialDomain
 import kotlinx.datetime.Clock
+import org.example.project.tutor.mappers.chatHistory.toDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import org.example.project.tutor.models.domainModels.learningUnits.QuotationDomain
@@ -21,7 +22,6 @@ import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
 import org.example.project.tutor.networkModel.uploadPdf.UnitImageDto
-import org.example.project.utils.nonNull
 import kotlin.uuid.ExperimentalUuidApi
 
 fun String?.toLanguageEnum(): LanguageOfLearningUnitsEnum =
@@ -75,17 +75,14 @@ fun ExerciseDto.toDomain(): ExerciseDomain {
         estimatedMinutes = estimatedMinutes ?: 0,
         question = question.orEmpty(),
         options = options,
-        answerIndex = answerIndex ?: 0,
+        answerIndex = answerIndex,
         hint = hint.orEmpty(),
         explanation = explanation.orEmpty(),
         solution = solution.orEmpty(),
-        points = points.nonNull,
-        maxPoints = maxPoints.nonNull,
-        awardedPoints = awardedPoints.nonNull,
-        gradingStatus = gradingStatus.nonNull,
+        maxPoints = maxPoints ?: 0.0,
+        attempts = attempts.map { it.toDomain() }
     )
 }
-
 
 fun String?.toExerciseType(): ExerciseType = when (this?.trim()?.lowercase()) {
     "mcq" -> ExerciseType.MCQ

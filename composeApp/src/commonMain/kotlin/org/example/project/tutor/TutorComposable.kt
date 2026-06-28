@@ -108,7 +108,7 @@ fun TutorScreen(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double,) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -220,7 +220,7 @@ fun TutorChatUI(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, ) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -574,7 +574,7 @@ private fun TutorChatContent(
     currentUnit: LearningUnitContentDomain,
     isLoading: Boolean,
     canGoNext: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double,) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,

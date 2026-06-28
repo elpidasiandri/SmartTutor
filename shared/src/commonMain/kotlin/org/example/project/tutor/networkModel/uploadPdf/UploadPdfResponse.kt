@@ -37,7 +37,7 @@ data class LearningUnitDto(
     @SerialName("quotations") val quotations: List<QuotationDto> = emptyList(),
     @SerialName("images") val images: List<UnitImageDto> = emptyList(),
     @SerialName("exercises") val exercises: List<ExerciseDto> = emptyList(),
-    @SerialName("totalPoints") val totalPoints: Double = 20.0
+    @SerialName("totalPoints") val totalPoints: Double = 20.0,
 )
 
 @Serializable
@@ -65,10 +65,18 @@ data class ExerciseDto(
     @SerialName("hint") val hint: String? = null,
     @SerialName("explanation") val explanation: String? = null,
     @SerialName("solution") val solution: String? = null,
-    @SerialName("points") val points: Double? = null,
-    @SerialName("maxPoints") val maxPoints: Double? = null,
-    @SerialName("awardedPoints") val awardedPoints: Double? = null,
-    @SerialName("gradingStatus") val gradingStatus: String? = null,
+    @SerialName("maxPoints") val maxPoints: Double?,
+    @SerialName("attempts") val attempts: List<ExerciseAttemptDto> = emptyList()
+)
+
+@Serializable
+data class ExerciseAttemptDto(
+    @SerialName("attemptNumber") val attemptNumber: Int,
+    @SerialName("awardedPoints") val awardedPoints: Double,
+    @SerialName("gradingStatus") val gradingStatus: String, // correct | partial | wrong
+    @SerialName("isCorrect") val isCorrect: Boolean,
+    @SerialName("selectedAnswer") val selectedAnswer: String,
+    @SerialName("answeredAtEpochMillis") val answeredAtEpochMillis: Long,
 )
 
 @Serializable
@@ -107,7 +115,7 @@ enum class JobStatus(val value: String) {
     Failed("failed")
 }
 
-enum class LanguageOfLearningUnitsEnum(val value :String){
+enum class LanguageOfLearningUnitsEnum(val value: String) {
     Greek("el"),
     English("en")
 }

@@ -6,6 +6,7 @@ import org.example.project.tutor.models.domainModels.chatHistory.ChatHistoryDoma
 import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitExerciseStatsDomain
 import org.example.project.tutor.models.domainModels.learningUnits.QuotationDomain
 import org.example.project.tutor.models.domainModels.learningUnits.UnitImageDomain
 import org.example.project.tutor.models.domainModels.tutorChat.ChatDomain
@@ -18,6 +19,7 @@ import org.example.project.tutor.models.domainModels.tutorChat.MaterialDomain
 import org.example.project.tutor.models.domainModels.tutorChat.SenderType
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseAttemptDto
 import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
@@ -244,9 +246,19 @@ fun ExerciseDto.toDomain(): ExerciseDomain {
         hint = hint.nonNull,
         explanation = explanation.nonNull,
         solution = solution.nonNull,
-        points = points.nonNull,
         maxPoints = maxPoints.nonNull,
-        awardedPoints = awardedPoints.nonNull,
-        gradingStatus = gradingStatus.nonNull,
+        attempts = attempts.map {
+            it.toDomain()
+        },
+    )
+}
+fun ExerciseAttemptDto.toDomain(): LearningUnitExerciseStatsDomain {
+    return LearningUnitExerciseStatsDomain(
+        attemptNumber = attemptNumber,
+        awardedPoints = awardedPoints,
+        gradingStatus = gradingStatus,
+        isCorrect = isCorrect,
+        selectedAnswer = selectedAnswer,
+        answeredAtEpochMillis = answeredAtEpochMillis
     )
 }

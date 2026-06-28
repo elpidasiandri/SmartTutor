@@ -8,6 +8,7 @@ import org.example.project.myProgress.networkModel.LearningUnitExerciseStatsDto
 import org.example.project.myProgress.networkModel.UnitReadProgressDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 import org.example.project.myProgress.repo.IProgressRepository
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseAttemptDto
 
 class FirestoreProgressRepository(
     private val db: Firestore,
@@ -228,12 +229,37 @@ class FirestoreProgressRepository(
     ) {
         val docId =
             "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}_${answer.answeredAtEpochMillis}"
-        usersCol.document(userId)
+        val docRef = usersCol.document(userId)
             .collection("progress")
             .document("exerciseAnswers")
             .collection("items")
             .document(docId)
-            .set(
+
+        db.runTransaction<Boolean> { tx ->
+            val snap = tx.get(docRef).get()
+
+            val oldAttempts = if (snap.exists()) {
+                val raw = snap.get("attempts") as? List<*> ?: emptyList<Any>()
+                raw.mapNotNull { mapToExerciseAttempt(it) }
+            } else {
+                emptyList()
+            }
+
+            val incoming = answer.attempts.lastOrNull()
+                ?: error("Missing attempt")
+
+            val nextAttemptNumber = oldAttempts.size + 1
+
+            val newAttempt = incoming.copy(
+                attemptNumber = nextAttemptNumber,
+                answeredAtEpochMillis = answer.answeredAtEpochMillis
+            )
+
+            val allAttempts = oldAttempts + newAttempt
+            val lastAttempt = allAttempts.last()
+
+            tx.set(
+                docRef,
                 mapOf(
                     "chatId" to answer.chatId,
                     "userId" to userId,
@@ -242,19 +268,20 @@ class FirestoreProgressRepository(
                     "exerciseIndex" to answer.exerciseIndex,
                     "exerciseType" to answer.exerciseType,
                     "question" to answer.question,
-                    "selectedAnswer" to answer.selectedAnswer,
+                    "selectedAnswer" to lastAttempt.selectedAnswer,
                     "correctAnswer" to answer.correctAnswer,
-                    "isCorrect" to answer.isCorrect,
+                    "isCorrect" to lastAttempt.isCorrect,
                     "timeToAnswerMs" to answer.timeToAnswerMs,
                     "answeredAtEpochMillis" to answer.answeredAtEpochMillis,
                     "maxPoints" to answer.maxPoints,
-                    "awardedPoints" to answer.awardedPoints,
-                    "gradingStatus" to answer.gradingStatus,
-                    "attemptNumber" to answer.attemptNumber,
+                    "awardedPoints" to lastAttempt.awardedPoints,
+                    "gradingStatus" to lastAttempt.gradingStatus,
+                    "attempts" to allAttempts.map { it.toMap() },
                 )
             )
-            .get()
 
+            true
+        }.get()
         val chatProgress = getChatProgressList(userId)
             .firstOrNull { it.chatId == answer.chatId }
 
@@ -273,6 +300,34 @@ class FirestoreProgressRepository(
         updateOverview(userId)
     }
 
+    fun mapToExerciseAttempt(raw: Any?): ExerciseAttemptDto? {
+        val map = raw as? Map<*, *> ?: return null
+
+        return ExerciseAttemptDto(
+            attemptNumber = (map["attemptNumber"] as? Long)?.toInt()
+                ?: (map["attemptNumber"] as? Int)
+                ?: 1,
+            awardedPoints = (map["awardedPoints"] as? Double)
+                ?: (map["awardedPoints"] as? Long)?.toDouble()
+                ?: 0.0,
+            gradingStatus = map["gradingStatus"] as? String ?: "not_answered",
+            isCorrect = map["isCorrect"] as? Boolean ?: false,
+            selectedAnswer = map["selectedAnswer"] as? String ?: "",
+            answeredAtEpochMillis = map["answeredAtEpochMillis"] as? Long ?: 0L
+        )
+    }
+
+    private fun ExerciseAttemptDto.toMap(): Map<String, Any?> {
+        return mapOf(
+            "attemptNumber" to attemptNumber,
+            "awardedPoints" to awardedPoints,
+            "gradingStatus" to gradingStatus,
+            "isCorrect" to isCorrect,
+            "selectedAnswer" to selectedAnswer,
+            "answeredAtEpochMillis" to answeredAtEpochMillis
+        )
+    }
+
     override suspend fun getExerciseStats(
         userId: String,
     ): List<LearningUnitExerciseStatsDto> {
@@ -285,6 +340,11 @@ class FirestoreProgressRepository(
             .get()
 
         val allAnswers = snap.documents.map { doc ->
+            val attemptsRaw = doc.get("attempts") as? List<*> ?: emptyList<Any>()
+            val attempt = mapToExerciseAttempt(doc.get("attempt"))
+            val attempts = attemptsRaw.mapNotNull {
+                mapToExerciseAttempt(it)
+            }
             ExerciseAnswerProgressDto(
                 chatId = doc.getString("chatId") ?: "",
                 userId = doc.getString("userId") ?: userId,
@@ -299,9 +359,7 @@ class FirestoreProgressRepository(
                 timeToAnswerMs = doc.getLong("timeToAnswerMs") ?: 0L,
                 answeredAtEpochMillis = doc.getLong("answeredAtEpochMillis") ?: 0L,
                 maxPoints = doc.getDouble("maxPoints") ?: 0.0,
-                awardedPoints = doc.getDouble("awardedPoints") ?: 0.0,
-                gradingStatus = doc.getString("gradingStatus") ?: if (doc.getBoolean("isCorrect") == true) "correct" else "wrong",
-                attemptNumber = (doc.getLong("attemptNumber") ?: 1L).toInt(),
+                attempts = attempts
             )
         }
 
