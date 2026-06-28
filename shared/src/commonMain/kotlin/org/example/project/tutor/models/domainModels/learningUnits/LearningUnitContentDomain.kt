@@ -17,7 +17,7 @@ data class LearningUnitContentDomain(
     val quotations: List<QuotationDomain> = emptyList(),
     val exercises: List<ExerciseDomain> = emptyList(),
     val isRead: Boolean = false,
-    val totalPoints: Double,
+    val totalPoints: Double = 0.0,
 )
 
 

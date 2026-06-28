@@ -50,7 +50,8 @@ fun LearningUnitDto.toDomain(): LearningUnitContentDomain {
         images = images.map { it.toDomain() },
         quotations = quotations.map { it.toDomain() },
         exercises = exercises.map { it.toDomain() },
-        isRead = isRead ?: false
+        isRead = isRead ?: false,
+        totalPoints = totalPoints.nonNull
     )
 }
 
