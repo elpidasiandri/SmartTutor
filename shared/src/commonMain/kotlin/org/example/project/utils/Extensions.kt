@@ -6,6 +6,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 val String?.nonNull: String get() = this ?: ""
+val Double?.nonNull: Double get() = this ?: 0.0
 
 val Int?.nonNull: Int get() = this ?: -1
 val Long?.nonNull: Long get() = this ?: -1

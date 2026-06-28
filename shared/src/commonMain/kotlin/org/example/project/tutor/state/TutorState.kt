@@ -70,6 +70,9 @@ sealed class TutorUiEvents {
         val isCorrect: Boolean,
         val timeToAnswerMs: Long,
         val question: String,
+        val maxPoints: Double,
+        val awardedPoints: Double,
+        val gradingStatus: String,
     ) : TutorUiEvents()
 
     data class SendMessage(val text: String) : TutorUiEvents()

@@ -27,7 +27,7 @@ data class ChatProgressDto(
     @SerialName("lastActivityEpochMillis") val lastActivityEpochMillis: Long = 0L,
     @SerialName("progressPercent") val progressPercent: Int = 0,
     @SerialName("units")
-    val units: List<UnitReadProgressDto> = emptyList()
+    val units: List<UnitReadProgressDto> = emptyList(),
 )
 
 @Serializable
@@ -51,6 +51,9 @@ data class ExerciseAnswerProgressDto(
     @SerialName("isCorrect") val isCorrect: Boolean,
     @SerialName("timeToAnswerMs") val timeToAnswerMs: Long,
     @SerialName("answeredAtEpochMillis") val answeredAtEpochMillis: Long,
+    @SerialName("maxPoints") val maxPoints: Double = 0.0,
+    @SerialName("awardedPoints") val awardedPoints: Double = 0.0,
+    @SerialName("gradingStatus") val gradingStatus: String? = null,
 )
 
 @Serializable

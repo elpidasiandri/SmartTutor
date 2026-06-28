@@ -21,6 +21,7 @@ import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
 import org.example.project.tutor.networkModel.uploadPdf.UnitImageDto
+import org.example.project.utils.nonNull
 import kotlin.uuid.ExperimentalUuidApi
 
 fun String?.toLanguageEnum(): LanguageOfLearningUnitsEnum =
@@ -77,6 +78,10 @@ fun ExerciseDto.toDomain(): ExerciseDomain {
         hint = hint.orEmpty(),
         explanation = explanation.orEmpty(),
         solution = solution.orEmpty(),
+        points = points.nonNull,
+        maxPoints = maxPoints.nonNull,
+        awardedPoints = awardedPoints.nonNull,
+        gradingStatus = gradingStatus.nonNull,
     )
 }
 

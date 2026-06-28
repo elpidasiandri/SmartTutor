@@ -56,7 +56,7 @@ fun ExercisesTab(
     modifier: Modifier = Modifier,
     exercises: List<ExerciseDomain>,
     exerciseTutorAnswers: Map<Int, String>,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -112,7 +112,7 @@ private fun ExerciseCard(
     index: Int,
     exercise: ExerciseDomain,
     tutorAnswer: String?,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -211,7 +211,10 @@ private fun ExerciseCard(
                                 correctAnswerText(exercise),
                                 clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
-                                exercise.question
+                                exercise.question,
+                                exercise.maxPoints,
+                                exercise.awardedPoints,
+                                exercise.gradingStatus,
                             )
                         }
                     )
@@ -247,7 +250,10 @@ private fun ExerciseCard(
                             correctAnswer,
                             trueCorrect,
                             startedAt.elapsedNow().inWholeMilliseconds,
-                            exercise.question
+                            exercise.question,
+                            exercise.maxPoints,
+                            exercise.awardedPoints,
+                            exercise.gradingStatus,
                         )
                     }
                 )
@@ -267,7 +273,10 @@ private fun ExerciseCard(
                             correctAnswer,
                             falseCorrect,
                             startedAt.elapsedNow().inWholeMilliseconds,
-                            exercise.question
+                            exercise.question,
+                            exercise.maxPoints,
+                            exercise.awardedPoints,
+                            exercise.gradingStatus,
                         )
                     }
                 )
@@ -343,7 +352,10 @@ private fun ExerciseCard(
                                 correctAnswerText(exercise),
                                 clickedIsCorrect,
                                 startedAt.elapsedNow().inWholeMilliseconds,
-                                exercise.question
+                                exercise.question,
+                                exercise.maxPoints,
+                                exercise.awardedPoints,
+                                exercise.gradingStatus,
                             )
                         }
                     )
@@ -497,6 +509,7 @@ private fun difficultyLabel(difficulty: String?): String {
         else -> "Άγνωστο"
     }
 }
+
 @Composable
 private fun ExpandSection(
     title: String,

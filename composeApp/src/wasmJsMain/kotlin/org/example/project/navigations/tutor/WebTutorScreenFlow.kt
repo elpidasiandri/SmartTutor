@@ -120,7 +120,7 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         canGoNext = state.canGoNext,
         askTutor = state.askTutor,
-        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question ->
+        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question, maxPoints, awardedPoints, gradingStatus ->
             controller.onEvent(
                 TutorUiEvents.ExerciseAnswered(
                     exerciseIndex = index,
@@ -130,6 +130,9 @@ fun WebTutorScreenFlow(navController: NavController) {
                     isCorrect = isCorrect,
                     timeToAnswerMs = timeMs,
                     question = question,
+                    maxPoints = maxPoints,
+                    awardedPoints = awardedPoints,
+                    gradingStatus = gradingStatus,
                 )
             )
         },

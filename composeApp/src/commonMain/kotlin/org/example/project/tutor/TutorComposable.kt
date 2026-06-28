@@ -108,7 +108,7 @@ fun TutorScreen(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -220,7 +220,7 @@ fun TutorChatUI(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
@@ -457,6 +457,7 @@ fun TutorChatUI(
         }
     }
 }
+
 @Composable
 private fun TutorToastHost(
     showErrorMessage: Boolean,
@@ -573,7 +574,7 @@ private fun TutorChatContent(
     currentUnit: LearningUnitContentDomain,
     isLoading: Boolean,
     canGoNext: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, Double, String) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,

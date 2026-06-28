@@ -301,7 +301,9 @@ class TutorCommonViewModel(
     private fun saveExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
         val current = _state.value
         val unit = current.currentUnit
-
+        val exercise = unit.exercises.getOrNull(event.exerciseIndex)
+        val maxPoints = exercise?.points ?: 0.0
+        val awardedPoints = if (event.isCorrect) maxPoints else 0.0
         track(
             name = EXERCISE_ANSWERED,
             params = mapOf(
@@ -313,7 +315,10 @@ class TutorCommonViewModel(
                 "selectedAnswer" to event.selectedAnswer,
                 "correctAnswer" to event.correctAnswer,
                 "isCorrect" to event.isCorrect.toString(),
-                "timeToAnswerMs" to event.timeToAnswerMs.toString()
+                "timeToAnswerMs" to event.timeToAnswerMs.toString(),
+                "maxPoints" to maxPoints.toString(),
+                "awardedPoints" to awardedPoints.toString(),
+                "gradingStatus" to if (event.isCorrect) "correct" else "wrong",
             )
         )
         val key = exerciseKey(
@@ -340,7 +345,10 @@ class TutorCommonViewModel(
                         correctAnswer = event.correctAnswer,
                         isCorrect = event.isCorrect,
                         timeToAnswerMs = event.timeToAnswerMs,
-                        answeredAtEpochMillis = event.timeToAnswerMs
+                        answeredAtEpochMillis = event.timeToAnswerMs,
+                        maxPoints = maxPoints,
+                        awardedPoints = awardedPoints,
+                        gradingStatus =  if (event.isCorrect) "correct" else "wrong"
                     )
                 )
             }.onSuccess {
@@ -551,7 +559,7 @@ class TutorCommonViewModel(
         chatId: String,
         unitTitle: String,
         tab: TutorTab = TutorTab.Learning,
-        exerciseIndex: Int? = null
+        exerciseIndex: Int? = null,
     ) {
 
         scope.launch {
@@ -609,7 +617,10 @@ class TutorCommonViewModel(
                         selectedExerciseIndex = targetExerciseIndex,
                         tabInfoMessage = when (tab) {
                             TutorTab.Learning -> buildLearningTabMessage(selected)
-                            TutorTab.Exercises -> buildExercisesTabMessage(selected, targetExerciseIndex)
+                            TutorTab.Exercises -> buildExercisesTabMessage(
+                                selected,
+                                targetExerciseIndex
+                            )
                         },
                     )
                 }
@@ -629,6 +640,7 @@ class TutorCommonViewModel(
             }
         }
     }
+
     private fun loadExistingChatAtUnit(chatId: String, unitTitle: String) {
         scope.launch {
             try {
@@ -829,6 +841,21 @@ class TutorCommonViewModel(
                 )
 
                 val aiText = response.aiMessage?.text.orEmpty()
+                val maxPoints = current.currentUnit.exercises
+                    .getOrNull(event.exerciseIndex)
+                    ?.points ?: 0.0
+
+                val gradingStatus = when {
+                    aiText.contains("GRADE: correct", true) -> "correct"
+                    aiText.contains("GRADE: partial", true) -> "partial"
+                    else -> "wrong"
+                }
+
+                val awardedPoints = when (gradingStatus) {
+                    "correct" -> maxPoints
+                    "partial" -> maxPoints * 0.5
+                    else -> 0.0
+                }
 
                 val verdict = aiText
                     .lineSequence()
@@ -854,7 +881,10 @@ class TutorCommonViewModel(
                         correctAnswer = event.suggestedSolution,
                         isCorrect = isCorrect,
                         timeToAnswerMs = Clock.System.now().toEpochMilliseconds() - startedAt,
-                        answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds()
+                        answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds(),
+                        maxPoints = maxPoints,
+                        awardedPoints = awardedPoints,
+                        gradingStatus = gradingStatus,
                     )
                 )
                 val key = exerciseKey(

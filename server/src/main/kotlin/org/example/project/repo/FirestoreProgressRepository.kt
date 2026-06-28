@@ -292,7 +292,10 @@ class FirestoreProgressRepository(
                 correctAnswer = doc.getString("correctAnswer") ?: "",
                 isCorrect = doc.getBoolean("isCorrect") == true,
                 timeToAnswerMs = doc.getLong("timeToAnswerMs") ?: 0L,
-                answeredAtEpochMillis = doc.getLong("answeredAtEpochMillis") ?: 0L
+                answeredAtEpochMillis = doc.getLong("answeredAtEpochMillis") ?: 0L,
+                maxPoints = doc.getDouble("maxPoints") ?: 0.0,
+                awardedPoints = doc.getDouble("awardedPoints") ?: 0.0,
+                gradingStatus = doc.getString("gradingStatus") ?: if (doc.getBoolean("isCorrect") == true) "correct" else "wrong",
             )
         }
 

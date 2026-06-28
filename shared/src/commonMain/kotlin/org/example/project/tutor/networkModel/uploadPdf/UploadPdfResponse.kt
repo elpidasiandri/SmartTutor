@@ -64,6 +64,10 @@ data class ExerciseDto(
     @SerialName("hint") val hint: String? = null,
     @SerialName("explanation") val explanation: String? = null,
     @SerialName("solution") val solution: String? = null,
+    @SerialName("points") val points: Double? = null,
+    @SerialName("maxPoints") val maxPoints: Double? = null,
+    @SerialName("awardedPoints") val awardedPoints: Double? = null,
+    @SerialName("gradingStatus") val gradingStatus: String? = null,
 )
 
 @Serializable

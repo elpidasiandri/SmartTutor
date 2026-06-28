@@ -35,7 +35,7 @@ fun List<UserChatDto>.toChatHistoryDomain(): ChatHistoryDomain {
 
             SubjectHistoryDomain(
                 subjectId = chat.chatId,
-                title = chat.partialResult?.prototypeTitle?:"",
+                title = chat.partialResult?.prototypeTitle ?: "",
                 learningUnits = units.map { it.toDomain() }
             )
         }
@@ -234,7 +234,6 @@ fun buildChatSessionFromStoredChat(
 
 fun ExerciseDto.toDomain(): ExerciseDomain {
     return ExerciseDomain(
-
         type = type.toExerciseType(),
         difficulty = difficulty.nonNull,
         estimatedMinutes = estimatedMinutes.nonNull,
@@ -243,6 +242,10 @@ fun ExerciseDto.toDomain(): ExerciseDomain {
         answerIndex = answerIndex,
         hint = hint.nonNull,
         explanation = explanation.nonNull,
-        solution = solution.nonNull
+        solution = solution.nonNull,
+        points = points.nonNull,
+        maxPoints = maxPoints.nonNull,
+        awardedPoints = awardedPoints.nonNull,
+        gradingStatus = gradingStatus.nonNull,
     )
 }

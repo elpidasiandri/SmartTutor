@@ -93,7 +93,15 @@ class PromptLlmClient(
         - 6 open
         - At least 5 open exercise must ask for Java code.
         - Use medium difficulty unless the student has many incorrect attempts; then include 1 difficult exercise. If the student has answered all correctly, output only difficult exercises.
-
+   
+        SCORING:
+        - Every exercise MUST include points.
+        - mcq: 1 point
+        - true_false: 0.5 points
+        - open theory: 2 points
+        - open coding: 3 to 5 points depending on difficulty
+        - hard open/coding exercises must have more points than simple mcq/true_false.
+        
         FORMAT:
         - mcq: options length 3..6, answerIndex valid.
         - true_false: options exactly ["Σωστό","Λάθος"], answerIndex 0 or 1.
@@ -187,6 +195,14 @@ class PromptLlmClient(
 
             TIME:
             - Total estimatedMinutes MUST sum to ${targetMinutes - 3}..${targetMinutes + 3} minutes.
+
+            SCORING:
+            - Every exercise MUST include points.
+            - mcq: 1 point
+            - true_false: 0.5 points
+            - open theory: 2 points
+            - open coding: 3 to 5 points depending on difficulty
+            - hard open/coding exercises must have more points than simple mcq/true_false.
 
             SELF-CONTAINED EXERCISE RULES:
             - Every exercise must be answerable by reading only that exercise.
@@ -1223,11 +1239,12 @@ class PromptLlmClient(
               "items":{
                 "type":"object",
                 "additionalProperties":false,
-                "required":["type","difficulty","estimatedMinutes","question","options","answerIndex","hint","explanation","solution"],
+                "required":["type","difficulty","estimatedMinutes","points","question","options","answerIndex","hint","explanation","solution"],
                 "properties":{
                   "type":{"type":"string","enum":["mcq","true_false","open"]},
                   "difficulty":{"type":"string","enum":["medium","hard"]},
                   "estimatedMinutes":{"type":"integer","minimum":1,"maximum":15},
+                  "points":{"type":"number","minimum":0.5,"maximum":10}
                   "question":{"type":"string","minLength":10},
                   "options":{
                     "type":"array",

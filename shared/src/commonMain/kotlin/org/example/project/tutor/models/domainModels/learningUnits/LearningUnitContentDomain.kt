@@ -30,6 +30,10 @@ data class ExerciseDomain(
     val hint: String,
     val explanation: String,
     val solution: String,
+    val points: Double,
+    val maxPoints: Double,
+    val awardedPoints: Double,
+    val gradingStatus: String,
 )
 
 enum class ExerciseType {
