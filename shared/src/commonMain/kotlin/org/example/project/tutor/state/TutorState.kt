@@ -55,6 +55,7 @@ sealed class TutorUiEvents {
         val question: String,
         val userAnswer: String,
         val suggestedSolution: String,
+        val maxPoints: Double
     ) : TutorUiEvents()
     data class OpenUnitSection(
         val title: String,

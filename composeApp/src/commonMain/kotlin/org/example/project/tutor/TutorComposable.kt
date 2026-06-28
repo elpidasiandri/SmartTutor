@@ -114,6 +114,7 @@ fun TutorScreen(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
+        maxPoint : Double
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
@@ -226,6 +227,7 @@ fun TutorChatUI(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
+        maxPoint : Double
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
@@ -580,6 +582,7 @@ private fun TutorChatContent(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
+        maxPoint : Double
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,

@@ -134,13 +134,14 @@ fun WebTutorScreenFlow(navController: NavController) {
                 )
             )
         },
-        onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution ->
+        onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution,maxPoint ->
             controller.onEvent(
                 TutorUiEvents.AskTutorForOpenExercise(
                     exerciseIndex = exerciseIndex,
                     question = question,
                     userAnswer = userAnswer,
                     suggestedSolution = suggestedSolution,
+                    maxPoints = maxPoint
                 )
             )
         },

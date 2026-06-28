@@ -69,6 +69,7 @@ fun ExercisesTab(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
+        maxPoint : Double
     ) -> Unit,
     currentUnitIndex: Int,
     selectedExerciseIndex: Int,
@@ -127,6 +128,7 @@ private fun ExerciseCard(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
+        maxPoint : Double
     ) -> Unit,
     answeredExerciseKeys: Set<String>,
     currentUnitIndex: Int,
@@ -351,7 +353,8 @@ private fun ExerciseCard(
                                 index,
                                 exercise.question,
                                 openAnswer,
-                                exercise.solution
+                                exercise.solution,
+                                exercise.maxPoints
                             )
                             openAnswer = ""
                         }

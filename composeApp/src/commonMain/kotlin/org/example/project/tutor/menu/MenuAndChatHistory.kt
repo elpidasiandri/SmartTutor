@@ -587,18 +587,21 @@ private fun LearningUnitRow(
                     val exerciseUnlocked =
                         exerciseIndex == 0 ||
                                 answeredExerciseKeys.contains("$unitIndex-${exerciseIndex - 1}")
+                    val previousExerciseAnswered =
+                        exerciseIndex == 0 ||
+                                exercises.getOrNull(exerciseIndex - 1)?.isAnswered == true
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
                                 color = when {
                                     isExerciseSelected -> Color(0xFFD1C4E9)
-                                    !exerciseUnlocked -> Color(0xFFE0E0E0)
+                                    !exerciseUnlocked || previousExerciseAnswered -> Color(0xFFE0E0E0)
                                     else -> Color.Transparent
                                 },
                                 shape = RoundedCornerShape(spacing8)
                             )
-                            .clickable(enabled = exerciseUnlocked) { onExerciseClick(exerciseIndex) }
+                            .clickable(enabled = exerciseUnlocked && previousExerciseAnswered) { onExerciseClick(exerciseIndex) }
                             .padding(
                                 start = spacing24,
                                 top = spacing8,

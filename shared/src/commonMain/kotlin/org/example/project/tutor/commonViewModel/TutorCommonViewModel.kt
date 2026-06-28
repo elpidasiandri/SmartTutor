@@ -764,6 +764,7 @@ class TutorCommonViewModel(
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
         val startedAt = Clock.System.now().toEpochMilliseconds()
+        val maxAmount = event.maxPoints
 
         _state.update { it.copy(loading = true, askTutor = true) }
 
@@ -777,6 +778,7 @@ class TutorCommonViewModel(
                 "exerciseType" to ExerciseType.OPEN.name,
                 "selectedAnswer" to event.userAnswer,
                 "correctAnswer" to event.suggestedSolution,
+                "maxAmount" to event.maxPoints.toString(),
                 "isCorrect" to "false",
                 "isOpenAnswer" to "true"
             )
@@ -828,10 +830,27 @@ class TutorCommonViewModel(
         - Αν η εκφώνηση δεν ζητά ρητά πλήρες πρόγραμμα, θεωρείται αποδεκτή απάντηση μια μεμονωμένη μέθοδος ή ένα μικρό απόσπασμα κώδικα που λύνει σωστά το πρόβλημα.
         - Μην απαιτείς `public class`, `main()` ή imports εκτός αν είναι απαραίτητα για αυτό που ζητά η άσκηση.
 
-
+        Μετά την αξιολόγηση υπολόγισε και βαθμό.
+        
+        Επέστρεψε ΥΠΟΧΡΕΩΤΙΚΑ στην αρχή:
+        Μέγιστη βαθμολογία άσκησης: $maxAmount
+        STATUS: correct | partial | wrong
+        
+        και μετά συνέχισε με την ανατροφοδότηση.
+        
+        Κανόνες:
+        
+        - correct -> πλήρης απάντηση
+        - partial -> λείπουν σημαντικά στοιχεία
+        - wrong -> ουσιαστικά λανθασμένη
+        
+        Η βαθμολογία μπορεί να είναι οποιαδήποτε τιμή από 0 μέχρι maxPoints.
+        Παράδειγμα:
+        GRADE: 7.5
+        STATUS: partial
 
     Μετά συνέχισε με:
-        1. Αν είναι σωστή ή όχι η απάντησή μου(μην δειξεις στον χρηστη CORRECT = ή PARTIAL = ή WRONG = . Πες του απλα αν ειναι σωστή, μερικώς σωστή ή λάθος).
+        1. Αν είναι σωστή ή όχι η απάντησή μου και τον βαθμό μου με βαση το max (μην δειξεις στον χρηστη CORRECT = ή PARTIAL = ή WRONG = . Πες του απλα αν ειναι σωστή, μερικώς σωστή ή λάθος).
         2. Τι λείπει, αν λείπει κάτι.
         3. Πώς μπορώ να τη βελτιώσω, μόνο αν χρειάζεται.
         4. Δώσε καλύτερη ενδεικτική απάντηση μόνο αν χρειάζεται.
@@ -871,9 +890,44 @@ class TutorCommonViewModel(
                     ?.trim()
                     .orEmpty()
 
-                val isCorrect =
-                    verdict.contains("Η απάντηση σου είναι: Σωστή", ignoreCase = true)
+//                val isCorrect =
+//                    verdict.contains("Η απάντηση σου είναι: Σωστή", ignoreCase = true)
 
+                val gradeLine = aiText
+                    .lineSequence()
+                    .firstOrNull { it.startsWith("GRADE:", ignoreCase = true) }
+                    .orEmpty()
+
+                val statusLine = aiText
+                    .lineSequence()
+                    .firstOrNull { it.startsWith("STATUS:", ignoreCase = true) }
+                    .orEmpty()
+
+                val awardedPoints = Regex("""GRADE:\s*([0-9]+(?:\.[0-9]+)?)""", RegexOption.IGNORE_CASE)
+                    .find(gradeLine)
+                    ?.groupValues
+                    ?.getOrNull(1)
+                    ?.toDoubleOrNull()
+                    ?.coerceIn(0.0, maxPoints)
+                    ?: 0.0
+
+                val gradingStatus = when {
+                    statusLine.contains("correct", ignoreCase = true) -> "correct"
+                    statusLine.contains("partial", ignoreCase = true) -> "partial"
+                    else -> "wrong"
+                }
+
+                val isCorrect = gradingStatus == "correct"
+                val answeredAt = Clock.System.now().toEpochMilliseconds()
+
+                val attempt = ExerciseAttemptDto(
+                    attemptNumber = 0, // το server θα το κάνει 1,2,3...
+                    awardedPoints = awardedPoints,
+                    gradingStatus = gradingStatus,
+                    isCorrect = isCorrect,
+                    selectedAnswer = event.userAnswer,
+                    answeredAtEpochMillis = answeredAt
+                )
                 saveExerciseAnswerUseCase(
                     userId = userId(),
                     token = token,
@@ -888,9 +942,10 @@ class TutorCommonViewModel(
                         selectedAnswer = event.userAnswer,
                         correctAnswer = event.suggestedSolution,
                         isCorrect = isCorrect,
-                        timeToAnswerMs = Clock.System.now().toEpochMilliseconds() - startedAt,
-                        answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds(),
+                        timeToAnswerMs = answeredAt - startedAt,
+                        answeredAtEpochMillis = answeredAt,
                         maxPoints = maxPoints,
+                        attempts = listOf(attempt)
                     )
                 )
                 val key = exerciseKey(
