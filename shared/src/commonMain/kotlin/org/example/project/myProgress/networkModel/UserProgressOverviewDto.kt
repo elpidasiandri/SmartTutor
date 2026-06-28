@@ -54,6 +54,19 @@ data class ExerciseAnswerProgressDto(
     @SerialName("maxPoints") val maxPoints: Double = 0.0,
     @SerialName("awardedPoints") val awardedPoints: Double = 0.0,
     @SerialName("gradingStatus") val gradingStatus: String? = null,
+    @SerialName("attemptNumber") val attemptNumber: Int = 1,
+)
+
+@Serializable
+data class UnitGradeAttemptDto(
+    @SerialName("chatId") val chatId: String,
+    @SerialName("userId") val userId: String,
+    @SerialName("unitIndex") val unitIndex: Int,
+    @SerialName("attemptNumber") val attemptNumber: Int,
+    @SerialName("totalMaxPoints") val totalMaxPoints: Double,
+    @SerialName("totalAwardedPoints") val totalAwardedPoints: Double,
+    @SerialName("percentage") val percentage: Double,
+    @SerialName("completedAtEpochMillis") val completedAtEpochMillis: Long,
 )
 
 @Serializable

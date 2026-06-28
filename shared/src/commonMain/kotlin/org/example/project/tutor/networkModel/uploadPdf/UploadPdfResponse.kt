@@ -37,6 +37,7 @@ data class LearningUnitDto(
     @SerialName("quotations") val quotations: List<QuotationDto> = emptyList(),
     @SerialName("images") val images: List<UnitImageDto> = emptyList(),
     @SerialName("exercises") val exercises: List<ExerciseDto> = emptyList(),
+    @SerialName("totalPoints") val totalPoints: Double = 20.0
 )
 
 @Serializable

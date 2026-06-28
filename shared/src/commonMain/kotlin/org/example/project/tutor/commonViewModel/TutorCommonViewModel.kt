@@ -302,8 +302,10 @@ class TutorCommonViewModel(
         val current = _state.value
         val unit = current.currentUnit
         val exercise = unit.exercises.getOrNull(event.exerciseIndex)
-        val maxPoints = exercise?.points ?: 0.0
+        val maxPoints = exercise?.maxPoints ?: exercise?.points ?: 1.0
         val awardedPoints = if (event.isCorrect) maxPoints else 0.0
+        val gradingStatus = if (event.isCorrect) "correct" else "wrong"
+
         track(
             name = EXERCISE_ANSWERED,
             params = mapOf(
@@ -348,7 +350,8 @@ class TutorCommonViewModel(
                         answeredAtEpochMillis = event.timeToAnswerMs,
                         maxPoints = maxPoints,
                         awardedPoints = awardedPoints,
-                        gradingStatus =  if (event.isCorrect) "correct" else "wrong"
+                        gradingStatus =  if (event.isCorrect) "correct" else "wrong",
+                        attemptNumber = 1,
                     )
                 )
             }.onSuccess {
@@ -746,6 +749,7 @@ class TutorCommonViewModel(
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
         val startedAt = Clock.System.now().toEpochMilliseconds()
+
         _state.update { it.copy(loading = true, askTutor = true) }
 
         track(

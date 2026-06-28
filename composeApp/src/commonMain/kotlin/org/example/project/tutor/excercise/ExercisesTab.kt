@@ -154,6 +154,15 @@ private fun ExerciseCard(
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1f)
             )
+            Text(
+                text = if (answered) {
+                    "Βαθμός: ${exercise.awardedPoints}/${exercise.maxPoints} μονάδες"
+                } else {
+                    "Η άσκηση πιάνει: ${exercise.maxPoints} μονάδες"
+                },
+                fontSize = 12.sp,
+                color = AppColors.GrayDark
+            )
             Spacer(Modifier.height(4.dp))
 
             Text(

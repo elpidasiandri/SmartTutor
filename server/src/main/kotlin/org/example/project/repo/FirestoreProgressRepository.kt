@@ -53,6 +53,7 @@ class FirestoreProgressRepository(
             )
         ).get()
     }
+
     private fun calculateRealProgressPercent(
         userId: String,
         progress: ChatProgressDto,
@@ -245,7 +246,11 @@ class FirestoreProgressRepository(
                     "correctAnswer" to answer.correctAnswer,
                     "isCorrect" to answer.isCorrect,
                     "timeToAnswerMs" to answer.timeToAnswerMs,
-                    "answeredAtEpochMillis" to answer.answeredAtEpochMillis
+                    "answeredAtEpochMillis" to answer.answeredAtEpochMillis,
+                    "maxPoints" to answer.maxPoints,
+                    "awardedPoints" to answer.awardedPoints,
+                    "gradingStatus" to answer.gradingStatus,
+                    "attemptNumber" to answer.attemptNumber,
                 )
             )
             .get()
@@ -296,6 +301,7 @@ class FirestoreProgressRepository(
                 maxPoints = doc.getDouble("maxPoints") ?: 0.0,
                 awardedPoints = doc.getDouble("awardedPoints") ?: 0.0,
                 gradingStatus = doc.getString("gradingStatus") ?: if (doc.getBoolean("isCorrect") == true) "correct" else "wrong",
+                attemptNumber = (doc.getLong("attemptNumber") ?: 1L).toInt(),
             )
         }
 

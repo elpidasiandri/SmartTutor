@@ -96,11 +96,12 @@ class PromptLlmClient(
    
         SCORING:
         - Every exercise MUST include points.
-        - mcq: 1 point
-        - true_false: 0.5 points
-        - open theory: 2 points
-        - open coding: 3 to 5 points depending on difficulty
-        - hard open/coding exercises must have more points than simple mcq/true_false.
+        - Every exercise MUST also include maxPoints.
+        - maxPoints MUST be equal to points.
+        - awardedPoints MUST be 0.
+        - gradingStatus MUST be "".
+        - Every learning unit has exactly 20 exercises.
+        - The sum of points in each learning unit MUST be exactly 20.0.
         
         FORMAT:
         - mcq: options length 3..6, answerIndex valid.
@@ -198,11 +199,12 @@ class PromptLlmClient(
 
             SCORING:
             - Every exercise MUST include points.
-            - mcq: 1 point
-            - true_false: 0.5 points
-            - open theory: 2 points
-            - open coding: 3 to 5 points depending on difficulty
-            - hard open/coding exercises must have more points than simple mcq/true_false.
+            - Every exercise MUST also include maxPoints.
+            - maxPoints MUST be equal to points.
+            - awardedPoints MUST be 0.
+            - gradingStatus MUST be "".
+            - Every learning unit has exactly 20 exercises.
+            - The sum of points in each learning unit MUST be exactly 20.0.
 
             SELF-CONTAINED EXERCISE RULES:
             - Every exercise must be answerable by reading only that exercise.
