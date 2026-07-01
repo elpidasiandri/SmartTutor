@@ -1,6 +1,7 @@
 package org.example.project.repo
 
 import com.google.cloud.firestore.Firestore
+import kotlinx.serialization.json.Json
 import org.example.project.myProgress.networkModel.ChatProgressDto
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.networkModel.ExerciseQuestionStatsDto
@@ -9,6 +10,7 @@ import org.example.project.myProgress.networkModel.UnitReadProgressDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 import org.example.project.myProgress.repo.IProgressRepository
 import org.example.project.tutor.networkModel.uploadPdf.ExerciseAttemptDto
+import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 
 class FirestoreProgressRepository(
     private val db: Firestore,
@@ -227,15 +229,13 @@ class FirestoreProgressRepository(
         userId: String,
         answer: ExerciseAnswerProgressDto,
     ) {
-        val docId =
-            "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}"
         val docRef = usersCol.document(userId)
             .collection("progress")
             .document("exerciseAnswers")
             .collection("items")
-            .document(docId)
+            .document("${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}")
 
-        db.runTransaction<Boolean> { tx ->
+        val savedAttempts = db.runTransaction<List<ExerciseAttemptDto>> { tx ->
             val snap = tx.get(docRef).get()
 
             val oldAttempts = if (snap.exists()) {
@@ -248,10 +248,8 @@ class FirestoreProgressRepository(
             val incoming = answer.attempts.lastOrNull()
                 ?: error("Missing attempt")
 
-            val nextAttemptNumber = oldAttempts.size + 1
-
             val newAttempt = incoming.copy(
-                attemptNumber = nextAttemptNumber,
+                attemptNumber = oldAttempts.size + 1,
                 answeredAtEpochMillis = answer.answeredAtEpochMillis
             )
 
@@ -272,7 +270,7 @@ class FirestoreProgressRepository(
                     "correctAnswer" to answer.correctAnswer,
                     "isCorrect" to lastAttempt.isCorrect,
                     "timeToAnswerMs" to answer.timeToAnswerMs,
-                    "answeredAtEpochMillis" to answer.answeredAtEpochMillis,
+                    "answeredAtEpochMillis" to lastAttempt.answeredAtEpochMillis,
                     "maxPoints" to answer.maxPoints,
                     "awardedPoints" to lastAttempt.awardedPoints,
                     "gradingStatus" to lastAttempt.gradingStatus,
@@ -280,8 +278,15 @@ class FirestoreProgressRepository(
                 )
             )
 
-            true
+            allAttempts
         }.get()
+
+        updateExerciseAttemptsInChat(
+            userId = userId,
+            answer = answer,
+            attempts = savedAttempts
+        )
+
         val chatProgress = getChatProgressList(userId)
             .firstOrNull { it.chatId == answer.chatId }
 
@@ -298,6 +303,77 @@ class FirestoreProgressRepository(
         }
 
         updateOverview(userId)
+    }
+
+    private fun updateExerciseAttemptsInChat(
+        userId: String,
+        answer: ExerciseAnswerProgressDto,
+        attempts: List<ExerciseAttemptDto>,
+    ) {
+        val chatRef = usersCol.document(userId)
+            .collection("chats")
+            .document(answer.chatId)
+
+        db.runTransaction { tx ->
+            val snap = tx.get(chatRef).get()
+            if (!snap.exists()) return@runTransaction false
+
+            fun updatePrototypeJson(field: String): String? {
+                val raw = snap.getString(field).orEmpty()
+                if (raw.isBlank()) return null
+                val json = Json {
+                    ignoreUnknownKeys = true
+                    encodeDefaults = true
+                    isLenient = true
+                }
+                val old = json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    raw
+                )
+
+                if (answer.unitIndex !in old.learningUnits.indices) return null
+
+                val updatedUnits = old.learningUnits.mapIndexed { unitIndex, unit ->
+                    if (unitIndex != answer.unitIndex) return@mapIndexed unit
+
+                    val updatedExercises = unit.exercises.mapIndexed { exerciseIndex, exercise ->
+                        if (exerciseIndex == answer.exerciseIndex) {
+                            exercise.copy(
+                                attempts = attempts
+                            )
+                        } else {
+                            exercise
+                        }
+                    }
+
+                    unit.copy(exercises = updatedExercises)
+                }
+
+                val updated = old.copy(learningUnits = updatedUnits)
+
+                return json.encodeToString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    updated
+                )
+            }
+
+            val updates = mutableMapOf<String, Any>(
+                "updatedAtEpochMillis" to System.currentTimeMillis()
+            )
+
+            updatePrototypeJson("resultJson")?.let {
+                updates["resultJson"] = it
+            }
+
+            updatePrototypeJson("partialResultJson")?.let {
+                updates["partialResultJson"] = it
+            }
+
+            if (updates.size == 1) return@runTransaction false
+
+            tx.update(chatRef, updates)
+            true
+        }.get()
     }
 
     fun mapToExerciseAttempt(raw: Any?): ExerciseAttemptDto? {
