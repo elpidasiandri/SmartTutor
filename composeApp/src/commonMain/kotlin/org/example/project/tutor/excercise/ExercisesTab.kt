@@ -69,7 +69,7 @@ fun ExercisesTab(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
-        maxPoint : Double
+        maxPoint: Double,
     ) -> Unit,
     currentUnitIndex: Int,
     selectedExerciseIndex: Int,
@@ -128,7 +128,7 @@ private fun ExerciseCard(
         question: String,
         userAnswer: String,
         suggestedSolution: String,
-        maxPoint : Double
+        maxPoint: Double,
     ) -> Unit,
     answeredExerciseKeys: Set<String>,
     currentUnitIndex: Int,
@@ -172,13 +172,6 @@ private fun ExerciseCard(
             Spacer(Modifier.height(4.dp))
 
             Text(
-                text = "$exersize_has: ${exercise.maxPoints} $exersize_has_grades",
-                fontSize = 12.sp,
-                color = AppColors.GrayDark
-            )
-            Spacer(Modifier.height(4.dp))
-
-            Text(
                 modifier = Modifier.padding(end = 8.dp),
                 text = "$excersize_level : ${difficultyLabel(exercise.difficulty)}",
                 fontSize = 12.sp,
@@ -195,6 +188,14 @@ private fun ExerciseCard(
                 type = type
             )
         }
+
+        Text(
+            text = "$exersize_has: ${exercise.maxPoints} $exersize_has_grades",
+            fontSize = 12.sp,
+            color = AppColors.GrayDark
+        )
+        Spacer(Modifier.height(4.dp))
+
         if (answered && latestAttempt != null) {
             Spacer(Modifier.height(spacing4))
 
@@ -509,15 +510,26 @@ private fun SmallToggleChip(
 ) {
     TextButton(
         onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(16.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = if (selected) AppColors.Purple else AppColors.GrayDark
+            containerColor = if (selected)
+                AppColors.Purple.copy(alpha = 0.12f)
+            else
+                AppColors.Purple,
+            contentColor = if (selected)
+                AppColors.Purple
+            else
+                AppColors.Black
         )
     ) {
-        Text(text, fontSize = 13.sp)
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+        )
     }
 }
-
 @Composable
 private fun OptionRow(
     label: String,
@@ -568,7 +580,9 @@ private fun difficultyLabel(difficulty: String?): String {
         "easy" -> "$excersize_easy"
         "medium" -> "$excersize_medium"
         "hard" -> "$excersize_hard"
-        else -> "Άγνωστο"
+        else -> {
+            excersize_easy
+        }
     }
 }
 

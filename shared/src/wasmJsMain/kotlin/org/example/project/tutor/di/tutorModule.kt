@@ -3,6 +3,7 @@ package org.example.project.tutor.di
 import io.ktor.client.HttpClient
 import org.example.project.AppConfig
 import org.example.project.myProgress.repo.IProgressRepo
+import org.example.project.myProgress.repo.IProgressRepository
 import org.example.project.myProgress.repo.WebProgressRepoImpl
 import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
@@ -53,7 +54,6 @@ val tutorModule = module {
             baseUrl = "https://smarttutor-production-5d4d.up.railway.app"
         )
     }
-
 
     factory { LearningUnitsUseCase(get()) }
     factory { PdfUploadServiceUseCase(get()) }

@@ -228,7 +228,7 @@ class FirestoreProgressRepository(
         answer: ExerciseAnswerProgressDto,
     ) {
         val docId =
-            "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}_${answer.answeredAtEpochMillis}"
+            "${answer.chatId}_${answer.unitIndex}_${answer.exerciseIndex}"
         val docRef = usersCol.document(userId)
             .collection("progress")
             .document("exerciseAnswers")

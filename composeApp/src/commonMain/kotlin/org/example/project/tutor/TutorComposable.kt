@@ -591,6 +591,19 @@ private fun TutorChatContent(
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
 ) {
+    val currentExerciseAnswered =
+        currentUnit.exercises
+            .getOrNull(selectedExerciseIndex)
+            ?.isAnswered == true
+
+    val nextEnabled =
+        chatData.material.fileUploaded &&
+                !isLoading &&
+                canGoNext &&
+                (
+                        selectedTab == TutorTab.Learning ||
+                                currentExerciseAnswered
+                        )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -604,7 +617,7 @@ private fun TutorChatContent(
         ) {
             TutorActionButton(
                 text = next_tab,
-                enabled = chatData.material.fileUploaded && !isLoading,
+                enabled = chatData.material.fileUploaded && !isLoading && nextEnabled,
                 onClick = onNextUnitClick,
                 selectedTab = false
             )

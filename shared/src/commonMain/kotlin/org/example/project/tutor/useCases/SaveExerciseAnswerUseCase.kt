@@ -1,6 +1,7 @@
 package org.example.project.tutor.useCases
 
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
+import org.example.project.myProgress.repo.IProgressRepository
 import org.example.project.tutor.repo.ITutorRepo
 
 class SaveExerciseAnswerUseCase(
@@ -15,7 +16,7 @@ class SaveExerciseAnswerUseCase(
         progressRepo.saveExerciseAnswer(
             answer = answer,
             userId = userId,
-            token = token
+            token = token,
         )
     }
 }

@@ -45,6 +45,7 @@ import org.example.project.tutor.models.AnalyticsEvents.PDF_UPLOAD_FAILED
 import org.example.project.tutor.models.AnalyticsEvents.TAB_CHANGED
 import org.example.project.tutor.models.AnalyticsEvents.TUTOR_SCREEN_OPENED
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitExerciseStatsDomain
 import org.example.project.tutor.models.domainModels.myProgress.ChatProgressUpsertDomain
 import org.example.project.tutor.networkModel.uploadPdf.ExerciseAttemptDto
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
@@ -302,8 +303,10 @@ class TutorCommonViewModel(
     private fun saveExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
         val current = _state.value
         val unit = current.currentUnit
-        val exercise = unit.exercises.getOrNull(event.exerciseIndex)
-        val maxPoints = exercise?.maxPoints ?: 0.0
+        val exercise = unit.exercises.getOrNull(event.exerciseIndex) ?: return
+        val maxPoints = exercise.maxPoints
+
+        val answeredAt = Clock.System.now().toEpochMilliseconds()
 
         val awardedPoints = if (event.isCorrect) maxPoints else 0.0
 
@@ -313,14 +316,48 @@ class TutorCommonViewModel(
             "wrong"
         }
 
-        val attempt = ExerciseAttemptDto(
-            attemptNumber = 0, // server will replace
+        val key = exerciseKey(
+            unitIndex = current.currentIndex,
+            exerciseIndex = event.exerciseIndex
+        )
+        val domainAttempt = LearningUnitExerciseStatsDomain(
+            attemptNumber = exercise.attempts.size + 1,
             awardedPoints = awardedPoints,
             gradingStatus = gradingStatus,
             isCorrect = event.isCorrect,
             selectedAnswer = event.selectedAnswer,
-            answeredAtEpochMillis = Clock.System.now().toEpochMilliseconds()
+            answeredAtEpochMillis = answeredAt
         )
+
+        val dtoAttempt = ExerciseAttemptDto(
+            attemptNumber = 0,// server will replace
+            awardedPoints = awardedPoints,
+            gradingStatus = gradingStatus,
+            isCorrect = event.isCorrect,
+            selectedAnswer = event.selectedAnswer,
+            answeredAtEpochMillis = answeredAt
+        )
+
+
+        val updatedExercise = exercise.copy(
+            attempts = exercise.attempts + domainAttempt
+        )
+
+        val updatedUnit = unit.copy(
+            exercises = unit.exercises.mapIndexed { index, oldExercise ->
+                if (index == event.exerciseIndex) updatedExercise else oldExercise
+            }
+        )
+
+        _state.update { state ->
+            state.copy(
+                currentUnit = updatedUnit,
+                allUnits = state.allUnits.mapIndexed { index, oldUnit ->
+                    if (index == state.currentIndex) updatedUnit else oldUnit
+                },
+                answeredExerciseKeys = state.answeredExerciseKeys + key
+            )
+        }
 
         track(
             name = EXERCISE_ANSWERED,
@@ -337,12 +374,8 @@ class TutorCommonViewModel(
                 "timeToAnswerMs" to event.timeToAnswerMs.toString(),
                 "maxPoints" to maxPoints.toString(),
                 "awardedPoints" to awardedPoints.toString(),
-                "gradingStatus" to if (event.isCorrect) "correct" else "wrong",
+                "gradingStatus" to gradingStatus,
             )
-        )
-        val key = exerciseKey(
-            unitIndex = current.currentIndex,
-            exerciseIndex = event.exerciseIndex
         )
 
         scope.launch {
@@ -364,22 +397,17 @@ class TutorCommonViewModel(
                         correctAnswer = event.correctAnswer,
                         isCorrect = event.isCorrect,
                         timeToAnswerMs = event.timeToAnswerMs,
-                        answeredAtEpochMillis = event.timeToAnswerMs,
+                        answeredAtEpochMillis = answeredAt,
                         maxPoints = maxPoints,
-                        attempts = listOf(attempt)
+                        attempts = listOf(
+                            dtoAttempt
+                        )
                     )
                 )
-            }.onSuccess {
-                _state.update {
-                    it.copy(
-                        answeredExerciseKeys = it.answeredExerciseKeys + key
-                    )
-                }
             }.onFailure {
                 platform.log("Progress", "Failed to save exercise answer", it)
             }
         }
-
     }
 
     private fun trackExerciseAnswered(event: TutorUiEvents.ExerciseAnswered) {
@@ -543,10 +571,95 @@ class TutorCommonViewModel(
 
         selectCurrentChatUnitByTitle(title)
     }
+    private fun uploadPdf(picked: PickedFile) {
+        scope.launch {
+            try {
+                _state.update { it.copy(loading = true) }
+
+                val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
+                    picked = picked,
+                    userId = userId(),
+                    mode = state.value.selectedTab.name
+                )
+
+                val units = res.prototype.learningUnits
+                val subjectTitle = res.prototype.title
+
+                val session = buildChatSessionStart(
+                    fileName = subjectTitle,
+                    units = units,
+                    activeIndex = 0
+                )
+
+                val refreshedChats = getAllHistoryChatUseCase(userId())
+
+
+                track(
+                    name = PDF_UPLOADED,
+                    params = mapOf(
+                        "chatId" to res.chatId,
+                        "documentTitle" to subjectTitle,
+                        "unitsCount" to units.size.toString(),
+                        "language" to res.languageEnum.value,
+                        "mode" to state.value.selectedTab.name,
+                        "userId" to userId()
+                    )
+                )
+
+                val updatedUnits = units.mapIndexed { index, item ->
+                    if (index == 0) item.copy(isRead = true) else item
+                }
+
+                val selected = updatedUnits.firstOrNull() ?: LearningUnitContentDomain()
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        activeChatId = res.chatId,
+                        subjectTitle = subjectTitle,
+                        allUnits = updatedUnits,
+                        currentUnit = selected,
+                        currentIndex = 0,
+                        unlockedCount = 1,
+                        session = session,
+                        savedChats = refreshedChats,
+                        chatHistory = refreshedChats.toChatHistoryDomain(),
+                        isError = false,
+                        selectedTab = TutorTab.Learning,
+                        tabInfoMessage = buildLearningTabMessage(
+                            units.firstOrNull() ?: LearningUnitContentDomain()
+                        ),
+                        canGoNext = units.size > 1
+                    )
+                }
+                markUnitAsRead(0)
+                saveProgress()
+                loadAnsweredExercises()
+            } catch (t: Throwable) {
+                track(
+                    name = PDF_UPLOAD_FAILED,
+                    params = mapOf(
+                        "reason" to (t.toUserMessage()),
+                        "userId" to userId()
+                    )
+                )
+
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = "Upload failed"
+                    )
+                }
+            }
+        }
+    }
 
     private fun selectCurrentChatUnitByTitle(title: String) {
         val units = _state.value.allUnits
         if (units.isEmpty()) return
+
 
         val index = units.indexOfFirst { it.title.trim() == title.trim() }
         if (index == -1) return
@@ -903,13 +1016,14 @@ class TutorCommonViewModel(
                     .firstOrNull { it.startsWith("STATUS:", ignoreCase = true) }
                     .orEmpty()
 
-                val awardedPoints = Regex("""GRADE:\s*([0-9]+(?:\.[0-9]+)?)""", RegexOption.IGNORE_CASE)
-                    .find(gradeLine)
-                    ?.groupValues
-                    ?.getOrNull(1)
-                    ?.toDoubleOrNull()
-                    ?.coerceIn(0.0, maxPoints)
-                    ?: 0.0
+                val awardedPoints =
+                    Regex("""GRADE:\s*([0-9]+(?:\.[0-9]+)?)""", RegexOption.IGNORE_CASE)
+                        .find(gradeLine)
+                        ?.groupValues
+                        ?.getOrNull(1)
+                        ?.toDoubleOrNull()
+                        ?.coerceIn(0.0, maxPoints)
+                        ?: 0.0
 
                 val gradingStatus = when {
                     statusLine.contains("correct", ignoreCase = true) -> "correct"
@@ -1027,82 +1141,6 @@ class TutorCommonViewModel(
         }
     }
 
-    private fun uploadPdf(picked: PickedFile) {
-        scope.launch {
-            try {
-                _state.update { it.copy(loading = true) }
-
-                val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
-                    picked = picked,
-                    userId = userId(),
-                    mode = state.value.selectedTab.name
-                )
-
-                val units = res.prototype.learningUnits
-                val subjectTitle = res.prototype.title
-
-                val session = buildChatSessionStart(
-                    fileName = subjectTitle,
-                    units = units,
-                    activeIndex = 0
-                )
-
-                val refreshedChats = getAllHistoryChatUseCase(userId())
-
-                track(
-                    name = PDF_UPLOADED,
-                    params = mapOf(
-                        "chatId" to res.chatId,
-                        "documentTitle" to subjectTitle,
-                        "unitsCount" to units.size.toString(),
-                        "language" to res.languageEnum.value,
-                        "mode" to state.value.selectedTab.name,
-                        "userId" to userId()
-                    )
-                )
-
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        activeChatId = res.chatId,
-                        subjectTitle = subjectTitle,
-                        allUnits = units,
-                        currentIndex = 0,
-                        unlockedCount = 1,
-                        currentUnit = units.firstOrNull() ?: LearningUnitContentDomain(),
-                        session = session,
-                        savedChats = refreshedChats,
-                        chatHistory = refreshedChats.toChatHistoryDomain(),
-                        isError = false,
-                        tabInfoMessage = buildLearningTabMessage(
-                            units.firstOrNull() ?: LearningUnitContentDomain()
-                        ),
-                        canGoNext = units.size > 1
-                    )
-                }
-
-                saveProgress()
-                loadAnsweredExercises()
-            } catch (t: Throwable) {
-                track(
-                    name = PDF_UPLOAD_FAILED,
-                    params = mapOf(
-                        "reason" to (t.toUserMessage()),
-                        "userId" to userId()
-                    )
-                )
-
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        showCustomMessage = true,
-                        isError = true,
-                        message = "Upload failed"
-                    )
-                }
-            }
-        }
-    }
 
 
     private fun Throwable.toUserMessage(): String {
