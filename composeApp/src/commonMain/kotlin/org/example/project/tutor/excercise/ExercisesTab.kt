@@ -53,6 +53,7 @@ import org.example.project.strings.SmartTutorStrings.hint_tab
 import org.example.project.strings.SmartTutorStrings.info_retry
 import org.example.project.strings.SmartTutorStrings.solution_tab
 import org.example.project.strings.SmartTutorStrings.sum_grade
+import org.example.project.strings.SmartTutorStrings.sum_grade_are
 import org.example.project.strings.SmartTutorStrings.tutor_answer
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
@@ -138,8 +139,6 @@ private fun ExerciseCard(
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
     var showSolution by remember { mutableStateOf(false) }
-    val exerciseKey = "$currentUnitIndex-$index"
-//    val answered = answeredExerciseKeys.contains(exerciseKey)
     var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
     var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
@@ -204,30 +203,44 @@ private fun ExerciseCard(
                 fontSize = 12.sp,
                 color = AppColors.Purple
             )
+            Spacer(Modifier.height(4.dp))
 
             Text(
-                text = "$sum_grade ${exercise.attemptsCount}",
+                text = "$sum_grade ${exercise.attemptsCount} ",
                 fontSize = 12.sp,
                 color = AppColors.GrayDark
             )
+            if (exercise.attemptsCount > 1) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "$sum_grade_are ${exercise.attemptsCount} ",
+                    fontSize = 12.sp,
+                    color = AppColors.GrayDark
+                )
+                exercise.attempts
+                    .sortedBy { it.attemptNumber }
+                    .forEach { attempt ->
+                        Spacer(Modifier.height(2.dp))
 
-            exercise.attempts
-                .sortedBy { it.attemptNumber }
-                .forEach { attempt ->
+                        Text(
+                            text = "$current_attemp ${attempt.attemptNumber}: ${attempt.awardedPoints}/${exercise.maxPoints}",
+                            fontSize = 12.sp,
+                            color = AppColors.GrayDark
+                        )
+
+
+                    }
+
+                if (!hasAnsweredAllExercisesInUnit) {
                     Text(
-                        text = "$current_attemp ${attempt.attemptNumber}: ${attempt.awardedPoints}/${exercise.maxPoints}",
+                        text = attemp_info_retry,
                         fontSize = 12.sp,
                         color = AppColors.GrayDark
                     )
                 }
 
-            if (!hasAnsweredAllExercisesInUnit) {
-                Text(
-                    text = attemp_info_retry,
-                    fontSize = 12.sp,
-                    color = AppColors.GrayDark
-                )
             }
+
         }
         Spacer(Modifier.height(spacing8))
 
@@ -270,7 +283,7 @@ private fun ExerciseCard(
                                     exercise.question,
                                     exercise.maxPoints,
                                 )
-                            }
+                            } else retryError = true
                         }
                     )
                 }
@@ -309,7 +322,7 @@ private fun ExerciseCard(
                                 exercise.question,
                                 exercise.maxPoints,
                             )
-                        }
+                        } else retryError = true
                     }
                 )
 
@@ -332,7 +345,7 @@ private fun ExerciseCard(
                                 exercise.question,
                                 exercise.maxPoints,
                             )
-                        }
+                        } else retryError = true
                     }
                 )
             }
@@ -358,7 +371,7 @@ private fun ExerciseCard(
                                 exercise.maxPoints
                             )
                             openAnswer = ""
-                        }
+                        } else retryError = true
                     },
                     enabled = openAnswer.isNotBlank()
                 ) {
@@ -513,14 +526,8 @@ private fun SmallToggleChip(
         shape = RoundedCornerShape(16.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected)
-                AppColors.Purple.copy(alpha = 0.12f)
-            else
-                AppColors.Purple,
-            contentColor = if (selected)
-                AppColors.Purple
-            else
-                AppColors.Black
+            containerColor = AppColors.Purple.copy(alpha = 0.5f),
+            contentColor = AppColors.Purple,
         )
     ) {
         Text(
@@ -530,6 +537,7 @@ private fun SmallToggleChip(
         )
     }
 }
+
 @Composable
 private fun OptionRow(
     label: String,
