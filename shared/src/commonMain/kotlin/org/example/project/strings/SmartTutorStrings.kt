@@ -254,5 +254,7 @@ const val where_ = "όπου"
     const val and_ = "και"
 //    const val and_ = "and"
 
+    const val the_correct_answer_is = "Η σωστή απάντηση είναι"
+//    const val the_correct_answer_is = "The correct answer is"
 
 }

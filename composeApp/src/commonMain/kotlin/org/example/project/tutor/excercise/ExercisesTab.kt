@@ -54,6 +54,7 @@ import org.example.project.strings.SmartTutorStrings.info_retry
 import org.example.project.strings.SmartTutorStrings.solution_tab
 import org.example.project.strings.SmartTutorStrings.sum_grade
 import org.example.project.strings.SmartTutorStrings.sum_grade_are
+import org.example.project.strings.SmartTutorStrings.the_correct_answer_is
 import org.example.project.strings.SmartTutorStrings.tutor_answer
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
@@ -146,7 +147,7 @@ private fun ExerciseCard(
     val answered = latestAttempt != null
     val canAnswerNow = !answered || hasAnsweredAllExercisesInUnit
     val type = exercise.type
-
+    var showCorrectAnswer by rememberSaveable(index) { mutableStateOf(false) }
     val startedAt = remember(exercise.question) {
         TimeSource.Monotonic.markNow()
     }
@@ -263,7 +264,6 @@ private fun ExerciseCard(
                     val letter = ('A' + optIndex).toString()
                     val isSelected = selectedIndex == optIndex
                     val clickedIsCorrect = originalIndex == exercise.answerIndex
-
                     OptionRow(
                         label = "$letter)",
                         text = opt,
@@ -272,6 +272,7 @@ private fun ExerciseCard(
                         isWrong = isSelected && !clickedIsCorrect,
                         onClick = {
                             if (canAnswerNow) {
+                                showCorrectAnswer = true
                                 selectedIndex = optIndex
                                 onExerciseAnswered(
                                     index,
@@ -311,6 +312,7 @@ private fun ExerciseCard(
                     isWrong = tfSelected == true && !trueCorrect,
                     onClick = {
                         if (canAnswerNow) {
+                            showCorrectAnswer = true
                             tfSelected = true
                             onExerciseAnswered(
                                 index,
@@ -334,6 +336,7 @@ private fun ExerciseCard(
                     isWrong = tfSelected == false && !falseCorrect,
                     onClick = {
                         if (canAnswerNow) {
+                            showCorrectAnswer = true
                             tfSelected = false
                             onExerciseAnswered(
                                 index,
@@ -363,6 +366,7 @@ private fun ExerciseCard(
                 Button(
                     onClick = {
                         if (canAnswerNow) {
+                            showCorrectAnswer = true
                             onAskTutorForOpenExercise(
                                 index,
                                 exercise.question,
@@ -428,8 +432,16 @@ private fun ExerciseCard(
                             )
                         }
                     )
+
                 }
             }
+
+        }
+//        if (selectedIndex != null || answered) {
+        if (showCorrectAnswer ) {
+            CorrectAnswerBox(
+                answer = correctAnswerText(exercise)
+            )
         }
         if (retryError) {
             Spacer(Modifier.height(spacing4))
@@ -454,6 +466,27 @@ private fun ExerciseCard(
             ExpandSection(title = solution_tab, text = exercise.solution)
         }
     }
+}
+
+@Composable
+private fun CorrectAnswerBox(
+    answer: String,
+) {
+    Spacer(Modifier.height(spacing4))
+
+    Text(
+        text = "$the_correct_answer_is $answer",
+        fontSize = 13.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = Color(0xFF2E7D32),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFE6F4EA), RoundedCornerShape(10.dp))
+            .border(1.dp, Color(0xFF2E7D32), RoundedCornerShape(10.dp))
+            .padding(horizontal = 10.dp, vertical = 10.dp)
+    )
+
+    Spacer(Modifier.height(spacing8))
 }
 
 private fun isCorrectOption(
