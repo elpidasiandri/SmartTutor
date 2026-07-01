@@ -30,7 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.strings.SmartTutorStrings.and_
@@ -43,6 +45,7 @@ import org.example.project.strings.SmartTutorStrings.exerscize_answers_info
 import org.example.project.strings.SmartTutorStrings.exerscize_answers_sum
 import org.example.project.strings.SmartTutorStrings.exerscize_sum_total
 import org.example.project.strings.SmartTutorStrings.last_answer
+import org.example.project.strings.SmartTutorStrings.my_progress_attemps_that_u_did
 import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.of_which
 import org.example.project.strings.SmartTutorStrings.overall_progress
@@ -169,17 +172,32 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                                 modifier = Modifier.padding(12.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
+                                Row {
+                                    Text(
+                                        text = "$excercise ${question.exerciseIndex + 1}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    LearningRichMessage(
+                                        text ="( ${question.question} )",
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
 
                                 Text(
-                                    text = "$excercise ${question.exerciseIndex + 1}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
+                                    text = "$my_progress_attemps_that_u_did : ${question.attemptsCount}",
+                                    fontWeight = FontWeight.Medium
                                 )
 
-                                Text(
-                                    text = question.question,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                question.attempts
+                                    .sortedBy { it.attemptNumber }
+                                    .forEach { attempt ->
+                                        Text(
+                                            text = "Για την προσπάθεια ${attempt.attemptNumber}, ο βαθμός που πήρες ήταν ${attempt.awardedPoints}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
 
                                 Text(
                                     text = "$you_answered ${question.attemptsCount} $you_answered_times $where_ :" +

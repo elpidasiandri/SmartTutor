@@ -256,5 +256,7 @@ const val where_ = "όπου"
 
     const val the_correct_answer_is = "Η σωστή απάντηση είναι"
 //    const val the_correct_answer_is = "The correct answer is"
+    const val my_progress_attemps_that_u_did = "Οι προσπάθειες που έκανες συνολικά είναι"
+//    const val my_progress_attemps_that_u_did = "The attempts you made in total are"
 
 }

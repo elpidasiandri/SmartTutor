@@ -75,4 +75,5 @@ data class ExerciseQuestionStatsDto(
     @SerialName("wrongCount") val wrongCount: Int,
     @SerialName("lastSelectedAnswer") val lastSelectedAnswer: String,
     @SerialName("correctAnswer") val correctAnswer: String,
+    @SerialName("attempts") val attempts: List<ExerciseAttemptDto> = emptyList(),
 )

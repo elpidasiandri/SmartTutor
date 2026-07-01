@@ -2,6 +2,8 @@ package org.example.project.myProgress.state
 
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.myProgress.networkModel.ExerciseQuestionStatsDto
+import org.example.project.tutor.mappers.chatHistory.toDomain
+import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitExerciseStatsDomain
 
 data class MyProgressState(
     val loading: Boolean = false,
@@ -64,6 +66,7 @@ data class ExerciseQuestionStatsDomain(
     val wrongCount: Int,
     val lastSelectedAnswer: String,
     val correctAnswer: String,
+    val attempts: List<LearningUnitExerciseStatsDomain>,
 )
 
 fun ExerciseQuestionStatsDto.toDomain(): ExerciseQuestionStatsDomain {
@@ -74,7 +77,8 @@ fun ExerciseQuestionStatsDto.toDomain(): ExerciseQuestionStatsDomain {
         correctCount = correctCount,
         wrongCount = wrongCount,
         lastSelectedAnswer = lastSelectedAnswer,
-        correctAnswer = correctAnswer
+        correctAnswer = correctAnswer,
+        attempts = attempts.map { it.toDomain() },
     )
 }
 
