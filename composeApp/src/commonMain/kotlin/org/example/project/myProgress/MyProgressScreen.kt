@@ -130,11 +130,13 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                 val isExpanded = expandedUnits[unit.unitIndex] ?: false
                 val answered = unit.totalAnswered
                 val total = unit.totalExercises
-                val remaining = (total - answered).coerceAtLeast(0)
-                val unitProgressPercent = if (total == 0) {
+                val safeTotal = if (total <= 0) answered else total
+                val remaining = (safeTotal - answered).coerceAtLeast(0)
+
+                val unitProgressPercent = if (safeTotal == 0) {
                     0
                 } else {
-                    (answered * 100) / total
+                    (answered * 100) / safeTotal
                 }
 
                 val gradePercent = if (unit.totalMaxPoints == 0.0) {
@@ -192,12 +194,7 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                                 fontWeight = FontWeight.Bold
                             )
 
-                            LinearProgressIndicator(
-                                progress = { unitProgressPercent / 100f },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Text("Απάντησες $answered από τις $total ασκήσεις")
+                            Text("Απάντησες $answered από τις $safeTotal ασκήσεις")
 
                             Text("Μένουν άλλες $remaining ερωτήσεις")
 

@@ -18,10 +18,39 @@ class FirestoreProgressRepository(
 
     private val usersCol = db.collection("users")
 
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        isLenient = true
+    }
     override fun upsertChatProgress(
         userId: String,
         progress: ChatProgressDto,
     ) {
+        val chatSnap = usersCol
+            .document(userId)
+            .collection("chats")
+            .document(progress.chatId)
+            .get()
+            .get()
+
+        val resultJson = chatSnap.getString("resultJson")
+        val partialResultJson = chatSnap.getString("partialResultJson")
+
+        val prototype = when {
+            !resultJson.isNullOrBlank() -> json.decodeFromString(
+                LearningUnitsPrototypeDto.serializer(),
+                resultJson
+            )
+
+            !partialResultJson.isNullOrBlank() -> json.decodeFromString(
+                LearningUnitsPrototypeDto.serializer(),
+                partialResultJson
+            )
+
+            else -> null
+        }
         val docRef = usersCol
             .document(userId)
             .collection("progress")
@@ -47,12 +76,15 @@ class FirestoreProgressRepository(
                 "lastActivityEpochMillis" to progress.lastActivityEpochMillis,
                 "progressPercent" to calculatedProgressPercent,
                 "units" to progress.units.map {
+                    val realUnit = prototype?.learningUnits?.getOrNull(it.unitIndex)
                     mapOf(
                         "unitIndex" to it.unitIndex,
                         "unitTitle" to it.unitTitle,
                         "isRead" to it.isRead,
-                        "totalExercises" to it.totalExercises,
-                        "totalMaxPoints" to it.totalMaxPoints
+                        "totalExercises" to (realUnit?.exercises?.size ?: 0),
+                        "totalMaxPoints" to (realUnit?.exercises?.sumOf { exercise ->
+                            exercise.maxPoints ?: 0.0
+                        } ?: 0.0)
                     )
                 }
             )
