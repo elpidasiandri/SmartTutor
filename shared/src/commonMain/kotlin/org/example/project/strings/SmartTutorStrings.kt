@@ -190,11 +190,11 @@ object SmartTutorStrings {
     //    const val exerscize_answers_sum = "Summary of answered exercises :"
 
 
-//    const val last_answer = "Last answer"
-    const val last_answer = "Τελευταία απάντηση"
+//    const val last_answer = Last answer you gave"
+    const val last_answer = "Τελευταία απάντηση που έδωσες"
 
-//    const val correct_answer_ = "Correct answer"
-    const val correct_answer_ = "Σωστή απάντηση"
+//    const val correct_answer_ = "The correct answer to the question is:"
+    const val correct_answer_ = "Σωστή απάντηση της ερώτησης είναι:"
 //    const val progress_activity = "Activity"
 
 
@@ -258,5 +258,13 @@ const val where_ = "όπου"
 //    const val the_correct_answer_is = "The correct answer is"
     const val my_progress_attemps_that_u_did = "Οι προσπάθειες που έκανες συνολικά είναι"
 //    const val my_progress_attemps_that_u_did = "The attempts you made in total are"
+const val all_answers = "Απαντήσεις:"
+//    const val all_answers = "Answers:"
+//    const val total_atempts_title = "Total attempts:"
+    const val total_atempts_title = "Προσπάθειες συνολικά :"
+    const val attempt_title = "Προσπάθεια"
+//    const val attempt_title = "Attempt"
+//    const val grade_info = "grade"
+    const val grade_info = "βαθμός"
 
 }

@@ -9,17 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,12 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressState
-import org.example.project.strings.SmartTutorStrings.and_
+import org.example.project.strings.SmartTutorStrings.all_answers
+import org.example.project.strings.SmartTutorStrings.attempt_title
 import org.example.project.strings.SmartTutorStrings.correct_
 import org.example.project.strings.SmartTutorStrings.correct_and
 import org.example.project.strings.SmartTutorStrings.correct_answer_
@@ -44,18 +42,16 @@ import org.example.project.strings.SmartTutorStrings.exerscize_answer
 import org.example.project.strings.SmartTutorStrings.exerscize_answers_info
 import org.example.project.strings.SmartTutorStrings.exerscize_answers_sum
 import org.example.project.strings.SmartTutorStrings.exerscize_sum_total
+import org.example.project.strings.SmartTutorStrings.grade_info
 import org.example.project.strings.SmartTutorStrings.last_answer
-import org.example.project.strings.SmartTutorStrings.my_progress_attemps_that_u_did
 import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.of_which
 import org.example.project.strings.SmartTutorStrings.overall_progress
 import org.example.project.strings.SmartTutorStrings.progress_chat
 import org.example.project.strings.SmartTutorStrings.sum_answers
+import org.example.project.strings.SmartTutorStrings.total_atempts_title
 import org.example.project.strings.SmartTutorStrings.unit_title
-import org.example.project.strings.SmartTutorStrings.where_
 import org.example.project.strings.SmartTutorStrings.wrong_
-import org.example.project.strings.SmartTutorStrings.you_answered
-import org.example.project.strings.SmartTutorStrings.you_answered_times
 import org.example.project.tutor.learningList.LearningRichMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -162,71 +158,98 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                     Spacer(Modifier.height(8.dp))
 
                     unit.questions.forEach { question ->
-
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 16.dp, bottom = 12.dp)
+                                .padding(start = 8.dp, bottom = 12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Row {
+
+                                Row(
+                                    verticalAlignment = Alignment.Top,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Text(
                                         text = "$excercise ${question.exerciseIndex + 1}",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
 
                                     LearningRichMessage(
-                                        text ="( ${question.question} )",
-                                        modifier = Modifier.fillMaxWidth()
+                                        text = question.question,
+                                        modifier = Modifier.weight(1f)
                                     )
                                 }
 
-                                Text(
-                                    text = "$my_progress_attemps_that_u_did : ${question.attemptsCount}",
-                                    fontWeight = FontWeight.Medium
-                                )
-
-                                question.attempts
-                                    .sortedBy { it.attemptNumber }
-                                    .forEach { attempt ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
                                         Text(
-                                            text = "Για την προσπάθεια ${attempt.attemptNumber}, ο βαθμός που πήρες ήταν ${attempt.awardedPoints}",
-                                            style = MaterialTheme.typography.bodySmall
+                                            text = "$total_atempts_title ${question.attemptsCount}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+
+                                        question.attempts
+                                            .sortedBy { it.attemptNumber }
+                                            .forEach { attempt ->
+                                                Text(
+                                                    text = "$attempt_title ${attempt.attemptNumber}: $grade_info ${attempt.awardedPoints}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+
+                                        Text(
+                                            text = "$all_answers ${question.correctCount} $correct_ • ${question.wrongCount} $wrong_",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
                                         )
                                     }
+                                }
 
-                                Text(
-                                    text = "$you_answered ${question.attemptsCount} $you_answered_times $where_ :" +
-                                            "$correct_ ${question.correctCount} $and_ $wrong_ ${question.wrongCount}",
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = last_answer,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
 
-                                Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = question.lastSelectedAnswer,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
 
-                                Text(
-                                    text = last_answer,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.labelLarge
-                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        text = correct_answer_,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
 
-                                Text(question.lastSelectedAnswer)
-
-                                Spacer(Modifier.height(4.dp))
-
-                                Text(
-                                    text = correct_answer_,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-
-                                LearningRichMessage(
-                                    text = question.correctAnswer,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                    LearningRichMessage(
+                                        text = question.correctAnswer,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             }
                         }
                     }
