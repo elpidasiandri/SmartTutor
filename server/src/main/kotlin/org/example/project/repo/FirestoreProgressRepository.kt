@@ -421,6 +421,7 @@ class FirestoreProgressRepository(
             val attempts = attemptsRaw.mapNotNull {
                 mapToExerciseAttempt(it)
             }
+
             ExerciseAnswerProgressDto(
                 chatId = doc.getString("chatId") ?: "",
                 userId = doc.getString("userId") ?: userId,
@@ -447,18 +448,24 @@ class FirestoreProgressRepository(
                     .groupBy {
                         "${it.chatId}_${it.unitIndex}_${it.exerciseIndex}_${it.question.hashCode()}"
                     }
-                    .map { (_, attempts) ->
-                        val sortedAttempts = attempts.sortedBy { it.answeredAtEpochMillis }
-                        val lastAttempt = sortedAttempts.last()
+                    .map { (_, answersForQuestion) ->
+                        val lastAnswer = answersForQuestion.maxBy { it.answeredAtEpochMillis }
+
+                        val realAttempts = answersForQuestion
+                            .flatMap { it.attempts }
+                            .sortedBy { it.attemptNumber }
+
+                        val lastAttempt = realAttempts.lastOrNull()
 
                         ExerciseQuestionStatsDto(
-                            exerciseIndex = lastAttempt.exerciseIndex,
-                            question = lastAttempt.question,
-                            attemptsCount = attempts.size,
-                            correctCount = attempts.count { it.isCorrect },
-                            wrongCount = attempts.count { !it.isCorrect },
-                            lastSelectedAnswer = lastAttempt.selectedAnswer,
-                            correctAnswer = lastAttempt.correctAnswer
+                            exerciseIndex = lastAnswer.exerciseIndex,
+                            question = lastAnswer.question,
+                            attemptsCount = realAttempts.size,
+                            correctCount = realAttempts.count { it.isCorrect },
+                            wrongCount = realAttempts.count { !it.isCorrect },
+                            lastSelectedAnswer = lastAttempt?.selectedAnswer ?: lastAnswer.selectedAnswer,
+                            correctAnswer = lastAnswer.correctAnswer,
+                            attempts = realAttempts
                         )
                     }
                     .sortedBy { it.exerciseIndex }
