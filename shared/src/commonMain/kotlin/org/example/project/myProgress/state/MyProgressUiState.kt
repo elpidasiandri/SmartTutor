@@ -105,6 +105,10 @@ data class LearningUnitExerciseStatsUi(
     val correctCount: Int,
     val wrongCount: Int,
     val totalAnswered: Int,
+    val totalExercises: Int,
+    val totalMaxPoints: Double,
+    val awardedPoints: Double,
+    val isRead: Boolean,
     val questions: List<ExerciseQuestionStatsDomain>,
 )
 

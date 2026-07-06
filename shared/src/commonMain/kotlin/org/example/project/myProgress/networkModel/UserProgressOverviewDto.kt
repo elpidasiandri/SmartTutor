@@ -36,6 +36,8 @@ data class UnitReadProgressDto(
     @SerialName("unitIndex") val unitIndex: Int = 0,
     @SerialName("unitTitle") val unitTitle: String = "",
     @SerialName("isRead") val isRead: Boolean = false,
+    @SerialName("totalExercises") val totalExercises: Int = 0,
+    @SerialName("totalMaxPoints") val totalMaxPoints: Double = 0.0,
 )
 
 @Serializable

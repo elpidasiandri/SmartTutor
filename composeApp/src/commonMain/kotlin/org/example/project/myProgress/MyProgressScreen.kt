@@ -19,6 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -127,31 +128,94 @@ fun ExerciseAnswersCard(state: MyProgressState) {
 
             state.unitExerciseStats.forEach { unit ->
                 val isExpanded = expandedUnits[unit.unitIndex] ?: false
+                val answered = unit.totalAnswered
+                val total = unit.totalExercises
+                val remaining = (total - answered).coerceAtLeast(0)
+                val unitProgressPercent = if (total == 0) {
+                    0
+                } else {
+                    (answered * 100) / total
+                }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            expandedUnits[unit.unitIndex] = !isExpanded
-                        }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                val gradePercent = if (unit.totalMaxPoints == 0.0) {
+                    0
+                } else {
+                    ((unit.awardedPoints * 100) / unit.totalMaxPoints).toInt()
+                }
+
+                val failed = unit.totalMaxPoints > 0.0 && gradePercent < 50
+
+
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "$unit_title ${unit.unitIndex + 1}: ${unit.unitTitle}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                    Row(
                         modifier = Modifier
-                    )
+                            .fillMaxWidth()
+                            .clickable {
+                                expandedUnits[unit.unitIndex] = !isExpanded
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$unit_title ${unit.unitIndex + 1}: ${unit.unitTitle}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
 
-                    Icon(
-                        imageVector = if (isExpanded) {
-                            Icons.Filled.KeyboardArrowDown
-                        } else {
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight
-                        },
-                        contentDescription = null
-                    )
+                        Icon(
+                            imageVector = if (isExpanded) {
+                                Icons.Filled.KeyboardArrowDown
+                            } else {
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight
+                            },
+                            contentDescription = null
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Πρόοδος ενότητας: $unitProgressPercent%",
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            LinearProgressIndicator(
+                                progress = { unitProgressPercent / 100f },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Text("Απάντησες $answered από τις $total ασκήσεις")
+
+                            Text("Μένουν άλλες $remaining ερωτήσεις")
+
+                            Text(
+                                text = "Βαθμός: ${unit.awardedPoints}/${unit.totalMaxPoints} ($gradePercent%)",
+                                color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            if (failed) {
+                                Text(
+                                    text = "Failed",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (isExpanded) {

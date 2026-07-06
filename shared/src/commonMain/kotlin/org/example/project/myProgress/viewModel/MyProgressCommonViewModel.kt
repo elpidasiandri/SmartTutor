@@ -7,20 +7,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.example.project.myProgress.state.LearningUnitExerciseStatsUi
-import org.example.project.myProgress.state.MyProgressChatItem
 import org.example.project.myProgress.state.MyProgressEvents
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.myProgress.state.MyProgressUiEvents
 import org.example.project.myProgress.state.toDomain
-import org.example.project.myProgress.useCases.DeleteChatProgressUseCase
 import org.example.project.myProgress.useCases.GetChatProgressListUseCase
 import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
-import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
-import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
-import org.example.project.tutor.useCases.GetChatByIdUseCase
 
 class MyProgressCommonViewModel(
     private val scope: CoroutineScope,
@@ -116,6 +111,7 @@ class MyProgressCommonViewModel(
 
                 val totalTasks = totalUnits + totalExercises
 
+
                 val calculatedProgressPercent =
                     if (totalTasks == 0) {
                         0
@@ -140,13 +136,24 @@ class MyProgressCommonViewModel(
                         totalCorrectAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.correctCount },
                         totalWrongAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.wrongCount },
                         unitExerciseStats = exerciseStats.map { exerciseState ->
+                            val unitFromChat = latestChat?.units
+                                ?.firstOrNull { it.unitIndex == exerciseState.unitIndex }
+
+                            val awardedPoints = exerciseState.questions.sumOf { question ->
+                                question.attempts.maxByOrNull { it.attemptNumber }?.awardedPoints ?: 0.0
+                            }
+
                             LearningUnitExerciseStatsUi(
                                 unitIndex = exerciseState.unitIndex,
                                 unitTitle = exerciseState.unitTitle,
                                 correctCount = exerciseState.correctCount,
                                 wrongCount = exerciseState.wrongCount,
                                 totalAnswered = exerciseState.totalAnswered,
-                                questions = exerciseState.questions.map { questions -> questions.toDomain() }
+                                totalExercises = unitFromChat?.totalExercises ?: exerciseState.totalAnswered,
+                                totalMaxPoints = unitFromChat?.totalMaxPoints ?: 0.0,
+                                awardedPoints = awardedPoints,
+                                isRead = unitFromChat?.isRead ?: false,
+                                questions = exerciseState.questions.map { it.toDomain() }
                             )
                         },
                         event = MyProgressEvents.Loaded

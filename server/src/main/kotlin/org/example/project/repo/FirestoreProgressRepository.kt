@@ -50,7 +50,9 @@ class FirestoreProgressRepository(
                     mapOf(
                         "unitIndex" to it.unitIndex,
                         "unitTitle" to it.unitTitle,
-                        "isRead" to it.isRead
+                        "isRead" to it.isRead,
+                        "totalExercises" to it.totalExercises,
+                        "totalMaxPoints" to it.totalMaxPoints
                     )
                 }
             )
@@ -206,7 +208,11 @@ class FirestoreProgressRepository(
                     UnitReadProgressDto(
                         unitIndex = (unit["unitIndex"] as? Long)?.toInt() ?: 0,
                         unitTitle = unit["unitTitle"] as? String ?: "",
-                        isRead = unit["isRead"] as? Boolean ?: false
+                        isRead = unit["isRead"] as? Boolean ?: false,
+                        totalExercises = (unit["totalExercises"] as? Long)?.toInt() ?: 0,
+                        totalMaxPoints = (unit["totalMaxPoints"] as? Double)
+                            ?: (unit["totalMaxPoints"] as? Long)?.toDouble()
+                            ?: 0.0
                     )
                 } ?: emptyList(),
             )

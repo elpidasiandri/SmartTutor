@@ -27,5 +27,7 @@ data class ChatProgressDomain(
 data class UnitReadProgressDomain(
     val unitIndex: Int = 0,
     val unitTitle: String = "",
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
+    val totalExercises: Int = 0,
+    val totalMaxPoints: Double = 0.0,
 )

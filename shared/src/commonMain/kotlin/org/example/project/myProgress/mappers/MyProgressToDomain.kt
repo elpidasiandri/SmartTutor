@@ -33,7 +33,9 @@ fun ChatProgressDto.toDomain() = ChatProgressDomain(
         UnitReadProgressDomain(
             unitIndex = it.unitIndex,
             unitTitle = it.unitTitle,
-            isRead = it.isRead
+            isRead = it.isRead,
+            totalExercises = it.totalExercises,
+            totalMaxPoints = it.totalMaxPoints
         )
     }
 )
