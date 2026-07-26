@@ -172,6 +172,7 @@ class MyProgressCommonViewModel(
                         streakDays = overview.streakDays,
                         totalCorrectAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.correctCount },
                         totalWrongAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.wrongCount },
+                        totalPartialAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.partialCount },
                         unitExerciseStats = unitExerciseStatsUi,
                         event = MyProgressEvents.Loaded
                     )

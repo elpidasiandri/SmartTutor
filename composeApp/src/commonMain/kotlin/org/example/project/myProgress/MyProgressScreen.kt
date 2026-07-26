@@ -61,6 +61,7 @@ import org.example.project.strings.SmartTutorStrings.total_atempts_title
 import org.example.project.strings.SmartTutorStrings.unit_progress_title
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.strings.SmartTutorStrings.wrong_
+import org.example.project.strings.SmartTutorStrings.wrong_parial
 import org.example.project.strings.SmartTutorStrings.you_answered
 import org.example.project.strings.SmartTutorStrings.you_answered_of
 import org.example.project.strings.SmartTutorStrings.you_answered_of_answers
@@ -366,8 +367,13 @@ private fun ProgressOverviewCard(state: MyProgressState) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            val totalAnswers =
+                state.totalCorrectAnswers +
+                        state.totalPartialAnswers +
+                        state.totalWrongAnswers
+
             StatBox(
-                value = (state.totalCorrectAnswers + state.totalWrongAnswers).toString(),
+                value = totalAnswers.toString(),
                 title = sum_answers,
                 modifier = Modifier.width(200.dp).fillMaxHeight()
             )
@@ -387,8 +393,8 @@ private fun ProgressOverviewCard(state: MyProgressState) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             StatBox(
-                value = state.totalWrongAnswers.toString(),
-                title = wrong_,
+                value = (state.totalWrongAnswers+ state.totalPartialAnswers).toString(),
+                title = wrong_parial,
                 isError = true,
                 modifier = Modifier.width(200.dp).fillMaxHeight()
             )

@@ -33,6 +33,7 @@ data class MyProgressState(
     val uiEvent: MyProgressUiEvents = MyProgressUiEvents.None,
     val totalCorrectAnswers: Int = 0,
     val totalWrongAnswers: Int = 0,
+    val totalPartialAnswers: Int = 0 ,
     val unitExerciseStats: List<LearningUnitExerciseStatsUi> = emptyList(),
 )
 

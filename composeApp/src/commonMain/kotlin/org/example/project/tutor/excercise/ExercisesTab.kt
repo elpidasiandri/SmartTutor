@@ -39,6 +39,7 @@ import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.strings.SmartTutorStrings.ask_tutor_about_my_answer
 import org.example.project.strings.SmartTutorStrings.attemp_info_retry
+import org.example.project.strings.SmartTutorStrings.cannot_answer_this_time
 import org.example.project.strings.SmartTutorStrings.current_attemp
 import org.example.project.strings.SmartTutorStrings.excercise
 import org.example.project.strings.SmartTutorStrings.excercise_write_your_answer
@@ -54,6 +55,8 @@ import org.example.project.strings.SmartTutorStrings.explanation_tab
 import org.example.project.strings.SmartTutorStrings.grade_
 import org.example.project.strings.SmartTutorStrings.hint_tab
 import org.example.project.strings.SmartTutorStrings.info_retry
+import org.example.project.strings.SmartTutorStrings.must_completed_this_attemp_excersizes
+import org.example.project.strings.SmartTutorStrings.progress_unit_not_completed_see_answers
 import org.example.project.strings.SmartTutorStrings.solution_tab
 import org.example.project.strings.SmartTutorStrings.sum_grade
 import org.example.project.strings.SmartTutorStrings.sum_grade_are
@@ -152,6 +155,7 @@ private fun ExerciseCard(
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
     val latestAttempt = exercise.latestAttempt
     val answered = latestAttempt != null
+    val isTemporarilyLocked = answered && !hasAnsweredAllExercisesInUnit
     val canAnswerNow = !answered || hasAnsweredAllExercisesInUnit
     val type = exercise.type
     var showCorrectAnswer by rememberSaveable(index) { mutableStateOf(false) }
@@ -444,7 +448,13 @@ private fun ExerciseCard(
             }
 
         }
-//        if (selectedIndex != null || answered) {
+
+        if (isTemporarilyLocked) {
+            Spacer(Modifier.height(spacing12))
+
+            ExerciseLockedInfo()
+        }
+
         if (showCorrectAnswer ) {
             CorrectAnswerBox(
                 answer = correctAnswerText(exercise)
@@ -653,3 +663,40 @@ private fun ExpandSection(
     }
 }
 
+@Composable
+private fun ExerciseLockedInfo() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = Color(0xFFFFF8E1),
+                shape = RoundedCornerShape(10.dp),
+            )
+            .border(
+                width = 1.dp,
+                color = Color(0xFFF9A825),
+                shape = RoundedCornerShape(10.dp),
+            )
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = cannot_answer_this_time,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6D4C00),
+        )
+
+        Text(
+            text = must_completed_this_attemp_excersizes,
+            fontSize = 12.sp,
+            color = Color(0xFF6D4C00),
+        )
+
+        Text(
+            text = progress_unit_not_completed_see_answers,
+            fontSize = 12.sp,
+            color = Color(0xFF6D4C00),
+        )
+    }
+}
