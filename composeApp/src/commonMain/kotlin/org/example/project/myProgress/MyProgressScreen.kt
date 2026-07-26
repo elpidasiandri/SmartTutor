@@ -19,7 +19,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.strings.SmartTutorStrings.all_answers
+import org.example.project.strings.SmartTutorStrings.answers_left
+import org.example.project.strings.SmartTutorStrings.answers_left_of_questions
 import org.example.project.strings.SmartTutorStrings.attempt_title
 import org.example.project.strings.SmartTutorStrings.correct_
 import org.example.project.strings.SmartTutorStrings.correct_and
@@ -49,10 +50,17 @@ import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.of_which
 import org.example.project.strings.SmartTutorStrings.overall_progress
 import org.example.project.strings.SmartTutorStrings.progress_chat
+import org.example.project.strings.SmartTutorStrings.progress_failed
+import org.example.project.strings.SmartTutorStrings.progress_passed
+import org.example.project.strings.SmartTutorStrings.progress_unit_not_completed
 import org.example.project.strings.SmartTutorStrings.sum_answers
 import org.example.project.strings.SmartTutorStrings.total_atempts_title
+import org.example.project.strings.SmartTutorStrings.unit_progress_title
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.strings.SmartTutorStrings.wrong_
+import org.example.project.strings.SmartTutorStrings.you_answered
+import org.example.project.strings.SmartTutorStrings.you_answered_of
+import org.example.project.strings.SmartTutorStrings.you_answered_of_answers
 import org.example.project.tutor.learningList.LearningRichMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,15 +137,16 @@ fun ExerciseAnswersCard(state: MyProgressState) {
             state.unitExerciseStats.forEach { unit ->
                 val isExpanded = expandedUnits[unit.unitIndex] ?: false
                 val answered = unit.totalAnswered
-                val total = unit.totalExercises
-                val safeTotal = if (total <= 0) answered else total
-                val remaining = (safeTotal - answered).coerceAtLeast(0)
 
-                val unitProgressPercent = if (safeTotal == 0) {
+                val total = unit.totalExercises
+                val remaining = (total - answered).coerceAtLeast(0)
+
+                val unitProgressPercent = if (total <= 0) {
                     0
                 } else {
-                    (answered * 100) / safeTotal
+                    (answered * 100) / total
                 }
+
 
                 val gradePercent = if (unit.totalMaxPoints == 0.0) {
                     0
@@ -145,9 +154,15 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                     ((unit.awardedPoints * 100) / unit.totalMaxPoints).toInt()
                 }
 
-                val failed = unit.totalMaxPoints > 0.0 && gradePercent < 50
+                val isCompleted = total > 0 && answered >= total
 
+                val failed = isCompleted &&
+                        unit.totalMaxPoints > 0.0 &&
+                        gradePercent < 50
 
+                val passed = isCompleted &&
+                        unit.totalMaxPoints > 0.0 &&
+                        gradePercent >= 50
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -190,26 +205,44 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "Πρόοδος ενότητας: $unitProgressPercent%",
+                                text = "$unit_progress_title: $unitProgressPercent%",
                                 fontWeight = FontWeight.Bold
                             )
 
-                            Text("Απάντησες $answered από τις $safeTotal ασκήσεις")
+                            Text("$you_answered $answered $you_answered_of $total $you_answered_of_answers")
 
-                            Text("Μένουν άλλες $remaining ερωτήσεις")
+                            Text("$answers_left $remaining $answers_left_of_questions")
 
                             Text(
-                                text = "Βαθμός: ${unit.awardedPoints}/${unit.totalMaxPoints} ($gradePercent%)",
+                                text = "$grade_info : ${unit.awardedPoints}/${unit.totalMaxPoints} ($gradePercent%)",
                                 color = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
                             )
 
-                            if (failed) {
-                                Text(
-                                    text = "Failed",
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
+                            when {
+                                failed -> {
+                                    Text(
+                                        text = progress_failed,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                }
+
+                                passed -> {
+                                    Text(
+                                        text = progress_passed,
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                }
+
+                                answered > 0 -> {
+                                    Text(
+                                        text = progress_unit_not_completed,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
                             }
                         }
                     }

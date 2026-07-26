@@ -1342,7 +1342,11 @@ class TutorCommonViewModel(
                 UnitReadProgressDomain(
                     unitIndex = index,
                     unitTitle = unit.title,
-                    isRead = unit.isRead
+                    isRead = unit.isRead,
+                    totalExercises = unit.exercises.size,
+                    totalMaxPoints = unit.exercises.sumOf { exercise ->
+                        exercise.maxPoints
+                    }
                 )
             }
         )

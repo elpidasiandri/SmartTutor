@@ -118,6 +118,43 @@ class MyProgressCommonViewModel(
                     } else {
                         ((readUnits + answeredExercises) * 100) / totalTasks
                     }
+
+                val statsByUnitIndex = exerciseStats.associateBy { it.unitIndex }
+
+                val unitExerciseStatsUi = latestChat?.units.orEmpty().map { chatUnit ->
+                    val exerciseState = statsByUnitIndex[chatUnit.unitIndex]
+
+                    val questions = exerciseState
+                        ?.questions
+                        ?.map { it.toDomain() }
+                        .orEmpty()
+
+                    val answeredUniqueExercises = questions
+                        .map { it.exerciseIndex }
+                        .distinct()
+                        .size
+
+                    val awardedPoints = questions.sumOf { question ->
+                        question.attempts
+                            .maxByOrNull { it.attemptNumber }
+                            ?.awardedPoints
+                            ?: 0.0
+                    }
+
+                    LearningUnitExerciseStatsUi(
+                        unitIndex = chatUnit.unitIndex,
+                        unitTitle = chatUnit.unitTitle,
+                        correctCount = exerciseState?.correctCount ?: 0,
+                        wrongCount = exerciseState?.wrongCount ?: 0,
+                        totalAnswered = answeredUniqueExercises,
+                        totalExercises = chatUnit.totalExercises,
+                        totalMaxPoints = chatUnit.totalMaxPoints,
+                        awardedPoints = awardedPoints,
+                        isRead = chatUnit.isRead,
+                        questions = questions
+                    )
+                }
+
                 _state.update {
                     it.copy(
                         loading = false,
@@ -135,27 +172,7 @@ class MyProgressCommonViewModel(
                         streakDays = overview.streakDays,
                         totalCorrectAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.correctCount },
                         totalWrongAnswers = exerciseStats.sumOf { exerciseState -> exerciseState.wrongCount },
-                        unitExerciseStats = exerciseStats.map { exerciseState ->
-                            val unitFromChat = latestChat?.units
-                                ?.firstOrNull { it.unitIndex == exerciseState.unitIndex }
-
-                            val awardedPoints = exerciseState.questions.sumOf { question ->
-                                question.attempts.maxByOrNull { it.attemptNumber }?.awardedPoints ?: 0.0
-                            }
-
-                            LearningUnitExerciseStatsUi(
-                                unitIndex = exerciseState.unitIndex,
-                                unitTitle = exerciseState.unitTitle,
-                                correctCount = exerciseState.correctCount,
-                                wrongCount = exerciseState.wrongCount,
-                                totalAnswered = exerciseState.totalAnswered,
-                                totalExercises = unitFromChat?.totalExercises ?: exerciseState.totalAnswered,
-                                totalMaxPoints = unitFromChat?.totalMaxPoints ?: 0.0,
-                                awardedPoints = awardedPoints,
-                                isRead = unitFromChat?.isRead ?: false,
-                                questions = exerciseState.questions.map { it.toDomain() }
-                            )
-                        },
+                        unitExerciseStats = unitExerciseStatsUi,
                         event = MyProgressEvents.Loaded
                     )
                 }
