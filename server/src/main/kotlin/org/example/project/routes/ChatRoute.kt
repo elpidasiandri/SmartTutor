@@ -18,6 +18,7 @@ import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
+import org.example.project.tutor.networkModel.chatHistory.OpenExerciseEvaluationDto
 import java.util.UUID
 
 fun Route.chatRoutes(
@@ -25,6 +26,7 @@ fun Route.chatRoutes(
     llm: PromptLlmClient,
     progressRepo: IProgressRepository
 ) {
+
     route("/v1/chats") {
         post("/{chatId}/units/{unitIndex}/read") {
             val userId = call.request.queryParameters["userId"]
@@ -176,6 +178,7 @@ fun Route.chatRoutes(
             val req = call.receive<AskTutorRequest>()
 
             val messageText = req.message?.trim()
+
             if (messageText.isNullOrBlank()) {
                 return@post call.respond(
                     HttpStatusCode.BadRequest,
@@ -196,6 +199,7 @@ fun Route.chatRoutes(
             )
 
             val safeUnitIndex = req.unitIndex ?: 0
+
             val unit = prototype.learningUnits.getOrNull(safeUnitIndex)
                 ?: return@post call.respond(
                     HttpStatusCode.BadRequest,
@@ -203,45 +207,177 @@ fun Route.chatRoutes(
                 )
 
             val userMessage = ChatMessageDto(
-                messageId = "msg_" + UUID.randomUUID().toString().replace("-", ""),
+                messageId = "msg_" + UUID.randomUUID()
+                    .toString()
+                    .replace("-", ""),
                 chatId = chatId,
                 sender = ChatSender.User.value,
                 text = messageText,
                 unitNumber = unit.numbering,
                 unitTitle = unit.title,
-                createdAtEpochMillis = System.currentTimeMillis()
+                createdAtEpochMillis = System.currentTimeMillis(),
             )
 
             if (req.saveToChat) {
                 chatRepo.addMessage(userId, chatId, userMessage)
             }
-            val recentMessages = chatRepo.getMessages(userId, chatId).takeLast(12)
 
-            val contextText = req.contextText?.trim().orEmpty().ifBlank {
-                when (req.tab.lowercase()) {
-                    "learning" -> unit.textInfo ?: ""
-                    "exercises" -> unit.exercises.joinToString("\n\n") { it.question ?: "" }
-                    else -> unit.textInfo ?: ""
+            /*
+             * ΑΞΙΟΛΟΓΗΣΗ ΑΝΟΙΧΤΗΣ ΑΣΚΗΣΗΣ
+             */
+            if (req.isExerciseEvaluation) {
+                val exerciseIndex = req.exerciseIndex
+                    ?: return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing exerciseIndex")
+                    )
+
+                val exercise = unit.exercises.getOrNull(exerciseIndex)
+                    ?: return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid exerciseIndex")
+                    )
+
+                val maxPoints = exercise.maxPoints ?: 0.0
+
+                if (maxPoints <= 0.0) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid maxPoints")
+                    )
                 }
+
+                val evaluation = llm.gradeOpenExercise(
+                    language = resolveTutorLanguage(chat.language),
+                    fileName = chat.title,
+                    unitTitle = unit.title.orEmpty(),
+                    question = exercise.question.orEmpty(),
+                    suggestedSolution = exercise.solution.orEmpty(),
+                    userAnswer = messageText,
+                    maxPoints = maxPoints,
+                )
+
+                val resolvedLanguage = resolveTutorLanguage(chat.language)
+
+                val statusText = when {
+                    resolvedLanguage.equals("Greek", ignoreCase = true) -> {
+                        when (evaluation.gradingStatus.lowercase()) {
+                            "correct" -> "Σωστή απάντηση"
+                            "partial" -> "Μερικώς σωστή απάντηση"
+                            else -> "Η απάντηση χρειάζεται βελτίωση"
+                        }
+                    }
+
+                    else -> {
+                        when (evaluation.gradingStatus.lowercase()) {
+                            "correct" -> "Correct answer"
+                            "partial" -> "Partially correct answer"
+                            else -> "The answer needs improvement"
+                        }
+                    }
+                }
+
+                val scoreText = if (
+                    resolvedLanguage.equals("Greek", ignoreCase = true)
+                ) {
+                    "Βαθμολογία: ${formatPoints(evaluation.awardedPoints)} / " +
+                            formatPoints(evaluation.maxPoints)
+                } else {
+                    "Score: ${formatPoints(evaluation.awardedPoints)} / " +
+                            formatPoints(evaluation.maxPoints)
+                }
+
+                val aiText = buildString {
+                    appendLine(scoreText)
+                    appendLine(statusText)
+                    appendLine()
+                    append(evaluation.feedback)
+
+                    evaluation.improvementSuggestion
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let {
+                            appendLine()
+                            appendLine()
+                            append(it)
+                        }
+
+                    evaluation.exampleAnswer
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let {
+                            appendLine()
+                            appendLine()
+                            append(it)
+                        }
+                }
+
+                val aiMessage = ChatMessageDto(
+                    messageId = "msg_" + UUID.randomUUID()
+                        .toString()
+                        .replace("-", ""),
+                    chatId = chatId,
+                    sender = ChatSender.Ai.value,
+                    text = aiText,
+                    unitNumber = unit.numbering,
+                    unitTitle = unit.title,
+                    createdAtEpochMillis = System.currentTimeMillis(),
+                )
+                if (req.saveToChat) {
+                    chatRepo.addMessage(userId, chatId, aiMessage)
+                }
+
+                return@post call.respond(
+                    AskTutorResponse(
+                        userMessage = userMessage,
+                        aiMessage = aiMessage,
+                        evaluation = evaluation,
+                    )
+                )
             }
 
+            /*
+             * ΑΠΛΗ ΕΡΩΤΗΣΗ ΠΡΟΣ ΤΟΝ TUTOR
+             */
+            val recentMessages = chatRepo
+                .getMessages(userId, chatId)
+                .takeLast(12)
+
+            val contextText = req.contextText
+                ?.trim()
+                .orEmpty()
+                .ifBlank {
+                    when (req.tab.lowercase()) {
+                        "learning" -> unit.textInfo.orEmpty()
+
+                        "exercises" -> unit.exercises.joinToString(
+                            separator = "\n\n"
+                        ) {
+                            it.question.orEmpty()
+                        }
+
+                        else -> unit.textInfo.orEmpty()
+                    }
+                }
+
             val aiAnswer = llm.answerQuestionForUnit(
-                language = chat.language ?: "el",
+                language = resolveTutorLanguage(chat.language),
                 fileName = chat.title,
-                unitTitle = unit.title ?: "",
+                unitTitle = unit.title.orEmpty(),
                 tab = req.tab,
                 contextText = contextText,
                 recentMessages = recentMessages,
-                userQuestion = messageText
+                userQuestion = messageText,
             )
+
             val aiMessage = ChatMessageDto(
-                messageId = "msg_" + UUID.randomUUID().toString().replace("-", ""),
+                messageId = "msg_" + UUID.randomUUID()
+                    .toString()
+                    .replace("-", ""),
                 chatId = chatId,
                 sender = ChatSender.Ai.value,
                 text = aiAnswer,
                 unitNumber = unit.numbering,
                 unitTitle = unit.title,
-                createdAtEpochMillis = System.currentTimeMillis()
+                createdAtEpochMillis = System.currentTimeMillis(),
             )
 
             if (req.saveToChat) {
@@ -251,7 +387,8 @@ fun Route.chatRoutes(
             call.respond(
                 AskTutorResponse(
                     userMessage = userMessage,
-                    aiMessage = aiMessage
+                    aiMessage = aiMessage,
+                    evaluation = null,
                 )
             )
         }
@@ -297,3 +434,35 @@ fun Route.chatRoutes(
         }
     }
 }
+
+private fun formatPoints(value: Double): String {
+    return if (value % 1.0 == 0.0) {
+        value.toInt().toString()
+    } else {
+        value.toString()
+    }
+}
+fun resolveTutorLanguage(language: String?): String {
+    return when (language?.trim()?.lowercase()) {
+        "el",
+        "el-gr",
+        "gr",
+        "greek",
+        "ελληνικά",
+        "ελληνικη",
+        "ελληνική" -> "Greek"
+
+        "en",
+        "en-us",
+        "en-gb",
+        "english",
+        "αγγλικά",
+        "αγγλικα" -> "English"
+
+        null,
+        "" -> "Greek"
+
+        else -> language
+    }
+}
+

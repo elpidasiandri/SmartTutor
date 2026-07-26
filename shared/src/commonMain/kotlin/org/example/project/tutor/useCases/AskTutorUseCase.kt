@@ -14,7 +14,9 @@ class AskTutorUseCase(
         message: String,
         token: String,
         chatMode: String,
-        saveToChat: Boolean
+        saveToChat: Boolean,
+        isExerciseEvaluation: Boolean = false,
+        exerciseIndex: Int? = null,
     ): AskTutorResponse {
         return repo.askTutor(
             chatId = chatId,
@@ -23,7 +25,9 @@ class AskTutorUseCase(
                 unitIndex = unitIndex,
                 message = message,
                 tab = chatMode,
-                saveToChat = saveToChat
+                saveToChat = saveToChat,
+                isExerciseEvaluation = isExerciseEvaluation,
+                exerciseIndex = exerciseIndex,
             ),
             token = token
         )

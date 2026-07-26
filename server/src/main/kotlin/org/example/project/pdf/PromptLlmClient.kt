@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.json.*
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
+import org.example.project.tutor.networkModel.chatHistory.OpenExerciseEvaluationDto
 import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.ImageGenRequest
 import org.example.project.tutor.networkModel.uploadPdf.ImageGenResponse
@@ -43,7 +44,235 @@ class PromptLlmClient(
         }
         engine { requestTimeout = 180_000 }
     }
+    suspend fun gradeOpenExercise(
+        language: String,
+        fileName: String,
+        unitTitle: String,
+        question: String,
+        suggestedSolution: String,
+        userAnswer: String,
+        maxPoints: Double,
+    ): OpenExerciseEvaluationDto {
+        require(maxPoints > 0.0) {
+            "maxPoints must be greater than zero"
+        }
 
+        val resolvedLanguage = when (
+            language.trim().lowercase()
+        ) {
+            "el",
+            "el-gr",
+            "gr",
+            "greek",
+            "ελληνικά",
+            "ελληνικα" -> "Greek"
+
+            "en",
+            "en-us",
+            "en-gb",
+            "english",
+            "αγγλικά",
+            "αγγλικα" -> "English"
+
+            else -> language.ifBlank { "Greek" }
+        }
+
+        val system = """
+        MODE: OPEN_EXERCISE_GRADING
+
+        You are grading a student's open-ended educational answer.
+
+        RESPONSE LANGUAGE:
+        - All user-facing text must be written exclusively in $resolvedLanguage.
+        - feedback must be written in $resolvedLanguage.
+        - improvementSuggestion must be written in $resolvedLanguage.
+        - exampleAnswer must be written in $resolvedLanguage.
+        - Java code and Java keywords must not be translated.
+        - gradingStatus must always remain one of:
+          correct, partial, wrong.
+
+        GRADING RULES:
+        - Evaluate only what the exercise asks.
+        - Compare the student's answer with the suggested solution.
+        - Also accept other technically correct equivalent answers.
+        - Do not require class, main method, or imports unless the question
+          explicitly requests a complete Java program.
+        - If the question requests only a method, a correct standalone method
+          is acceptable.
+        - awardedPoints must be between 0 and $maxPoints.
+        - maxPoints must always be exactly $maxPoints.
+
+        STATUS RULES:
+        - correct:
+          The answer is correct and substantially complete.
+          Normally award 80% to 100% of maxPoints.
+
+        - partial:
+          The answer contains meaningful correct information but misses
+          important requested elements or contains small/medium errors.
+          awardedPoints must be greater than 0 and less than maxPoints.
+
+        - wrong:
+          The answer is mostly incorrect, irrelevant, or does not answer
+          the question.
+          awardedPoints must be 0.
+
+        BOOLEAN RULE:
+        - isCorrect must be true only when gradingStatus is correct.
+        - isCorrect must be false for partial and wrong.
+
+        FEEDBACK RULES:
+        - Clearly tell the student whether the answer is correct,
+          partially correct, or needs improvement.
+        - Explain what is correct.
+        - Explain what is missing or incorrect.
+        - Provide an improvement suggestion only when needed.
+        - Provide an example answer only when needed.
+        - Do not show technical enum explanations such as
+          "CORRECT means..." or "PARTIAL means...".
+        - Do not include GRADE:, STATUS:, or RESULT: inside feedback.
+        - Do not use Markdown code fences around the entire response.
+    """.trimIndent()
+
+        val user = """
+        Document:
+        $fileName
+
+        Learning unit:
+        $unitTitle
+
+        Exercise:
+        $question
+
+        Suggested solution:
+        $suggestedSolution
+
+        Student answer:
+        $userAnswer
+
+        Maximum points:
+        $maxPoints
+    """.trimIndent()
+
+        val request = buildResponsesRequest(
+            model = "gpt-4o-2024-08-06",
+            system = system,
+            user = user,
+            schemaOnly = openExerciseEvaluationSchemaJson(),
+            maxOutputTokens = 1400,
+        )
+
+        onRawHook?.invoke(
+            "open_exercise_grade_request",
+            request
+        )
+
+        val response = callOpenAIResponsesWithRetry(request)
+
+        onRawHook?.invoke(
+            "open_exercise_grade_response",
+            response
+        )
+
+        if (!ensureCompleted(response)) {
+            error("Open exercise grading response was incomplete")
+        }
+
+        val rawOutput = extractOutputJson(response)
+        val jsonOutput = coerceToJsonObjectString(rawOutput)
+
+        val parsed = json.decodeFromString(
+            OpenExerciseEvaluationDto.serializer(),
+            jsonOutput
+        )
+
+        val safeStatus = when (
+            parsed.gradingStatus.trim().lowercase()
+        ) {
+            "correct" -> "correct"
+            "partial" -> "partial"
+            "wrong" -> "wrong"
+            else -> "wrong"
+        }
+
+        val safePoints = parsed.awardedPoints.coerceIn(
+            minimumValue = 0.0,
+            maximumValue = maxPoints
+        )
+
+        val normalizedPoints = when (safeStatus) {
+            "wrong" -> 0.0
+
+            "partial" -> {
+                when {
+                    maxPoints <= 0.0 -> 0.0
+                    safePoints <= 0.0 -> minOf(maxPoints / 2.0, maxPoints)
+                    safePoints >= maxPoints -> maxPoints * 0.75
+                    else -> safePoints
+                }
+            }
+
+            else -> safePoints
+        }
+
+        return parsed.copy(
+            awardedPoints = normalizedPoints,
+            maxPoints = maxPoints,
+            gradingStatus = safeStatus,
+            isCorrect = safeStatus == "correct",
+        )
+    }
+    private fun openExerciseEvaluationSchemaJson(): String {
+        return """
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "awardedPoints": {
+              "type": "number"
+            },
+            "maxPoints": {
+              "type": "number"
+            },
+            "gradingStatus": {
+              "type": "string",
+              "enum": [
+                "correct",
+                "partial",
+                "wrong"
+              ]
+            },
+            "isCorrect": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            },
+            "improvementSuggestion": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "exampleAnswer": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "awardedPoints",
+            "maxPoints",
+            "gradingStatus",
+            "isCorrect",
+            "feedback",
+            "improvementSuggestion",
+            "exampleAnswer"
+          ]
+        }
+    """.trimIndent()
+    }
     suspend fun generateAdaptiveExercisesForUnit(
         unit: LearningUnitDto,
         language: String,
@@ -1246,8 +1475,8 @@ class PromptLlmClient(
                   "type":{"type":"string","enum":["mcq","true_false","open"]},
                   "difficulty":{"type":"string","enum":["medium","hard"]},
                   "estimatedMinutes":{"type":"integer","minimum":1,"maximum":15},
-                  "points":{"type":"number","minimum":0.5,"maximum":10}
-                  "question":{"type":"string","minLength":10},
+                    "points":{"type":"number","minimum":0.5,"maximum":10},
+                    "question":{"type":"string","minLength":10},
                   "options":{
                     "type":"array",
                     "minItems":1,

@@ -495,12 +495,26 @@ class FirestoreProgressRepository(
 
                         val lastAttempt = realAttempts.lastOrNull()
 
+                        val attempts = lastAnswer.attempts
+
+                        val correctCount = attempts.count {
+                            it.gradingStatus.equals("correct", ignoreCase = true)
+                        }
+
+                        val partialCount = attempts.count {
+                            it.gradingStatus.equals("partial", ignoreCase = true)
+                        }
+
+                        val wrongCount = attempts.count {
+                            it.gradingStatus.equals("wrong", ignoreCase = true)
+                        }
                         ExerciseQuestionStatsDto(
                             exerciseIndex = lastAnswer.exerciseIndex,
                             question = lastAnswer.question,
                             attemptsCount = realAttempts.size,
-                            correctCount = realAttempts.count { it.isCorrect },
-                            wrongCount = realAttempts.count { !it.isCorrect },
+                            correctCount = correctCount,
+                            wrongCount = wrongCount,
+                            partialCount = partialCount,
                             lastSelectedAnswer = lastAttempt?.selectedAnswer ?: lastAnswer.selectedAnswer,
                             correctAnswer = lastAnswer.correctAnswer,
                             attempts = realAttempts
@@ -514,6 +528,7 @@ class FirestoreProgressRepository(
                     correctCount = questionStats.sumOf { it.correctCount },
                     wrongCount = questionStats.sumOf { it.wrongCount },
                     totalAnswered = questionStats.sumOf { it.attemptsCount },
+                    partialCount = questionStats.sumOf { it.partialCount },
                     questions = questionStats
                 )
             }

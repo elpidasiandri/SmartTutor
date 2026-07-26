@@ -52,22 +52,62 @@ data class ChatMessageDto(
 
 @Serializable
 data class AskTutorRequest(
-    @SerialName("unitIndex") val unitIndex: Int?,
-    @SerialName("message") val message: String?,
-    @SerialName("tab") val tab: String,              // "learning" | "exercises"
-    @SerialName("contextText") val contextText: String? = null,
-    @SerialName("saveToChat") val saveToChat: Boolean = true,
+    @SerialName("unitIndex")
+    val unitIndex: Int?,
+
+    @SerialName("message")
+    val message: String?,
+
+    @SerialName("tab")
+    val tab: String,
+
+    @SerialName("contextText")
+    val contextText: String? = null,
+
+    @SerialName("saveToChat")
+    val saveToChat: Boolean = true,
+
+    @SerialName("isExerciseEvaluation")
+    val isExerciseEvaluation: Boolean = false,
+
+    @SerialName("exerciseIndex")
+    val exerciseIndex: Int? = null,
+)
+
+@Serializable
+data class OpenExerciseEvaluationDto(
+    @SerialName("awardedPoints")
+    val awardedPoints: Double,
+
+    @SerialName("maxPoints")
+    val maxPoints: Double,
+
+    @SerialName("gradingStatus")
+    val gradingStatus: String,
+
+    @SerialName("isCorrect")
+    val isCorrect: Boolean,
+
+    @SerialName("feedback")
+    val feedback: String,
+
+    @SerialName("improvementSuggestion")
+    val improvementSuggestion: String? = null,
+
+    @SerialName("exampleAnswer")
+    val exampleAnswer: String? = null,
 )
 
 @Serializable
 data class AskTutorResponse(
     @SerialName("userMessage") val userMessage: ChatMessageDto?,
     @SerialName("aiMessage") val aiMessage: ChatMessageDto?,
+    @SerialName("evaluation") val evaluation: OpenExerciseEvaluationDto? = null,
 )
 
 @Serializable
 data class AddMoreExercisesResponse(
     @SerialName("exercises")
-    val exercises: List<ExerciseDto>
+    val exercises: List<ExerciseDto>,
 )
 

@@ -877,105 +877,49 @@ class TutorCommonViewModel(
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
         val startedAt = Clock.System.now().toEpochMilliseconds()
-        val maxAmount = event.maxPoints
 
-        _state.update { it.copy(loading = true, askTutor = true) }
+        if (chatId.isBlank()) {
+            _state.update {
+                it.copy(
+                    showCustomMessage = true,
+                    isError = true,
+                    message = "Missing chat"
+                )
+            }
+            return
+        }
 
-        track(
-            name = EXERCISE_ANSWERED,
-            params = mapOf(
-                "chatId" to chatId,
-                "unitIndex" to unitIndex.toString(),
-                "unitTitle" to current.currentUnit.title,
-                "exerciseIndex" to event.exerciseIndex.toString(),
-                "exerciseType" to ExerciseType.OPEN.name,
-                "selectedAnswer" to event.userAnswer,
-                "correctAnswer" to event.suggestedSolution,
-                "maxAmount" to event.maxPoints.toString(),
-                "isCorrect" to "false",
-                "isOpenAnswer" to "true"
+        if (event.userAnswer.isBlank()) {
+            _state.update {
+                it.copy(
+                    showCustomMessage = true,
+                    isError = true,
+                    message = "Please write an answer"
+                )
+            }
+            return
+        }
+
+        val exercise = current.currentUnit.exercises
+            .getOrNull(event.exerciseIndex)
+
+        if (exercise == null) {
+            _state.update {
+                it.copy(
+                    showCustomMessage = true,
+                    isError = true,
+                    message = "Exercise not found"
+                )
+            }
+            return
+        }
+
+        _state.update {
+            it.copy(
+                loading = true,
+                askTutor = true
             )
-        )
-
-
-        if (chatId.isBlank()) return
-        if (event.userAnswer.isBlank()) return
-
-        val hiddenPrompt = """
-        Θέλω να ελέγξεις την απάντησή μου για την παρακάτω άσκηση.
-        
-        Ερώτηση:
-        ${event.question}
-
-        Η απάντησή μου:
-        ${event.userAnswer}
-
-        Ενδεικτική απάντηση:
-        ${event.suggestedSolution}
-  Απάντησε σύντομα και βοηθητικά.
-
-    Αν γράψεις κώδικα, βάλ' τον ΠΑΝΤΑ μέσα σε markdown code block με γλώσσα.
-    Παράδειγμα:
-    ```java
-    int counter = 0;
-    while (counter < 5) {
-        counter++;
-    }
-    ```
-        
-    Μορφή απάντησης:
-    ΠΡΩΤΗ ΓΡΑΜΜΗ ΥΠΟΧΡΕΩΤΙΚΑ:
-    Η απάντηση σου είναι : Σωστή
-    ή
-    Η απάντηση σου είναι: Μερικώς σωστή
-    ή
-    Η απάντηση σου είναι: Λάθος
-    Ορισμοί:
-    - CORRECT = η απάντηση είναι ουσιαστικά σωστή.
-    - PARTIAL = η απάντηση είναι μερικώς σωστή αλλά λείπουν σημαντικά στοιχεία.
-    - WRONG = η απάντηση είναι λανθασμένη.
-
-        Σημαντικές οδηγίες αξιολόγησης:
-        - Αξιολόγησε με βάση αυτό ακριβώς που ζητά η εκφώνηση.
-        - Αν η εκφώνηση ζητά απλώς μια μέθοδο (method), θεωρείται σωστό να δοθεί μόνο η μέθοδος χωρίς `class`, `public class`, `main()` ή άλλο περιτύλιγμα.
-
-        Για ασκήσεις Java:
-        - Αν η εκφώνηση δεν ζητά ρητά πλήρες πρόγραμμα, θεωρείται αποδεκτή απάντηση μια μεμονωμένη μέθοδος ή ένα μικρό απόσπασμα κώδικα που λύνει σωστά το πρόβλημα.
-        - Μην απαιτείς `public class`, `main()` ή imports εκτός αν είναι απαραίτητα για αυτό που ζητά η άσκηση.
-
-        Μετά την αξιολόγηση υπολόγισε και βαθμό.
-        
-        Επέστρεψε ΥΠΟΧΡΕΩΤΙΚΑ στην αρχή:
-        Μέγιστη βαθμολογία άσκησης: $maxAmount
-        STATUS: correct | partial | wrong
-        
-        και μετά συνέχισε με την ανατροφοδότηση.
-        
-        Κανόνες:
-        
-        - correct -> πλήρης απάντηση
-        - partial -> λείπουν σημαντικά στοιχεία
-        - wrong -> ουσιαστικά λανθασμένη
-        
-        Η βαθμολογία μπορεί να είναι οποιαδήποτε τιμή από 0 μέχρι maxPoints.
-        Παράδειγμα:
-        GRADE: 7.5
-        STATUS: partial
-
-    Μετά συνέχισε με:
-        1. Αν είναι σωστή ή όχι η απάντησή μου και τον βαθμό μου με βαση το max (μην δειξεις στον χρηστη CORRECT = ή PARTIAL = ή WRONG = . Πες του απλα αν ειναι σωστή, μερικώς σωστή ή λάθος).
-        2. Τι λείπει, αν λείπει κάτι.
-        3. Πώς μπορώ να τη βελτιώσω, μόνο αν χρειάζεται.
-        4. Δώσε καλύτερη ενδεικτική απάντηση μόνο αν χρειάζεται.
-        
-        Αν η απάντηση του χρήστη είναι σωστή:
-        - Μην ψάχνεις αναγκαστικά λάθη.
-        - Μπορείς να παραλείψεις τα σημεία 3 και 4 αν δεν υπάρχει κάτι ουσιαστικό για βελτίωση.
-        - Μη δώσεις καλύτερη ενδεικτική απάντηση αν η απάντηση του χρήστη είναι ήδη πλήρης και σωστή.
-        - Αρκεί να επιβεβαιώσεις σύντομα γιατί είναι σωστή.
-    """.trimIndent()
-
-        _state.update { it.copy(loading = true) }
+        }
 
         scope.launch {
             runCatching {
@@ -985,63 +929,37 @@ class TutorCommonViewModel(
                     chatId = chatId,
                     userId = userId(),
                     unitIndex = unitIndex,
-                    message = hiddenPrompt,
+                    message = event.userAnswer,
                     token = token,
                     chatMode = "exercises",
-                    saveToChat = false
+                    saveToChat = false,
+                    isExerciseEvaluation = true,
+                    exerciseIndex = event.exerciseIndex,
                 )
 
-                val aiText = response.aiMessage?.text.orEmpty()
-                val exercise = current.currentUnit.exercises
-                    .getOrNull(event.exerciseIndex)
+                val evaluation = response.evaluation
+                    ?: error(
+                        "Exercise evaluation was missing " +
+                                "from tutor response"
+                    )
 
-                val maxPoints = exercise?.maxPoints ?: 0.0
+                val aiText = response.aiMessage?.text
+                    ?.takeIf { it.isNotBlank() }
+                    ?: evaluation.feedback
 
-                val verdict = aiText
-                    .lineSequence()
-                    .firstOrNull()
-                    ?.trim()
-                    .orEmpty()
-
-//                val isCorrect =
-//                    verdict.contains("Η απάντηση σου είναι: Σωστή", ignoreCase = true)
-
-                val gradeLine = aiText
-                    .lineSequence()
-                    .firstOrNull { it.startsWith("GRADE:", ignoreCase = true) }
-                    .orEmpty()
-
-                val statusLine = aiText
-                    .lineSequence()
-                    .firstOrNull { it.startsWith("STATUS:", ignoreCase = true) }
-                    .orEmpty()
-
-                val awardedPoints =
-                    Regex("""GRADE:\s*([0-9]+(?:\.[0-9]+)?)""", RegexOption.IGNORE_CASE)
-                        .find(gradeLine)
-                        ?.groupValues
-                        ?.getOrNull(1)
-                        ?.toDoubleOrNull()
-                        ?.coerceIn(0.0, maxPoints)
-                        ?: 0.0
-
-                val gradingStatus = when {
-                    statusLine.contains("correct", ignoreCase = true) -> "correct"
-                    statusLine.contains("partial", ignoreCase = true) -> "partial"
-                    else -> "wrong"
-                }
-
-                val isCorrect = gradingStatus == "correct"
-                val answeredAt = Clock.System.now().toEpochMilliseconds()
+                val answeredAt = Clock.System
+                    .now()
+                    .toEpochMilliseconds()
 
                 val attempt = ExerciseAttemptDto(
-                    attemptNumber = 0, // το server θα το κάνει 1,2,3...
-                    awardedPoints = awardedPoints,
-                    gradingStatus = gradingStatus,
-                    isCorrect = isCorrect,
+                    attemptNumber = 0,
+                    awardedPoints = evaluation.awardedPoints,
+                    gradingStatus = evaluation.gradingStatus,
+                    isCorrect = evaluation.isCorrect,
                     selectedAnswer = event.userAnswer,
-                    answeredAtEpochMillis = answeredAt
+                    answeredAtEpochMillis = answeredAt,
                 )
+
                 saveExerciseAnswerUseCase(
                     userId = userId(),
                     token = token,
@@ -1055,40 +973,114 @@ class TutorCommonViewModel(
                         question = event.question,
                         selectedAnswer = event.userAnswer,
                         correctAnswer = event.suggestedSolution,
-                        isCorrect = isCorrect,
+                        isCorrect = evaluation.isCorrect,
                         timeToAnswerMs = answeredAt - startedAt,
                         answeredAtEpochMillis = answeredAt,
-                        maxPoints = maxPoints,
-                        attempts = listOf(attempt)
+                        maxPoints = evaluation.maxPoints,
+                        attempts = listOf(attempt),
                     )
                 )
+
+                val domainAttempt = LearningUnitExerciseStatsDomain(
+                    attemptNumber = exercise.attempts.size + 1,
+                    awardedPoints = evaluation.awardedPoints,
+                    gradingStatus = evaluation.gradingStatus,
+                    isCorrect = evaluation.isCorrect,
+                    selectedAnswer = event.userAnswer,
+                    answeredAtEpochMillis = answeredAt,
+                )
+
+                val updatedExercise = exercise.copy(
+                    attempts = exercise.attempts + domainAttempt
+                )
+
+                val updatedUnit = current.currentUnit.copy(
+                    exercises = current.currentUnit.exercises
+                        .mapIndexed { index, oldExercise ->
+                            if (index == event.exerciseIndex) {
+                                updatedExercise
+                            } else {
+                                oldExercise
+                            }
+                        }
+                )
+
                 val key = exerciseKey(
                     unitIndex = unitIndex,
-                    exerciseIndex = event.exerciseIndex
+                    exerciseIndex = event.exerciseIndex,
                 )
+
                 _state.update { state ->
                     state.copy(
-                        answeredExerciseKeys = state.answeredExerciseKeys + key,
+                        currentUnit = updatedUnit,
+                        allUnits = state.allUnits.mapIndexed {
+                                index,
+                                oldUnit,
+                            ->
+                            if (index == unitIndex) {
+                                updatedUnit
+                            } else {
+                                oldUnit
+                            }
+                        },
+                        answeredExerciseKeys =
+                            state.answeredExerciseKeys + key,
                         loading = false,
                         askTutor = false,
-                        exerciseTutorAnswers = state.exerciseTutorAnswers +
-                                (event.exerciseIndex to aiText)
+                        exerciseTutorAnswers =
+                            state.exerciseTutorAnswers +
+                                    (event.exerciseIndex to aiText),
                     )
                 }
-            }.onFailure {
+
+                /*
+                 * Analytics μετά την αξιολόγηση,
+                 * ώστε να έχουμε τον πραγματικό βαθμό.
+                 */
+                track(
+                    name = EXERCISE_ANSWERED,
+                    params = mapOf(
+                        "chatId" to chatId,
+                        "unitIndex" to unitIndex.toString(),
+                        "unitTitle" to current.currentUnit.title,
+                        "exerciseIndex" to
+                                event.exerciseIndex.toString(),
+                        "exerciseType" to ExerciseType.OPEN.name,
+                        "selectedAnswer" to event.userAnswer,
+                        "correctAnswer" to event.suggestedSolution,
+                        "maxPoints" to
+                                evaluation.maxPoints.toString(),
+                        "awardedPoints" to
+                                evaluation.awardedPoints.toString(),
+                        "gradingStatus" to
+                                evaluation.gradingStatus,
+                        "isCorrect" to
+                                evaluation.isCorrect.toString(),
+                        "isOpenAnswer" to "true",
+                        "timeToAnswerMs" to
+                                (answeredAt - startedAt).toString(),
+                    )
+                )
+            }.onFailure { throwable ->
+                platform.log(
+                    tag = "OpenExercise",
+                    message = "Failed to grade open exercise",
+                    t = throwable,
+                )
+
                 _state.update {
                     it.copy(
                         loading = false,
                         askTutor = false,
                         showCustomMessage = true,
                         isError = true,
-                        message = "Failed to check your answer"
+                        message = throwable.message
+                            ?: "Failed to check your answer",
                     )
                 }
             }
         }
     }
-
     private fun markUnitAsRead(index: Int) {
         val current = _state.value
         val chatId = current.activeChatId
