@@ -95,30 +95,6 @@ class MyProgressCommonViewModel(
 
                 val latestChat = chatProgressList.maxByOrNull { it.lastActivityEpochMillis }
                 val exerciseStats = getExerciseStateUseCase(userId)
-                val readUnits = latestChat?.units?.count { it.isRead } ?: 0
-
-                val answeredExercises = exerciseStats
-                    .flatMap { unit ->
-                        unit.questions.map { question ->
-                            "${unit.unitIndex}-${question.exerciseIndex}"
-                        }
-                    }
-                    .distinct()
-                    .size
-
-                val totalUnits = latestChat?.totalUnits ?: 0
-                val totalExercises = latestChat?.availableExercisesCount ?: 0
-
-                val totalTasks = totalUnits + totalExercises
-
-
-                val calculatedProgressPercent =
-                    if (totalTasks == 0) {
-                        0
-                    } else {
-                        ((readUnits + answeredExercises) * 100) / totalTasks
-                    }
-
                 val statsByUnitIndex = exerciseStats.associateBy { it.unitIndex }
 
                 val unitExerciseStatsUi = latestChat?.units.orEmpty().map { chatUnit ->
@@ -153,6 +129,30 @@ class MyProgressCommonViewModel(
                         isRead = chatUnit.isRead,
                         questions = questions
                     )
+                }
+
+                val totalLearningUnits = unitExerciseStatsUi.size
+
+                val readLearningUnits = unitExerciseStatsUi.count { unit ->
+                    unit.isRead
+                }
+
+                val totalExercises = unitExerciseStatsUi.sumOf { unit ->
+                    unit.totalExercises
+                }
+
+                val answeredExercises = unitExerciseStatsUi.sumOf { unit ->
+                    unit.totalAnswered.coerceAtMost(unit.totalExercises)
+                }
+
+                val totalProgressItems = totalLearningUnits + totalExercises
+                val completedProgressItems = readLearningUnits + answeredExercises
+
+                val calculatedProgressPercent = if (totalProgressItems == 0) {
+                    0
+                } else {
+                    ((completedProgressItems * 100) / totalProgressItems)
+                        .coerceIn(0, 100)
                 }
 
                 _state.update {

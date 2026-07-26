@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -113,7 +116,7 @@ fun ExerciseAnswersCard(state: MyProgressState) {
             Text(
                 text = exerscize_answers_info,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.ExtraBold,
             )
 
             Spacer(Modifier.height(2.dp))
@@ -122,13 +125,13 @@ fun ExerciseAnswersCard(state: MyProgressState) {
                 text = "$exerscize_sum_total ${state.totalCorrectAnswers + state.totalWrongAnswers} $exerscize_answer, " +
                         "$of_which ${state.totalCorrectAnswers} $correct_and ${state.totalWrongAnswers} $wrong_.",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.Normal,
             )
             Spacer(Modifier.height(24.dp))
             Text(
                 text = exerscize_answers_sum,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.Normal,
             )
             Spacer(Modifier.height(24.dp))
 
@@ -366,14 +369,14 @@ private fun ProgressOverviewCard(state: MyProgressState) {
             StatBox(
                 value = (state.totalCorrectAnswers + state.totalWrongAnswers).toString(),
                 title = sum_answers,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.width(200.dp).fillMaxHeight()
             )
 
             StatBox(
                 value = state.totalCorrectAnswers.toString(),
                 title = correct_,
                 isCorrect = true,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.width(200.dp).fillMaxHeight()
             )
         }
 
@@ -386,14 +389,14 @@ private fun ProgressOverviewCard(state: MyProgressState) {
             StatBox(
                 value = state.totalWrongAnswers.toString(),
                 title = wrong_,
-                modifier = Modifier.weight(1f),
-                isError = true
+                isError = true,
+                modifier = Modifier.width(200.dp).fillMaxHeight()
             )
 
             StatBox(
                 value = state.totalQuestionsAsked.toString(),
                 title = progress_chat,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.width(200.dp).fillMaxHeight()
             )
         }
 
