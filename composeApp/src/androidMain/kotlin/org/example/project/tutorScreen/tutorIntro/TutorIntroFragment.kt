@@ -159,7 +159,8 @@ class TutorIntroFragment : Fragment() {
                         )
                     },
                     isLoadingMoreExercises = state.askTutor,
-                    exercisesLoading = state.exercisesLoading
+                    exercisesLoading = state.exercisesLoading,
+                    pdfProcessingProgress = state.pdfProcessingProgress
                 )
             }
         }

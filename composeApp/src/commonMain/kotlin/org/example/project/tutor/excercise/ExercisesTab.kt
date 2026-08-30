@@ -1,6 +1,5 @@
 package org.example.project.tutor.excercise
 
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable

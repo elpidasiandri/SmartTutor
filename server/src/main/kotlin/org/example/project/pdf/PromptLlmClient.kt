@@ -911,10 +911,10 @@ class PromptLlmClient(
             maxOutputTokens = 6500
         )
 
-        val resp = callOpenAIResponsesWithRetry(req) ?: return emptyList()
+        val resp = callOpenAIResponsesWithRetry(req)
         if (!ensureCompleted(resp)) return emptyList()
 
-        val raw = extractOutputJson(resp) ?: return emptyList()
+        val raw = extractOutputJson(resp)
         val fixedOut = coerceToJsonObjectString(raw)
 
         return runCatching {
@@ -968,11 +968,9 @@ class PromptLlmClient(
         isLastChunk: Boolean,
     ): UnitsWithCarryDto {
         val fileId = uploadPdfToOpenAI(pdfChunkFile)
-            ?: return UnitsWithCarryDto(
-                units = emptyList(),
-                carry = carry.take(8000)
+            ?: error(
+                "Could not upload PDF chunk to OpenAI"
             )
-
         val schema = unitsWithCarrySchemaJson()
         val outputLanguage = language.ifBlank { "en" }
 
@@ -1036,7 +1034,7 @@ class PromptLlmClient(
             UNIT LENGTH:
             - Keep each learning unit concise and learner-friendly.
             - Prefer 3 to 6 short paragraphs.
-            - Target approximately 180–450 words per learning unit.
+            - Target approximately 100–300 words per learning unit.
             - Avoid repetition and unnecessary introductions.
             - Do not overload one unit with several major concepts.
 
@@ -1189,29 +1187,19 @@ class PromptLlmClient(
         onRawHook?.invoke("preview_response", resp)
 
         if (!ensureCompleted(resp)) {
-            return UnitsWithCarryDto(
-                units = emptyList(),
-                carry = carry.take(8000)
+            error(
+                "Preview generation returned an incomplete response"
             )
         }
 
         val raw = extractOutputJson(resp)
-            ?: return UnitsWithCarryDto(
-                units = emptyList(),
-                carry = carry.take(8000)
-            )
 
         val unwrapped = unwrapIfJsonString(raw)
         val out = extractFirstJsonObjectOrNull(unwrapped)
 
         if (out == null || !isValidJson(out)) {
-//            val mergedCarry = buildString {
-//                if (carry.isNotBlank()) appendLine(carry.trim())
-//                appendLine("[PREVIEW_INVALID_JSON]")
-//            }.trim().take(3000)
-            return UnitsWithCarryDto(
-                units = emptyList(),
-                carry = carry.take(8000)
+            error(
+                "Preview generation returned invalid JSON"
             )
         }
 
@@ -1226,12 +1214,11 @@ class PromptLlmClient(
                 it.message ?: "decode failed"
             )
 
-            return UnitsWithCarryDto(
-                units = emptyList(),
-                carry = carry.take(8000)
+            throw IllegalStateException(
+                "Could not decode generated learning units",
+                it
             )
         }
-
         val validUnits = dto.units?.mapIndexedNotNull { index, unit ->
 
             val fixedUnit = unit.copy(
@@ -1250,7 +1237,7 @@ class PromptLlmClient(
 
             val hasEnoughText =
                 paragraphs.size >= 2 &&
-                        wordCount >= 150
+                        wordCount >= 80
 
             if (hasEnoughText) fixedUnit else null
         }
@@ -1644,8 +1631,8 @@ class PromptLlmClient(
                       },
                       "text":{
                         "type":"string",
-                        "minLength":700,
-                        "maxLength":3000,
+                        "minLength":350,
+                        "maxLength":2500,
                         "pattern":"(?s).*\\n\\n.*"
                       },
                       "quotations":{

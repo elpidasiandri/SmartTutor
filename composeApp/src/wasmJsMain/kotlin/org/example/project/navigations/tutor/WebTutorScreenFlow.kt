@@ -176,6 +176,7 @@ fun WebTutorScreenFlow(navController: NavController) {
                 )
             )
         },
-        exercisesLoading = state.exercisesLoading
+        exercisesLoading = state.exercisesLoading,
+        pdfProcessingProgress = state.pdfProcessingProgress
     )
 }

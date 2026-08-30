@@ -38,6 +38,7 @@ data class TutorState(
     val exerciseTutorAnswers: Map<Int, String> = emptyMap(),
     val answeredExerciseKeys: Set<String> = emptySet(),
     val exercisesLoading: Boolean = false,
+    val pdfProcessingProgress: Int? = null,
 )
 
 sealed class TutorUiEvents {

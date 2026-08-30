@@ -799,12 +799,24 @@ class TutorCommonViewModel(
     private fun uploadPdf(picked: PickedFile) {
         scope.launch {
             try {
-                _state.update { it.copy(loading = true) }
+                _state.update {
+                    it.copy(
+                        loading = true,
+                        pdfProcessingProgress = 0
+                    )
+                }
 
                 val res = loadTutorFromPdfUseCase.loadTemplateForPickedPdf(
                     picked = picked,
                     userId = userId(),
-                    mode = state.value.selectedTab.name
+                    mode = state.value.selectedTab.name,
+                    onProgress = { progress ->
+                        _state.update {
+                            it.copy(
+                                pdfProcessingProgress = progress
+                            )
+                        }
+                    }
                 )
 
                 val units = res.prototype.learningUnits
@@ -840,6 +852,7 @@ class TutorCommonViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
+                        pdfProcessingProgress = null,
                         activeChatId = res.chatId,
                         activeDocumentId = res.documentId,
                         subjectTitle = subjectTitle,
@@ -873,6 +886,7 @@ class TutorCommonViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
+                        pdfProcessingProgress = null,
                         showCustomMessage = true,
                         isError = true,
                         message = "Upload failed"

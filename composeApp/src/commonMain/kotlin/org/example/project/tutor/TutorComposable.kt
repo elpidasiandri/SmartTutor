@@ -125,6 +125,7 @@ fun TutorScreen(
     onLearningClick: (String, String) -> Unit,
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
     exercisesLoading: Boolean,
+    pdfProcessingProgress: Int?,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -187,6 +188,7 @@ fun TutorScreen(
             onLearningClick = { title, subjectId ->
                 onLearningClick(title, subjectId)
             },
+            pdfProcessingProgress = pdfProcessingProgress,
             onExercisesMenuTabClick = { title, subjectId, index ->
                 onExercisesMenuTabClick(title, subjectId, index)
             },
@@ -240,6 +242,7 @@ fun TutorChatUI(
     isLoadingMoreExercises: Boolean,
     onLearningClick: (String, String) -> Unit,
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
+    pdfProcessingProgress: Int?
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -392,7 +395,12 @@ fun TutorChatUI(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     CircularProgressIndicator()
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    Text(waiting_for_response, color = Color.White)
+
+                                    Text(
+                                        text = pdfProcessingProgress?.let {
+                                            "Preparing your learning material... $it%"
+                                        } ?:waiting_for_response
+                                    )
                                 }
                             }
                         }
@@ -601,7 +609,7 @@ private fun TutorChatContent(
             .getOrNull(selectedExerciseIndex)
             ?.isAnswered == true
 
-    val nextEnabled = chatData.material.fileUploaded &&
+    val nextEnabled = chatData.material.fileUploaded  &&
             !isLoading &&
             !exercisesLoading &&
             when (selectedTab) {
@@ -616,103 +624,105 @@ private fun TutorChatContent(
                     }
                 }
             }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-    ) {
-        Row(
+    if (currentUnit.title.isNotEmpty()){
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing8),
-            horizontalArrangement = Arrangement.End
+                .fillMaxSize()
+                .padding(padding)
         ) {
-            TutorTopActionsRow(
-                fileUploaded = chatData.material.fileUploaded,
-                selectedTab = selectedTab,
-                onTabChange = onChangeTab,
-                onNextUnitClick = onNextUnitClick,
-                isLoading = isLoading || exercisesLoading,
-                canGoNext = nextEnabled,
-            )
-        }
-        Spacer(modifier = Modifier.height(spacing8))
-
-        when (selectedTab) {
-            TutorTab.Learning -> {
-
-                val config = koinInject<AppConfig>()
-
-                LearningMessagesList(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(horizontal = spacing8),
-                    chatMessages = chatMessages,
-                    baseUrl = config.baseUrl
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing8),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TutorTopActionsRow(
+                    fileUploaded = chatData.material.fileUploaded,
+                    selectedTab = selectedTab,
+                    onTabChange = onChangeTab,
+                    onNextUnitClick = onNextUnitClick,
+                    isLoading = isLoading || exercisesLoading,
+                    canGoNext = nextEnabled,
                 )
             }
+            Spacer(modifier = Modifier.height(spacing8))
 
-            TutorTab.Exercises -> {
-                if (exercisesLoading) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            CircularProgressIndicator()
+            when (selectedTab) {
+                TutorTab.Learning -> {
 
-                            Spacer(
-                                modifier = Modifier.height(12.dp)
-                            )
+                    val config = koinInject<AppConfig>()
 
-                            Text("Generating exercises...")
-                        }
-                    }
-                } else if (currentUnit.exercises.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No exercises available")
-                    }
-                } else {
-                    ExercisesTab(
+                    LearningMessagesList(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
                             .padding(horizontal = spacing8),
-                        exercises = currentUnit.exercises,
-                        selectedExerciseIndex = selectedExerciseIndex,
-                        onExerciseAnswered = onExerciseAnswered,
-                        onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                        exerciseTutorAnswers = exerciseTutorAnswers,
-                        answeredExerciseKeys = answeredExerciseKeys,
-                        currentUnitIndex = currentIndex,
-                        onMoreExercisesClick = onMoreExercisesClick,
-                        isLoadingMoreExercises = isLoadingMoreExercises,
+                        chatMessages = chatMessages,
+                        baseUrl = config.baseUrl
                     )
                 }
-            }
-        }
 
-        if (selectedTab == TutorTab.Learning) {
-            TutorInputSection(
-                fileUploaded = chatData.material.fileUploaded,
-                userMessageState = userMessageState,
-                onUserMessageChangeLocal = onUserMessageChangeLocal,
-                onSendClick = onSendClick,
-                onUploadPdfClick = onUploadPdfClick,
-                isLoading = isLoading
-            )
-        }
+                TutorTab.Exercises -> {
+                    if (exercisesLoading) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                CircularProgressIndicator()
+
+                                Spacer(
+                                    modifier = Modifier.height(12.dp)
+                                )
+
+                                Text("Generating exercises...")
+                            }
+                        }
+                    } else if (currentUnit.exercises.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No exercises available")
+                        }
+                    } else {
+                        ExercisesTab(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .padding(horizontal = spacing8),
+                            exercises = currentUnit.exercises,
+                            selectedExerciseIndex = selectedExerciseIndex,
+                            onExerciseAnswered = onExerciseAnswered,
+                            onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                            exerciseTutorAnswers = exerciseTutorAnswers,
+                            answeredExerciseKeys = answeredExerciseKeys,
+                            currentUnitIndex = currentIndex,
+                            onMoreExercisesClick = onMoreExercisesClick,
+                            isLoadingMoreExercises = isLoadingMoreExercises,
+                        )
+                    }
+                }
+            }
+
+            if (selectedTab == TutorTab.Learning) {
+                TutorInputSection(
+                    fileUploaded = chatData.material.fileUploaded,
+                    userMessageState = userMessageState,
+                    onUserMessageChangeLocal = onUserMessageChangeLocal,
+                    onSendClick = onSendClick,
+                    onUploadPdfClick = onUploadPdfClick,
+                    isLoading = isLoading
+                )
+            }
+    }
+
     }
 }
 

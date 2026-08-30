@@ -23,7 +23,8 @@ class LoadTutorFromPdfUseCase(
     suspend fun loadTemplateForPickedPdf(
         picked: PickedFile,
         userId: String,
-        mode: String
+        mode: String,
+        onProgress: (Int) -> Unit = {}
     ): TutorLoadResult {
         val token = getToken()
 
@@ -55,7 +56,9 @@ class LoadTutorFromPdfUseCase(
                 documentId = documentId,
                 token = token
             )
-
+            status.progress?.let { progress ->
+                onProgress(progress)
+            }
             when (
                 status.status
                     .trim()
