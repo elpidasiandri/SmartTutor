@@ -57,6 +57,7 @@ import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
+import org.example.project.tutor.useCases.LoadInitialExercisesUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
@@ -92,6 +93,7 @@ class TutorCommonViewModel(
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
     private val addMoreExercisesUseCase: AddMoreExercisesUseCase,
+    private val loadInitialExercisesUseCase: LoadInitialExercisesUseCase,
 ) {
     private val _state = MutableStateFlow(TutorState())
     val state: StateFlow<TutorState> = _state
@@ -129,7 +131,7 @@ class TutorCommonViewModel(
             TutorUiEvents.OpenMyProgress -> openMyProgress()
             is TutorUiEvents.UploadPdf -> uploadPdf(event.file)
             is TutorUiEvents.ChangeTab -> {
-                refreshTabInfoMessage(event.tab)
+                changeTab(event.tab)
             }
 
             is TutorUiEvents.OpenUnitSection -> {
@@ -193,6 +195,12 @@ class TutorCommonViewModel(
 
         markUnitAsRead(index)
         saveProgress()
+        if (
+            tab == TutorTab.Exercises &&
+            selected.exercises.isEmpty()
+        ) {
+            loadInitialExercisesForCurrentUnit()
+        }
     }
 
     private fun loadMoreExercises() {
@@ -258,6 +266,222 @@ class TutorCommonViewModel(
                         showCustomMessage = true,
                         isError = true,
                         message = "Failed to load more exercises"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun changeTab(tab: TutorTab) {
+        val current = _state.value
+        val unit = current.currentUnit
+
+        track(
+            name = TAB_CHANGED,
+            params = mapOf(
+                "chatId" to current.activeChatId,
+                "tab" to tab.name,
+                "unitTitle" to unit.title,
+                "userId" to userId()
+            )
+        )
+
+        if (
+            tab == TutorTab.Exercises &&
+            unit.exercises.isEmpty()
+        ) {
+            loadInitialExercisesForCurrentUnit()
+            return
+        }
+
+        val msg = when (tab) {
+            TutorTab.Learning ->
+                buildLearningTabMessage(unit)
+
+            TutorTab.Exercises ->
+                buildExercisesTabMessage(unit)
+        }
+
+        _state.update {
+            it.copy(
+                selectedTab = tab,
+                tabInfoMessage = msg
+            )
+        }
+
+        saveProgress()
+    }
+
+    private fun loadInitialExercisesForCurrentUnit() {
+        val current = _state.value
+
+        val documentId = current.activeDocumentId
+        val chatId = current.activeChatId
+        val unit = current.currentUnit
+        val unitNumber = unit.numbering
+
+        if (documentId.isBlank()) {
+            _state.update {
+                it.copy(
+                    showCustomMessage = true,
+                    isError = true,
+                    message = "Missing document"
+                )
+            }
+            return
+        }
+
+        if (chatId.isBlank()) {
+            _state.update {
+                it.copy(
+                    showCustomMessage = true,
+                    isError = true,
+                    message = "Missing chat"
+                )
+            }
+            return
+        }
+
+        if (unitNumber <= 0) {
+            _state.update {
+                it.copy(
+                    showCustomMessage = true,
+                    isError = true,
+                    message = "Invalid learning unit"
+                )
+            }
+            return
+        }
+
+        if (unit.exercises.isNotEmpty()) {
+            _state.update {
+                it.copy(
+                    selectedTab = TutorTab.Exercises,
+                    selectedExerciseIndex = 0,
+                    tabInfoMessage =
+                        buildExercisesTabMessage(unit)
+                )
+            }
+            return
+        }
+
+        if (current.exercisesLoading) {
+            return
+        }
+
+        _state.update {
+            it.copy(
+                selectedTab = TutorTab.Exercises,
+                selectedExerciseIndex = 0,
+                exercisesLoading = true
+            )
+        }
+
+        scope.launch {
+            runCatching {
+                val token = getIdTokenSuspendUseCase()
+
+                val response = loadInitialExercisesUseCase(
+                    documentId = documentId,
+                    unitNumber = unitNumber,
+                    token = token
+                )
+
+                val exercises = response.exercises.map {
+                    it.toDomain()
+                }
+
+                if (exercises.isEmpty()) {
+                    error("No exercises were generated")
+                }
+
+                exercises
+            }.onSuccess { exercises ->
+
+                _state.update { state ->
+
+                    if (
+                        state.activeChatId != chatId ||
+                        state.activeDocumentId != documentId
+                    ) {
+                        return@update state.copy(
+                            exercisesLoading = false
+                        )
+                    }
+
+                    val targetUnit = state.allUnits
+                        .firstOrNull {
+                            it.numbering == unitNumber
+                        }
+                        ?: return@update state.copy(
+                            exercisesLoading = false
+                        )
+
+                    val updatedUnit = targetUnit.copy(
+                        exercises = exercises
+                    )
+
+                    val updatedUnits =
+                        state.allUnits.map { oldUnit ->
+                            if (oldUnit.numbering == unitNumber) {
+                                updatedUnit
+                            } else {
+                                oldUnit
+                            }
+                        }
+
+                    val isStillCurrentUnit =
+                        state.currentUnit.numbering == unitNumber
+
+                    state.copy(
+                        exercisesLoading = false,
+                        allUnits = updatedUnits,
+                        currentUnit =
+                            if (isStillCurrentUnit) {
+                                updatedUnit
+                            } else {
+                                state.currentUnit
+                            },
+                        selectedTab =
+                            if (isStillCurrentUnit) {
+                                TutorTab.Exercises
+                            } else {
+                                state.selectedTab
+                            },
+                        selectedExerciseIndex =
+                            if (isStillCurrentUnit) {
+                                0
+                            } else {
+                                state.selectedExerciseIndex
+                            },
+                        tabInfoMessage =
+                            if (isStillCurrentUnit) {
+                                buildExercisesTabMessage(
+                                    updatedUnit
+                                )
+                            } else {
+                                state.tabInfoMessage
+                            }
+                    )
+                }
+
+                saveProgress()
+
+            }.onFailure { throwable ->
+
+                platform.log(
+                    tag = "InitialExercises",
+                    message = "Failed to load exercises",
+                    t = throwable
+                )
+
+                _state.update { state ->
+                    state.copy(
+                        exercisesLoading = false,
+                        showCustomMessage = true,
+                        isError = true,
+                        message = throwable.message
+                            ?: "Failed to load exercises"
                     )
                 }
             }
@@ -489,7 +713,7 @@ class TutorCommonViewModel(
                     chatId = chatId,
                     userId = userId(),
                     unitIndex = unitIndex,
-                    message = generic_error,
+                    message = trimmed,
                     token = token,
                     chatMode = state.value.selectedTab.name,
                     saveToChat = saveToChat
@@ -571,6 +795,7 @@ class TutorCommonViewModel(
 
         selectCurrentChatUnitByTitle(title)
     }
+
     private fun uploadPdf(picked: PickedFile) {
         scope.launch {
             try {
@@ -600,7 +825,7 @@ class TutorCommonViewModel(
                         "chatId" to res.chatId,
                         "documentTitle" to subjectTitle,
                         "unitsCount" to units.size.toString(),
-                        "language" to res.languageEnum.value,
+                        "language" to res.language,
                         "mode" to state.value.selectedTab.name,
                         "userId" to userId()
                     )
@@ -616,6 +841,7 @@ class TutorCommonViewModel(
                     it.copy(
                         loading = false,
                         activeChatId = res.chatId,
+                        activeDocumentId = res.documentId,
                         subjectTitle = subjectTitle,
                         allUnits = updatedUnits,
                         currentUnit = selected,
@@ -758,7 +984,12 @@ class TutorCommonViewModel(
                 markUnitAsRead(index)
                 saveProgress()
                 loadAnsweredExercises()
-
+                if (
+                    tab == TutorTab.Exercises &&
+                    selected.exercises.isEmpty()
+                ) {
+                    loadInitialExercisesForCurrentUnit()
+                }
             } catch (t: Throwable) {
                 _state.update {
                     it.copy(
@@ -842,32 +1073,6 @@ class TutorCommonViewModel(
                 }
             }
         }
-    }
-
-    private fun refreshTabInfoMessage(tab: TutorTab) {
-        val unit = _state.value.currentUnit
-
-        track(
-            name = TAB_CHANGED,
-            params = mapOf(
-                "chatId" to _state.value.activeChatId,
-                "tab" to tab.name,
-                "unitTitle" to unit.title,
-                "userId" to userId()
-            )
-        )
-
-        val msg = when (tab) {
-            TutorTab.Learning -> buildLearningTabMessage(unit)
-            TutorTab.Exercises -> buildExercisesTabMessage(unit)
-        }
-        _state.update {
-            it.copy(
-                tabInfoMessage = msg,
-                selectedTab = tab
-            )
-        }
-        saveProgress()
     }
 
     private fun askTutorForOpenExercise(
@@ -1081,6 +1286,7 @@ class TutorCommonViewModel(
             }
         }
     }
+
     private fun markUnitAsRead(index: Int) {
         val current = _state.value
         val chatId = current.activeChatId
@@ -1132,7 +1338,6 @@ class TutorCommonViewModel(
             }
         }
     }
-
 
 
     private fun Throwable.toUserMessage(): String {
@@ -1242,14 +1447,21 @@ class TutorCommonViewModel(
         val currentUnit = current.currentUnit
         val exercises = currentUnit.exercises
 
-        if (current.selectedTab == TutorTab.Learning && exercises.isNotEmpty()) {
+        if (current.selectedTab == TutorTab.Learning) {
+            if (exercises.isEmpty()) {
+                loadInitialExercisesForCurrentUnit()
+                return
+            }
+
             _state.update {
                 it.copy(
                     selectedTab = TutorTab.Exercises,
                     selectedExerciseIndex = 0,
-                    tabInfoMessage = buildExercisesTabMessage(currentUnit)
+                    tabInfoMessage =
+                        buildExercisesTabMessage(currentUnit)
                 )
             }
+
             saveProgress()
             return
         }
@@ -1356,7 +1568,19 @@ class TutorCommonViewModel(
             it.copy(
                 session = buildEmptyChatSessionStart(),
                 currentUnit = LearningUnitContentDomain(),
-                event = TutorEvents.None
+                allUnits = emptyList(),
+                currentIndex = 0,
+                subjectTitle = "",
+                activeChatId = "",
+                activeDocumentId = "",
+                allChatMessages = emptyList(),
+                selectedTab = TutorTab.Learning,
+                selectedExerciseIndex = 0,
+                tabInfoMessage = "",
+                exerciseTutorAnswers = emptyMap(),
+                answeredExerciseKeys = emptySet(),
+                event = TutorEvents.None,
+                exercisesLoading = false,
             )
         }
     }
@@ -1369,17 +1593,24 @@ class TutorCommonViewModel(
         }
 
         if (uid.isBlank()) {
-            platform.log("TutorStore", "UserId not ready yet", null)
+            platform.log(
+                "TutorStore",
+                "UserId not ready yet",
+                null
+            )
             return@launch
         }
 
         try {
-            _state.update { it.copy(loading = true, error = null) }
+            _state.update {
+                it.copy(
+                    loading = true,
+                    error = null
+                )
+            }
 
             val chats = getAllHistoryChatUseCase(uid)
-            if (chats.isEmpty()) {
-                loadGreekPdf()
-            }
+
             track(
                 name = TUTOR_SCREEN_OPENED,
                 params = mapOf(
@@ -1388,90 +1619,147 @@ class TutorCommonViewModel(
                 )
             )
 
-            if (chats.isNotEmpty()) {
-                val latestChatSummary = chats.first()
-
-                val latestChat = getChatByIdUseCase(
-                    chatId = latestChatSummary.chatId,
-                    userId = uid
-                )
-
-                track(
-                    name = LATEST_CHAT_AUTO_LOADED,
-                    params = mapOf(
-                        "chatId" to latestChat.chatId,
-                        "documentId" to latestChat.documentId,
-                        "userId" to uid
-                    )
-                )
-
-                val units = latestChat.result?.learningUnits
-                    ?: latestChat.partialResult?.learningUnits
-                    ?: emptyList()
-
-                val domainUnits = units.mapIndexed { index, unit ->
-                    val domain = unit.toDomain()
-                    if (index == 0) domain.copy(isRead = true) else domain
-                }
-                val activeIndex = 0
-
-                val activeUnit = domainUnits.firstOrNull()
-                    ?: LearningUnitContentDomain()
-
-                val session = buildChatSessionFromStoredChat(
-                    chat = latestChat,
-                    units = domainUnits,
-                    activeIndex = activeIndex
-                )
-
-                val fullMessages = latestChat.messages
-                    .sortedBy { it.createdAtEpochMillis }
-                    .map { it.toDomain() }
-
+            if (chats.isEmpty()) {
                 _state.update {
                     it.copy(
                         loading = false,
-                        savedChats = chats,
-                        chatHistory = chats.toChatHistoryDomain().copy(
-                            subjects = chats.toChatHistoryDomain().subjects.map { subject ->
-                                if (subject.subjectId != latestChat.chatId) subject
-                                else subject.copy(
-                                    learningUnits = subject.learningUnits.mapIndexed { i, lu ->
-                                        if (i == 0) lu.copy(isRead = true) else lu
-                                    }
-                                )
-                            }
-                        ),
-                        activeChatId = latestChat.chatId,
-                        activeDocumentId = latestChat.documentId,
-                        subjectTitle = latestChat.title,
 
-                        allUnits = domainUnits.mapIndexed { i, item ->
-                            if (i == 0) item.copy(isRead = true) else item
-                        },
+                        savedChats = emptyList(),
+                        chatHistory = chats.toChatHistoryDomain(),
 
-                        currentIndex = activeIndex,
-                        unlockedCount = maxOf(1, domainUnits.size),
-                        currentUnit = activeUnit,
+                        activeChatId = "",
+                        activeDocumentId = "",
+                        subjectTitle = "",
 
-                        session = session,
+                        allUnits = emptyList(),
+                        currentIndex = 0,
+                        unlockedCount = 0,
+                        currentUnit = LearningUnitContentDomain(),
 
-                        allChatMessages = fullMessages,
+                        session = buildEmptyChatSessionStart(),
+
+                        allChatMessages = emptyList(),
 
                         selectedTab = TutorTab.Learning,
-                        tabInfoMessage = buildLearningTabMessage(activeUnit),
+                        selectedExerciseIndex = 0,
+                        exercisesLoading = false,
 
-                        canGoNext = activeIndex < domainUnits.lastIndex,
+                        tabInfoMessage = "",
+                        canGoNext = false,
 
-                        event = TutorEvents.Loaded
+                        event = TutorEvents.None
                     )
                 }
-                markUnitAsRead(0)
-                loadAnsweredExercises()
+
                 return@launch
             }
 
-            return@launch
+            val latestChatSummary = chats.first()
+
+            val latestChat = getChatByIdUseCase(
+                chatId = latestChatSummary.chatId,
+                userId = uid
+            )
+
+            track(
+                name = LATEST_CHAT_AUTO_LOADED,
+                params = mapOf(
+                    "chatId" to latestChat.chatId,
+                    "documentId" to latestChat.documentId,
+                    "userId" to uid
+                )
+            )
+
+            val units =
+                latestChat.result?.learningUnits
+                    ?: latestChat.partialResult?.learningUnits
+                    ?: emptyList()
+
+            val domainUnits = units.mapIndexed { index, unit ->
+                val domain = unit.toDomain()
+
+                if (index == 0) {
+                    domain.copy(
+                        isRead = true
+                    )
+                } else {
+                    domain
+                }
+            }
+
+            val activeIndex = 0
+
+            val activeUnit =
+                domainUnits.firstOrNull()
+                    ?: LearningUnitContentDomain()
+
+            val session = buildChatSessionFromStoredChat(
+                chat = latestChat,
+                units = domainUnits,
+                activeIndex = activeIndex
+            )
+
+            val fullMessages =
+                latestChat.messages
+                    .sortedBy {
+                        it.createdAtEpochMillis
+                    }
+                    .map {
+                        it.toDomain()
+                    }
+
+            val chatHistory =
+                chats.toChatHistoryDomain()
+
+            _state.update {
+                it.copy(
+                    loading = false,
+
+                    savedChats = chats,
+
+                    chatHistory = chatHistory.copy(
+                        subjects = chatHistory.subjects.map { subject ->
+                            if (subject.subjectId != latestChat.chatId) {
+                                subject
+                            } else {
+                                subject.copy(
+                                    learningUnits = subject.learningUnits.mapIndexed {
+                                            index,
+                                            learningUnit,
+                                        ->
+
+                                        if (index == 0) {
+                                            learningUnit.copy(
+                                                isRead = true
+                                            )
+                                        } else {
+                                            learningUnit
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    ),
+                    activeChatId = latestChat.chatId,
+                    activeDocumentId = latestChat.documentId,
+                    subjectTitle = latestChat.title,
+                    allUnits = domainUnits,
+                    currentIndex = activeIndex,
+                    unlockedCount = maxOf(1, domainUnits.size),
+                    currentUnit = activeUnit,
+                    session = session,
+                    allChatMessages = fullMessages,
+                    selectedTab = TutorTab.Learning,
+                    selectedExerciseIndex = 0,
+                    exercisesLoading = false,
+                    tabInfoMessage = buildLearningTabMessage(activeUnit),
+                    canGoNext = activeIndex < domainUnits.lastIndex,
+                    event = TutorEvents.Loaded
+                )
+            }
+
+            markUnitAsRead(0)
+            loadAnsweredExercises()
 
         } catch (t: Throwable) {
             platform.log("TutorStore", "initializeData failed", t)
@@ -1482,81 +1770,6 @@ class TutorCommonViewModel(
                     message = generic_error,
                     showCustomMessage = true,
                     isError = true
-                )
-            }
-        }
-    }
-
-    private suspend fun loadGreekPdf() {
-        // todo remove this logic
-        try {
-            _state.update { it.copy(loading = true) }
-
-            val res = loadTutorFromPdfUseCase.loadGreekTemplate(
-                userId = userId(),
-                mode = state.value.selectedTab.name
-            )
-
-            val units = res.prototype.learningUnits
-            val subjectTitle = res.prototype.title
-
-            val session = buildChatSessionStart(
-                fileName = subjectTitle,
-                units = units,
-                activeIndex = 0
-            )
-
-            val refreshedChats = getAllHistoryChatUseCase(userId())
-
-            track(
-                name = PDF_UPLOADED,
-                params = mapOf(
-                    "chatId" to res.chatId,
-                    "documentTitle" to subjectTitle,
-                    "unitsCount" to units.size.toString(),
-                    "language" to res.languageEnum.value,
-                    "mode" to state.value.selectedTab.name,
-                    "userId" to userId()
-                )
-            )
-
-            _state.update {
-                it.copy(
-                    loading = false,
-                    activeChatId = res.chatId,
-                    subjectTitle = subjectTitle,
-                    allUnits = units,
-                    currentIndex = 0,
-                    unlockedCount = 1,
-                    currentUnit = units.firstOrNull() ?: LearningUnitContentDomain(),
-                    session = session,
-                    savedChats = refreshedChats,
-                    chatHistory = refreshedChats.toChatHistoryDomain(),
-                    isError = false,
-                    tabInfoMessage = buildLearningTabMessage(
-                        units.firstOrNull() ?: LearningUnitContentDomain()
-                    ),
-                    canGoNext = units.size > 1
-                )
-            }
-
-            saveProgress()
-
-        } catch (t: Throwable) {
-            track(
-                name = PDF_UPLOAD_FAILED,
-                params = mapOf(
-                    "reason" to (t.toUserMessage()),
-                    "userId" to userId()
-                )
-            )
-
-            _state.update {
-                it.copy(
-                    loading = false,
-                    showCustomMessage = true,
-                    isError = true,
-                    message = "Upload failed"
                 )
             }
         }
@@ -1594,6 +1807,13 @@ class TutorCommonViewModel(
                     .sortedBy { it.createdAtEpochMillis }
                     .map { it.toDomain() }
 
+                val initialTab =
+                    if (fullChat.mode.equals("Exercises", true)) {
+                        TutorTab.Exercises
+                    } else {
+                        TutorTab.Learning
+                    }
+
                 _state.update {
                     it.copy(
                         loading = false,
@@ -1605,16 +1825,27 @@ class TutorCommonViewModel(
                         currentUnit = firstUnit,
                         session = session,
                         allChatMessages = fullMessages,
-                        selectedTab = if (fullChat.mode.equals("Exercises", true)) {
-                            TutorTab.Exercises
-                        } else {
-                            TutorTab.Learning
+                        selectedTab = initialTab,
+                        selectedExerciseIndex = 0,
+                        tabInfoMessage = when (initialTab) {
+                            TutorTab.Learning ->
+                                buildLearningTabMessage(firstUnit)
+
+                            TutorTab.Exercises ->
+                                buildExercisesTabMessage(firstUnit)
                         },
-                        tabInfoMessage = buildLearningTabMessage(firstUnit),
                         canGoNext = domainUnits.size > 1
                     )
                 }
+
                 loadAnsweredExercises()
+
+                if (
+                    initialTab == TutorTab.Exercises &&
+                    firstUnit.exercises.isEmpty()
+                ) {
+                    loadInitialExercisesForCurrentUnit()
+                }
 
             } catch (t: Throwable) {
 

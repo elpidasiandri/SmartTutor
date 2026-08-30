@@ -40,6 +40,7 @@ import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocument
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
+import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 
 class WebTutorRepoImpl(
@@ -51,6 +52,40 @@ class WebTutorRepoImpl(
     private val json = Json { ignoreUnknownKeys = true }
 
     @OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+    override suspend fun getOrGenerateUnitExercises(
+        documentId: String,
+        unitNumber: Int,
+        token: String,
+    ): UnitExercisesOnlyDto {
+        val response = httpClient.post(
+            "$baseUrl/v1/pdfs/$documentId/units/$unitNumber/exercises"
+        ) {
+            header(
+                HttpHeaders.Authorization,
+                "Bearer $token"
+            )
+
+            accept(ContentType.Application.Json)
+            expectSuccess = false
+
+            timeout {
+                requestTimeoutMillis = 300_000
+                socketTimeoutMillis = 300_000
+                connectTimeoutMillis = 30_000
+            }
+        }
+
+        val raw = response.bodyAsText()
+
+        if (!response.status.isSuccess()) {
+            error(
+                "Exercise generation failed: " +
+                        "${response.status} body=$raw"
+            )
+        }
+
+        return json.decodeFromString(raw)
+    }
     override suspend fun uploadFile(file: UploadFile, idToken: String): UploadPdfResponse {
         val response = httpClient.submitFormWithBinaryData(
             url = "$baseUrl/v1/pdfs/upload",

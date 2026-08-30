@@ -3,7 +3,9 @@ package org.example.project.repo
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.Firestore
 import kotlinx.serialization.json.Json
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.JobStatus
+import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 
@@ -20,7 +22,6 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
     override fun createAndEnqueue(
         documentId: String,
         fileName: String,
-        language: String,
         storagePath: String,
     ) {
         val now = Timestamp.now()
@@ -30,8 +31,6 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
                 "documentId" to documentId,
                 "fileName" to fileName,
                 "storagePath" to storagePath,
-                "language" to language,
-
                 "status" to JobStatus.Queued.value,
                 "progress" to 0,
                 "error" to null,
@@ -86,7 +85,6 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
             PdfJob(
                 documentId = doc.id,
                 fileName = doc.getString("fileName") ?: "",
-                language = doc.getString("language") ?: "el",
                 storagePath = doc.getString("storagePath") ?: ""
             )
         }.sortedBy { it.documentId }
@@ -174,7 +172,6 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
     override fun completeSuccess(documentId: String, result: LearningUnitsPrototypeDto) {
         val now = Timestamp.now()
         val resultJson = json.encodeToString(LearningUnitsPrototypeDto.serializer(), result)
-
         col.document(documentId).update(
             mapOf(
                 "status" to JobStatus.Done.value,
@@ -183,6 +180,10 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
                 "language" to result.language,
                 "totalUnits" to (result.totalUnits ?: result.learningUnits.size),
                 "resultJson" to resultJson,
+                "partialResultJson" to null,
+                "partialTotalUnits" to null,
+                "lockedBy" to null,
+                "lockUntil" to null,
                 "updatedAt" to now
             )
         ).get()
@@ -197,6 +198,8 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
             mapOf(
                 "status" to JobStatus.Failed.value,
                 "error" to message.take(2000),
+                "lockedBy" to null,
+                "lockUntil" to null,
                 "updatedAt" to now
             )
         ).get()
@@ -256,6 +259,94 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
             partialResult = partial,
             result = result
         )
+    }
+    override fun getCompletedResult(
+        documentId: String
+    ): LearningUnitsPrototypeDto? {
+        val doc = col.document(documentId)
+            .get()
+            .get()
+
+        if (!doc.exists()) {
+            return null
+        }
+
+        val resultJson = doc.getString("resultJson")
+            ?.takeIf { it.isNotBlank() }
+            ?: return null
+
+        return runCatching {
+            json.decodeFromString(
+                LearningUnitsPrototypeDto.serializer(),
+                resultJson
+            )
+        }.getOrNull()
+    }
+
+    override fun replaceUnitExercises(
+        documentId: String,
+        unitNumber: Int,
+        exercises: List<ExerciseDto>
+    ): LearningUnitDto? {
+        val docRef = col.document(documentId)
+
+        return db.runTransaction { tx ->
+            val snapshot = tx.get(docRef).get()
+
+            if (!snapshot.exists()) {
+                return@runTransaction null
+            }
+
+            val resultJson = snapshot
+                .getString("resultJson")
+                ?.takeIf { it.isNotBlank() }
+                ?: return@runTransaction null
+
+            val current = runCatching {
+                json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    resultJson
+                )
+            }.getOrNull()
+                ?: return@runTransaction null
+
+            val unitIndex = current.learningUnits.indexOfFirst {
+                it.numbering == unitNumber
+            }
+
+            if (unitIndex < 0) {
+                return@runTransaction null
+            }
+
+            val updatedUnits = current.learningUnits.toMutableList()
+
+            val updatedUnit = updatedUnits[unitIndex].copy(
+                exercises = exercises
+            )
+
+            updatedUnits[unitIndex] = updatedUnit
+
+            val updatedResult = current.copy(
+                totalUnits = updatedUnits.size,
+                learningUnits = updatedUnits
+            )
+
+            val updatedJson = json.encodeToString(
+                LearningUnitsPrototypeDto.serializer(),
+                updatedResult
+            )
+
+            tx.update(
+                docRef,
+                mapOf(
+                    "resultJson" to updatedJson,
+                    "totalUnits" to updatedUnits.size,
+                    "updatedAt" to Timestamp.now()
+                )
+            )
+
+            updatedUnit
+        }.get()
     }
 
     private fun mirrorToUserIndex(

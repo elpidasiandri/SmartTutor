@@ -10,9 +10,15 @@ import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocument
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
+import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 
 interface ITutorRepo {
+    suspend fun getOrGenerateUnitExercises(
+        documentId: String,
+        unitNumber: Int,
+        token: String,
+    ): UnitExercisesOnlyDto
     suspend fun uploadFile(file: UploadFile, idToken: String): UploadPdfResponse
     fun getIdToken(onResult: (Boolean, String?) -> Unit)
     suspend fun getIdTokenSuspend(forceRefresh: Boolean = true): String

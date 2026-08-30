@@ -176,5 +176,6 @@ fun WebTutorScreenFlow(navController: NavController) {
                 )
             )
         },
+        exercisesLoading = state.exercisesLoading
     )
 }

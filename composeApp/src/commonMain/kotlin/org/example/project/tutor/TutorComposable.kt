@@ -108,13 +108,13 @@ fun TutorScreen(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double,) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
         userAnswer: String,
         suggestedSolution: String,
-        maxPoint : Double
+        maxPoint: Double,
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
@@ -124,6 +124,7 @@ fun TutorScreen(
     isLoadingMoreExercises: Boolean,
     onLearningClick: (String, String) -> Unit,
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
+    exercisesLoading: Boolean,
 ) {
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -174,6 +175,7 @@ fun TutorScreen(
             },
             canGoNext = canGoNext,
             askTutor = askTutor,
+            exercisesLoading = exercisesLoading,
             onExerciseAnswered = onExerciseAnswered,
             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
             exerciseTutorAnswers = exerciseTutorAnswers,
@@ -199,6 +201,7 @@ fun TutorChatUI(
     showCustomMessage: Boolean,
     message: String,
     isError: Boolean,
+    exercisesLoading: Boolean,
     userMessage: String,
     widthDividerMenu: Int = 2,
     onSettingsClick: () -> Unit,
@@ -221,13 +224,13 @@ fun TutorChatUI(
     navigateToMyProgress: () -> Unit,
     canGoNext: Boolean,
     askTutor: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double, ) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
         userAnswer: String,
         suggestedSolution: String,
-        maxPoint : Double
+        maxPoint: Double,
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
@@ -338,6 +341,7 @@ fun TutorChatUI(
                                 onMoreExercisesClick = onMoreExercisesClick,
                                 isLoadingMoreExercises = isLoadingMoreExercises,
                                 selectedExerciseIndex = selectedExerciseIndex,
+                                exercisesLoading = exercisesLoading,
                             )
 
                             if (isMobile) {
@@ -576,13 +580,13 @@ private fun TutorChatContent(
     currentUnit: LearningUnitContentDomain,
     isLoading: Boolean,
     canGoNext: Boolean,
-    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double,) -> Unit,
+    onExerciseAnswered: (Int, ExerciseType, String, String, Boolean, Long, String, Double) -> Unit,
     onAskTutorForOpenExercise: (
         exerciseIndex: Int,
         question: String,
         userAnswer: String,
         suggestedSolution: String,
-        maxPoint : Double
+        maxPoint: Double,
     ) -> Unit,
     exerciseTutorAnswers: Map<Int, String>,
     answeredExerciseKeys: Set<String>,
@@ -590,20 +594,29 @@ private fun TutorChatContent(
     selectedExerciseIndex: Int,
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
+    exercisesLoading: Boolean,
 ) {
     val currentExerciseAnswered =
         currentUnit.exercises
             .getOrNull(selectedExerciseIndex)
             ?.isAnswered == true
 
-    val nextEnabled =
-        chatData.material.fileUploaded &&
-                !isLoading &&
-                canGoNext &&
-                (
-                        selectedTab == TutorTab.Learning ||
-                                currentExerciseAnswered
-                        )
+    val nextEnabled = chatData.material.fileUploaded &&
+            !isLoading &&
+            !exercisesLoading &&
+            when (selectedTab) {
+                TutorTab.Learning -> true
+                TutorTab.Exercises -> {
+                    if (currentUnit.exercises.isEmpty()) {
+                        false
+                    } else {
+                        val hasNextExercise =
+                            selectedExerciseIndex < currentUnit.exercises.lastIndex
+                        currentExerciseAnswered && (hasNextExercise || canGoNext)
+                    }
+                }
+            }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -615,11 +628,13 @@ private fun TutorChatContent(
                 .padding(horizontal = spacing8),
             horizontalArrangement = Arrangement.End
         ) {
-            TutorActionButton(
-                text = next_tab,
-                enabled = chatData.material.fileUploaded && !isLoading && nextEnabled,
-                onClick = onNextUnitClick,
-                selectedTab = false
+            TutorTopActionsRow(
+                fileUploaded = chatData.material.fileUploaded,
+                selectedTab = selectedTab,
+                onTabChange = onChangeTab,
+                onNextUnitClick = onNextUnitClick,
+                isLoading = isLoading || exercisesLoading,
+                canGoNext = nextEnabled,
             )
         }
         Spacer(modifier = Modifier.height(spacing8))
@@ -640,21 +655,51 @@ private fun TutorChatContent(
             }
 
             TutorTab.Exercises -> {
-                ExercisesTab(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(horizontal = spacing8),
-                    exercises = currentUnit.exercises,
-                    selectedExerciseIndex = selectedExerciseIndex,
-                    onExerciseAnswered = onExerciseAnswered,
-                    onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                    exerciseTutorAnswers = exerciseTutorAnswers,
-                    answeredExerciseKeys = answeredExerciseKeys,
-                    currentUnitIndex = currentIndex,
-                    onMoreExercisesClick = onMoreExercisesClick,
-                    isLoadingMoreExercises = isLoadingMoreExercises,
-                )
+                if (exercisesLoading) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+
+                            Spacer(
+                                modifier = Modifier.height(12.dp)
+                            )
+
+                            Text("Generating exercises...")
+                        }
+                    }
+                } else if (currentUnit.exercises.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No exercises available")
+                    }
+                } else {
+                    ExercisesTab(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = spacing8),
+                        exercises = currentUnit.exercises,
+                        selectedExerciseIndex = selectedExerciseIndex,
+                        onExerciseAnswered = onExerciseAnswered,
+                        onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                        exerciseTutorAnswers = exerciseTutorAnswers,
+                        answeredExerciseKeys = answeredExerciseKeys,
+                        currentUnitIndex = currentIndex,
+                        onMoreExercisesClick = onMoreExercisesClick,
+                        isLoadingMoreExercises = isLoadingMoreExercises,
+                    )
+                }
             }
         }
 

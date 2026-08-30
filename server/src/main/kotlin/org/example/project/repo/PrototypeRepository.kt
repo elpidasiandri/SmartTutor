@@ -1,5 +1,7 @@
 package org.example.project.repo
 
+import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
+import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
 
@@ -8,9 +10,17 @@ interface PdfJobRepository {
     fun createAndEnqueue(
         documentId: String,
         fileName: String,
-        language: String,
         storagePath: String
     )
+    fun getCompletedResult(
+        documentId: String
+    ): LearningUnitsPrototypeDto?
+
+    fun replaceUnitExercises(
+        documentId: String,
+        unitNumber: Int,
+        exercises: List<ExerciseDto>
+    ): LearningUnitDto?
     fun claimNextJob(workerId: String): PdfJob?
 
     fun heartbeat(documentId: String, workerId: String)
@@ -29,6 +39,5 @@ interface PdfJobRepository {
 data class PdfJob(
     val documentId: String,
     val fileName: String,
-    val language: String,
     val storagePath: String
 )

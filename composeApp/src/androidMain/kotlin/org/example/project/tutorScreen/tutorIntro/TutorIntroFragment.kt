@@ -103,7 +103,7 @@ class TutorIntroFragment : Fragment() {
                     },
                     canGoNext = state.canGoNext,
                     askTutor = state.askTutor,
-                    onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question ->
+                    onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question, maxPoints,  ->
                         viewModel.onEvent(
                             TutorUiEvents.ExerciseAnswered(
                                 exerciseIndex = index,
@@ -113,16 +113,18 @@ class TutorIntroFragment : Fragment() {
                                 isCorrect = isCorrect,
                                 timeToAnswerMs = timeMs,
                                 question = question,
+                                maxPoints = maxPoints,
                             )
                         )
                     },
-                    onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution ->
+                    onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution,maxPoint ->
                         viewModel.onEvent(
                             TutorUiEvents.AskTutorForOpenExercise(
                                 exerciseIndex = exerciseIndex,
                                 question = question,
                                 userAnswer = userAnswer,
                                 suggestedSolution = suggestedSolution,
+                                maxPoints = maxPoint
                             )
                         )
                     },
@@ -156,7 +158,8 @@ class TutorIntroFragment : Fragment() {
                             TutorUiEvents.LoadMoreExercises
                         )
                     },
-                    isLoadingMoreExercises = state.askTutor
+                    isLoadingMoreExercises = state.askTutor,
+                    exercisesLoading = state.exercisesLoading
                 )
             }
         }

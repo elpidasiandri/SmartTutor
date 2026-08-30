@@ -22,7 +22,7 @@ import org.example.project.tutor.networkModel.uploadPdf.ImageGenRequest
 import org.example.project.tutor.networkModel.uploadPdf.ImageGenResponse
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
-import org.example.project.tutor.networkModel.uploadPdf.UnitWithCarryDto
+import org.example.project.tutor.networkModel.uploadPdf.UnitsWithCarryDto
 import kotlin.random.Random
 import java.io.File
 import java.util.Base64
@@ -44,6 +44,7 @@ class PromptLlmClient(
         }
         engine { requestTimeout = 180_000 }
     }
+
     suspend fun gradeOpenExercise(
         language: String,
         fileName: String,
@@ -52,107 +53,112 @@ class PromptLlmClient(
         suggestedSolution: String,
         userAnswer: String,
         maxPoints: Double,
+        unitContext: String = "",
     ): OpenExerciseEvaluationDto {
         require(maxPoints > 0.0) {
             "maxPoints must be greater than zero"
         }
-
-        val resolvedLanguage = when (
-            language.trim().lowercase()
-        ) {
-            "el",
-            "el-gr",
-            "gr",
-            "greek",
-            "ελληνικά",
-            "ελληνικα" -> "Greek"
-
-            "en",
-            "en-us",
-            "en-gb",
-            "english",
-            "αγγλικά",
-            "αγγλικα" -> "English"
-
-            else -> language.ifBlank { "Greek" }
-        }
+        val resolvedLanguage = language.trim().ifBlank { "en" }
 
         val system = """
-        MODE: OPEN_EXERCISE_GRADING
-
-        You are grading a student's open-ended educational answer.
-
-        RESPONSE LANGUAGE:
-        - All user-facing text must be written exclusively in $resolvedLanguage.
-        - feedback must be written in $resolvedLanguage.
-        - improvementSuggestion must be written in $resolvedLanguage.
-        - exampleAnswer must be written in $resolvedLanguage.
-        - Java code and Java keywords must not be translated.
-        - gradingStatus must always remain one of:
-          correct, partial, wrong.
-
-        GRADING RULES:
-        - Evaluate only what the exercise asks.
-        - Compare the student's answer with the suggested solution.
-        - Also accept other technically correct equivalent answers.
-        - Do not require class, main method, or imports unless the question
-          explicitly requests a complete Java program.
-        - If the question requests only a method, a correct standalone method
-          is acceptable.
-        - awardedPoints must be between 0 and $maxPoints.
-        - maxPoints must always be exactly $maxPoints.
-
-        STATUS RULES:
-        - correct:
-          The answer is correct and substantially complete.
-          Normally award 80% to 100% of maxPoints.
-
-        - partial:
-          The answer contains meaningful correct information but misses
-          important requested elements or contains small/medium errors.
-          awardedPoints must be greater than 0 and less than maxPoints.
-
-        - wrong:
-          The answer is mostly incorrect, irrelevant, or does not answer
-          the question.
-          awardedPoints must be 0.
-
-        BOOLEAN RULE:
-        - isCorrect must be true only when gradingStatus is correct.
-        - isCorrect must be false for partial and wrong.
-
-        FEEDBACK RULES:
-        - Clearly tell the student whether the answer is correct,
-          partially correct, or needs improvement.
-        - Explain what is correct.
-        - Explain what is missing or incorrect.
-        - Provide an improvement suggestion only when needed.
-        - Provide an example answer only when needed.
-        - Do not show technical enum explanations such as
-          "CORRECT means..." or "PARTIAL means...".
-        - Do not include GRADE:, STATUS:, or RESULT: inside feedback.
-        - Do not use Markdown code fences around the entire response.
-    """.trimIndent()
+            MODE: OPEN_EXERCISE_GRADING
+        
+            You are grading a learner's open-ended answer.
+        
+            LANGUAGE:
+            - Default response language code: $resolvedLanguage
+            - Write all learner-facing feedback in that language.
+            - If the learner explicitly asks to receive feedback in another language,
+              follow that request when clear.
+            - Do not translate programming syntax, identifiers, formulas,
+              technical notation, or language-specific examples when translation
+              would make them incorrect.
+            - gradingStatus must always remain exactly one of:
+              correct, partial, wrong.
+        
+            GROUNDING:
+            - Grade the answer using:
+              1. the exercise question,
+              2. the suggested solution,
+              3. the CURRENT UNIT CONTEXT when provided.
+            - The suggested solution is an exemplary answer, not necessarily
+              the only valid wording.
+            - Accept equivalent correct answers.
+            - Do not require information that was not requested by the exercise.
+            - Do not introduce requirements from unrelated learning units.
+            - Do not penalize a learner for using different wording when the
+              educational meaning is correct.
+        
+            SUBJECT ADAPTATION:
+            - Do NOT assume the subject is Java or programming.
+            - Adapt grading to the actual subject.
+            - For programming exercises:
+              evaluate correctness of logic, syntax and requested behavior.
+              Do not require a complete program unless explicitly requested.
+            - For language-learning exercises:
+              evaluate only the vocabulary, grammar, meaning, structure or
+              production skills actually taught and requested.
+            - For theoretical subjects:
+              prioritize conceptual correctness and completeness.
+        
+            SCORING:
+            - awardedPoints must be between 0 and $maxPoints.
+            - maxPoints must always be exactly $maxPoints.
+        
+            STATUS RULES:
+            - correct:
+              The answer is correct and substantially complete.
+              Normally award 80% to 100% of maxPoints.
+        
+            - partial:
+              The answer demonstrates meaningful understanding but contains
+              omissions, inaccuracies or incomplete reasoning.
+              awardedPoints must be greater than 0 and less than maxPoints.
+        
+            - wrong:
+              The answer is substantially incorrect, irrelevant,
+              or does not answer the exercise.
+              awardedPoints must be 0.
+        
+            BOOLEAN RULE:
+            - isCorrect = true only when gradingStatus = correct.
+            - isCorrect = false for partial and wrong.
+        
+            FEEDBACK:
+            - Explain briefly what the learner did correctly.
+            - Explain what is missing or incorrect.
+            - Be specific to this exercise.
+            - improvementSuggestion should explain what to improve,
+              without introducing unrelated material.
+            - exampleAnswer should be provided when it would genuinely help.
+            - Do not mention internal grading rules or enum names.
+            - Do not write GRADE:, STATUS:, RESULT:, or similar metadata
+              inside feedback.
+            - Do not wrap the whole response in Markdown code fences.
+        """.trimIndent()
 
         val user = """
-        Document:
-        $fileName
-
-        Learning unit:
-        $unitTitle
-
-        Exercise:
-        $question
-
-        Suggested solution:
-        $suggestedSolution
-
-        Student answer:
-        $userAnswer
-
-        Maximum points:
-        $maxPoints
-    """.trimIndent()
+            DOCUMENT:
+            $fileName
+        
+            LEARNING UNIT:
+            $unitTitle
+        
+            CURRENT UNIT CONTEXT:
+            ${unitContext.take(12_000)}
+        
+            EXERCISE:
+            $question
+        
+            SUGGESTED SOLUTION:
+            $suggestedSolution
+        
+            STUDENT ANSWER:
+            $userAnswer
+        
+            MAXIMUM POINTS:
+            $maxPoints
+        """.trimIndent()
 
         val request = buildResponsesRequest(
             model = "gpt-4o-2024-08-06",
@@ -222,6 +228,7 @@ class PromptLlmClient(
             isCorrect = safeStatus == "correct",
         )
     }
+
     private fun openExerciseEvaluationSchemaJson(): String {
         return """
         {
@@ -273,6 +280,7 @@ class PromptLlmClient(
         }
     """.trimIndent()
     }
+
     suspend fun generateAdaptiveExercisesForUnit(
         unit: LearningUnitDto,
         language: String,
@@ -280,75 +288,118 @@ class PromptLlmClient(
         adaptiveFocus: String,
         targetMinutes: Int = 55,
     ): List<ExerciseDto> {
-        val schema = unitExercisesOnlySchemaJson()
+        val schema = adaptiveExercisesOnlySchemaJson()
         val unitText = buildString {
-            appendLine("UNIT_TITLE: ${unit.title}")
+            appendLine("UNIT_TITLE:")
+            appendLine(unit.title)
+
+            appendLine()
             appendLine("UNIT_TEXT:")
-            appendLine(unit.textInfo ?: "")
+            appendLine(unit.textInfo.orEmpty())
+
             appendLine()
             appendLine("EXISTING_EXERCISES:")
             unit.exercises.forEachIndexed { index, ex ->
-                appendLine("Exercise $index: ${ex.question}")
-                appendLine("Solution: ${ex.solution}")
+                appendLine("Exercise ${index + 1}:")
+                appendLine("Question: ${ex.question.orEmpty()}")
+                appendLine("Solution: ${ex.solution.orEmpty()}")
+                appendLine()
             }
-            appendLine()
+
             appendLine("STUDENT_WEAKNESSES:")
-            appendLine(adaptiveFocus.ifBlank { "No specific wrong answers found. Generate balanced extra practice." })
+            appendLine(
+                adaptiveFocus.ifBlank {
+                    "No incorrect attempts are available. Generate new medium/hard practice based only on UNIT_TEXT."
+                }
+            )
         }.take(30_000)
 
         val system = """
-        MODE: ADAPTIVE_UNIT_EXERCISES
-        Return ONLY JSON matching schema.
+    MODE: ADAPTIVE_UNIT_EXERCISES
+    Return ONLY JSON matching schema.
 
-        GOAL:
-        Generate extra exercises for this unit based on the student's mistakes.
+    GOAL:
+    Generate additional exercises for the CURRENT learning unit.
 
-        RULES:
-        - Use ONLY the provided UNIT_TEXT and EXISTING_EXERCISES.
-        - Prioritize concepts where STUDENT_WEAKNESSES shows wrong attempts.
-        - Do NOT repeat the same questions.
-        - Create similar but not identical exercises.
-        - If the student made mistakes in code/scope/syntax, generate exercises that target that misconception.
-        - Exercises must be self-contained.
-        - If code is needed, include the full Java code block inside the question.
-        - If STUDENT_WEAKNESSES is empty, missing, or does not show wrong attempts, still generate new useful exercises based on UNIT_TEXT and EXISTING_EXERCISES.
-        - If the student has no answered exercises yet, do not fail and do not mention that there is no history; generate general practice exercises for this unit.
-        - If there are no mistakes, focus on deeper practice, variations, and slightly more challenging exercises from the same unit.
-    
-       REQUIRED OUTPUT:
-        - Exactly 12 exercises total.
-        - 3 mcq
-        - 3 true_false
-        - 6 open
-        - At least 5 open exercise must ask for Java code.
-        - Use medium difficulty unless the student has many incorrect attempts; then include 1 difficult exercise. If the student has answered all correctly, output only difficult exercises.
-   
-        SCORING:
-        - Every exercise MUST include points.
-        - Every exercise MUST also include maxPoints.
-        - maxPoints MUST be equal to points.
-        - awardedPoints MUST be 0.
-        - gradingStatus MUST be "".
-        - Every learning unit has exactly 20 exercises.
-        - The sum of points in each learning unit MUST be exactly 20.0.
-        
-        FORMAT:
-        - mcq: options length 3..6, answerIndex valid.
-        - true_false: options exactly ["Σωστό","Λάθος"], answerIndex 0 or 1.
-        - open: options exactly ["(Ελεύθερη απάντηση)"], answerIndex null.
-        - Every exercise must include hint, explanation, solution.
-        -  Αν γράψεις κώδικα, βάλ' τον ΠΑΝΤΑ μέσα σε markdown code block με γλώσσα.
-            Παράδειγμα:
-            ```java
-            int counter = 0;
-            while (counter < 5) {
-                counter++;
-            }
-            
-        LANGUAGE:
-        - Generate exercises in $language.
-    """.trimIndent()
+    PRIMARY SOURCE:
+    - Use the UNIT_TEXT as the main educational source.
+    - Every generated exercise must be answerable from concepts taught in UNIT_TEXT.
+    - EXISTING_EXERCISES may be used to understand the style and concepts already tested.
+    - Do NOT introduce concepts that are not taught in UNIT_TEXT.
 
+    STUDENT PERFORMANCE:
+    - STUDENT_WEAKNESSES contains information about exercises the student answered incorrectly or partially.
+    - Give higher priority to concepts where the student made mistakes.
+    - Create NEW exercises targeting those misconceptions.
+    - Do NOT simply repeat the same question.
+    - Test the same concept using a different example, wording, scenario, or reasoning path.
+
+    DIFFICULTY ADAPTATION:
+    - Every generated exercise must have difficulty = "medium" or "hard".
+    - Do not generate easy exercises.
+    - Exercises targeting a previously wrong concept should first test
+      whether the learner now understands the concept and then move toward
+      more demanding application or reasoning.
+    - Prefer hard exercises when the student's previous performance shows
+      that the underlying concept has already been partially understood.
+    - When the student has mistakes, progressively increase difficulty after reinforcing the weak concept.
+    - When the student has answered everything correctly, generate harder exercises that deepen understanding.
+    - If there is no performance history, generate balanced medium/hard practice based on UNIT_TEXT.
+
+    REQUIRED OUTPUT:
+    - Generate EXACTLY 12 new exercises.
+    - Include mcq, true_false and open exercises.
+    - At least 3 exercises must be open.
+    - Do not duplicate existing exercises.
+
+    SUBJECT ADAPTATION:
+    - Adapt exercises to the actual subject of UNIT_TEXT.
+
+    - For language-learning material:
+      use vocabulary, grammar, sentence construction, ordering,
+      translation, comprehension or production tasks when appropriate.
+
+    - For programming material:
+      use code reading, debugging, reasoning and code-writing when appropriate.
+      At least one open exercise should require writing code when UNIT_TEXT teaches programming.
+      Use the programming language appearing in UNIT_TEXT.
+      NEVER assume Java.
+
+    - For non-programming material:
+      do NOT generate programming exercises.
+
+    SELF-CONTAINED:
+    - Every exercise must be understandable on its own.
+    - Do not refer to "the previous exercise", "the code above",
+      or material that is not included in the question.
+    - If code is needed to answer the exercise, include the necessary code
+      inside the same question.
+
+    HINT:
+    - Every exercise must include a useful hint.
+    - The hint should guide the learner toward the relevant concept
+      without revealing the answer.
+
+    SOLUTION:
+    - Every exercise must contain a correct solution.
+    - Open exercises must contain an exemplary expected answer.
+    - Programming solutions must contain code when code is required.
+
+    FORMAT:
+    - mcq: options length 3..6 and valid answerIndex.
+    - true_false: exactly 2 localized True/False options and answerIndex 0 or 1.
+    - open: one localized free-response placeholder and answerIndex null.
+    - Every exercise must include hint, explanation and solution.
+
+    CODE FORMAT:
+    - If code is included, always use Markdown fenced code blocks.
+    - Use the correct programming-language tag.
+    - Never assume Java.
+
+    LANGUAGE:
+    - Generate all learner-facing content in language code: $language
+    - Keep programming keywords, identifiers and code syntax unchanged.
+""".trimIndent()
         val user = """
         Filename: $fileName
         Language: $language
@@ -361,19 +412,32 @@ class PromptLlmClient(
             system = system,
             user = user,
             schemaOnly = schema,
-            maxOutputTokens = 3200
+            maxOutputTokens = 4800
         )
 
         val resp = callOpenAIResponsesWithRetry(req)
-        ensureCompleted(resp)
+
+        if (!ensureCompleted(resp)) {
+            error("Adaptive exercise response was incomplete")
+        }
 
         val raw = extractOutputJson(resp)
         val out = coerceToJsonObjectString(raw)
 
-        return json.decodeFromString(
+        val exercises = json.decodeFromString(
             UnitExercisesOnlyDto.serializer(),
             out
         ).exercises
+
+        val normalizedExercises = normalizeExercisePoints(
+            exercises
+        )
+
+        validateAdaptiveExercisesOrThrow(
+            normalizedExercises
+        )
+
+        return normalizedExercises
     }
 
     suspend fun generateExercisesForUnit(
@@ -404,63 +468,73 @@ class PromptLlmClient(
             GOAL:
             Generate a complete exam set based ONLY on the given UNIT.
 
-            IMPORTANT GENERATION STRATEGY:
-            - To maximize reliability, generate EXACTLY 16 exercises.
-            - This satisfies the required overall range 16..30.
+            EXERCISE GENERATION RULES:
 
-            HARD RULES:
-            - Generate exercises ONLY from UNIT_TEXT/QUOTATIONS/IMAGES_CAPTIONS above.
-            - exercises MUST NOT be empty.
-            - Every exercise must be fully self-contained.
-            - Never assume the student remembers any previous example, previous exercise, or earlier code from the learning unit.
-            - Never refer to "the previous code", "the example above", "the program shown earlier", or similar wording.
+            Generate EXACTLY 20 exercises for this learning unit.
 
-            EXACT REQUIRED COMPOSITION:
-            - Exactly 6 exercises of type="mcq"
-            - Exactly 5 exercises of type="true_false"
-            - Exactly 5 exercises of type="open"
-            - At least 2 of the open exercises MUST be a Java coding exercise
-            - Exactly 2 exercises MUST have difficulty="hard"
-            - All other exercises MUST have difficulty="medium"
+            DIFFICULTY DISTRIBUTION:
+            - Exactly 4 exercises with difficulty = "easy"
+            - Exactly 8 exercises with difficulty = "medium"
+            - Exactly 8 exercises with difficulty = "hard"
 
-            TIME:
-            - Total estimatedMinutes MUST sum to ${targetMinutes - 3}..${targetMinutes + 3} minutes.
+            SOURCE GROUNDING:
+            - EVERY exercise must be based ONLY on this learning unit.
+            - Do not introduce concepts that do not appear in UNIT_TEXT, quotations or image captions.
+            - Avoid generic questions that could fit unrelated learning units.
+
+            EXERCISE TYPES:
+            - Use a pedagogically appropriate mix of:
+              mcq
+              true_false
+              open
+            - Open-ended exercises MUST be included.
+
+            SUBJECT ADAPTATION:
+            - If the material is language learning, generate vocabulary, ordering, grammar, sentence creation, translation or comprehension exercises when appropriate.
+            - If the material is programming, include code-reading, debugging, reasoning and code-writing exercises.
+            - If programming is taught in this unit, at least one open exercise MUST require writing code.
+            - Use the programming language that appears in the learning unit.
+            - NEVER assume Java.
+            - For non-programming material, do NOT generate programming exercises.
+
+            DIFFICULTY:
+            - easy = direct recall, recognition or very simple application
+            - medium = understanding, interpretation, comparison or multi-step application
+            - hard = deeper reasoning, synthesis, problem solving, debugging or production
+
+            HINT:
+            - Every exercise must have a useful hint.
+            - The hint must guide the learner without revealing the answer.
+
+            SOLUTION:
+            - Every exercise must include a correct solution.
+            - Open exercises must include an exemplary expected answer.
+            - Programming solutions must include code when code is required.
 
             SCORING:
-            - Every exercise MUST include points.
-            - Every exercise MUST also include maxPoints.
-            - maxPoints MUST be equal to points.
-            - awardedPoints MUST be 0.
-            - gradingStatus MUST be "".
-            - Every learning unit has exactly 20 exercises.
-            - The sum of points in each learning unit MUST be exactly 20.0.
+            - easy: maxPoints = 0.5
+            - medium: maxPoints = 1.0
+            - hard: maxPoints = 1.25
+            - Total maxPoints of all 20 exercises MUST equal exactly 20.0.
 
-            SELF-CONTAINED EXERCISE RULES:
-            - Every exercise must be answerable by reading only that exercise.
-            - If a question depends on code, include the full necessary code snippet inside the same exercise question.
-            - If an exercise asks for output, bug-fixing, completion, extension, or explanation of code, the code must appear inside that same exercise.
-            - Do not rely on hidden context from the unit text.
-            - Do not assume that the learner remembers earlier code examples.
+            TIME:
+            - estimatedMinutes must be realistic for an average learner.
+            - Easy exercises should usually take less time than medium exercises.
+            - Hard/open/problem-solving exercises may take more time.
 
-            OPEN EXERCISES:
-            - Open exercises may be theory, reasoning, short problem solving, code analysis, or Java coding.
-            - At least 1 open exercise MUST explicitly ask the student to write Java code.
-            - If an open exercise asks to analyze/fix/extend/predict output of code, the full code must be included in that exercise question.
+            FORMAT:
+            - mcq: options length 3..6, answerIndex valid
+            - true_false: 2 options, answerIndex 0 or 1
+            - open: one placeholder option and answerIndex null
+            - Every exercise must include hint, explanation and solution.
 
-            MCQ OPTIONS:
-            - MCQ may have 3 to 6 options.
-            - answerIndex MUST be a valid index for the options array.
-
-            FORMAT RULES:
-            - mcq: options length 3..6, answerIndex 0..(len-1)
-            - true_false: options MUST be ["Σωστό","Λάθος"], answerIndex 0/1
-            - open: options MUST be ["(Ελεύθερη απάντηση)"], answerIndex MUST be null
-            - Every exercise MUST include hint + explanation + solution (non-empty).
-
-            OUTPUT DISCIPLINE:
-            - Do not omit any exercise.
-            - Do not return fewer than 16.
-            - Do not return more than 30.
+            CODE:
+            - If code is included, use markdown fenced code blocks.
+            - Use the correct language tag for the programming language in the unit.
+            - Example:
+              ```python
+              print("hello")
+              ```
         """.trimIndent()
 
         val user = """
@@ -476,30 +550,37 @@ class PromptLlmClient(
             system = system,
             user = user,
             schemaOnly = schema,
-            maxOutputTokens = 4200
+            maxOutputTokens = 6500
         )
 
         onRawHook?.invoke("exercises_request", req)
 
         val resp = callOpenAIResponsesWithRetry(req)
+
+        if (!ensureCompleted(resp)) {
+            error("Exercise response was incomplete")
+        }
         onRawHook?.invoke("exercises_response", resp)
-        ensureCompleted(resp)
 
         val raw = extractOutputJson(resp)
         val out = coerceToJsonObjectString(raw)
         val dto = json.decodeFromString(UnitExercisesOnlyDto.serializer(), out)
-
-        val normalized = normalizeExercisesToTimeBudget(dto.exercises, targetMinutes)
+        val normalizedExercises = normalizeExercisePoints(
+            dto.exercises
+        )
         val validated = runCatching {
             validateExercisesOrThrow(
-                normalized,
-                targetMinutes,
-                tolerance = 1,
-                hardMin = 50,
-                hardMax = 75
+                normalizedExercises,
+                targetMinutes
             )
-            normalized
+
+            normalizedExercises
         }.getOrElse { err ->
+            onRawHook?.invoke(
+                "exercises_validation_failed",
+                err.message ?: "validation failed"
+            )
+
             val repaired = repairExercisesToMeetConstraints(
                 originalJson = out,
                 unitText = unitText,
@@ -508,19 +589,121 @@ class PromptLlmClient(
                 targetMinutes = targetMinutes,
                 schemaOnly = schema
             )
-            validateExercisesOrThrow(
-                normalized,
-                targetMinutes,
-                tolerance = 1,
-                hardMin = 50,
-                hardMax = 75
+
+            val normalizedRepaired = normalizeExercisePoints(
+                repaired
             )
-            repaired
+
+            validateExercisesOrThrow(
+                normalizedRepaired,
+                targetMinutes
+            )
+
+            normalizedRepaired
+
         }
 
         return validated
     }
 
+    private fun normalizeExercisePoints(
+        exercises: List<ExerciseDto>
+    ): List<ExerciseDto> {
+        return exercises.map { exercise ->
+            val points = when (
+                exercise.difficulty
+                    ?.trim()
+                    ?.lowercase()
+            ) {
+                "easy" -> 0.5
+                "medium" -> 1.0
+                "hard" -> 1.25
+                else -> exercise.maxPoints
+            }
+
+            exercise.copy(
+                maxPoints = points
+            )
+        }
+    }
+    private fun validateAdaptiveExercisesOrThrow(
+        exercises: List<ExerciseDto>
+    ) {
+        require(exercises.size == 12) {
+            "Expected exactly 12 adaptive exercises, got ${exercises.size}"
+        }
+
+        require(exercises.count { it.type == "open" } >= 3) {
+            "Adaptive exercises require at least 3 open exercises"
+        }
+
+        exercises.forEachIndexed { index, ex ->
+            require(
+                ex.difficulty.equals("medium", true) ||
+                        ex.difficulty.equals("hard", true)
+            ) {
+                "Adaptive exercise #${index + 1} must be medium or hard"
+            }
+
+            when (ex.type) {
+                "mcq" -> {
+                    require(ex.options.size in 3..6) {
+                        "Adaptive MCQ options invalid at #${index + 1}"
+                    }
+
+                    val answerIndex = ex.answerIndex
+                        ?: error(
+                            "Adaptive MCQ answerIndex missing at #${index + 1}"
+                        )
+
+                    require(answerIndex in ex.options.indices) {
+                        "Adaptive MCQ answerIndex invalid at #${index + 1}"
+                    }
+                }
+
+                "true_false" -> {
+                    require(ex.options.size == 2) {
+                        "Adaptive true/false must have 2 options at #${index + 1}"
+                    }
+
+                    require(
+                        ex.answerIndex == 0 ||
+                                ex.answerIndex == 1
+                    ) {
+                        "Adaptive true/false answerIndex invalid at #${index + 1}"
+                    }
+                }
+
+                "open" -> {
+                    require(ex.options.size == 1) {
+                        "Open exercise must have one placeholder option at #${index + 1}"
+                    }
+
+                    require(ex.answerIndex == null) {
+                        "Open exercise answerIndex must be null at #${index + 1}"
+                    }
+                }
+
+                else -> {
+                    error(
+                        "Unknown adaptive exercise type '${ex.type}' at #${index + 1}"
+                    )
+                }
+            }
+
+            require(ex.hint?.isNotBlank() == true) {
+                "Adaptive hint missing at #${index + 1}"
+            }
+
+            require(ex.solution?.isNotBlank() == true) {
+                "Adaptive solution missing at #${index + 1}"
+            }
+
+            require((ex.estimatedMinutes ?: 0) > 0) {
+                "Adaptive estimatedMinutes invalid at #${index + 1}"
+            }
+        }
+    }
     private fun validateExercisesOrThrow(
         exercises: List<ExerciseDto>,
         targetMinutes: Int,
@@ -528,67 +711,99 @@ class PromptLlmClient(
         hardMin: Int = 50,
         hardMax: Int = 75,
     ) {
-        if (exercises.size !in 16..30) error("Exercise count must be 16..30 (got ${exercises.size})")
-
-        val total = exercises.sumOf { it.estimatedMinutes ?: 0 }
-
-        if (total < hardMin || total > hardMax) {
-            error("Total minutes hard bounds $hardMin..$hardMax (got $total)")
+        require(exercises.size == 20) {
+            "Expected exactly 20 exercises, got ${exercises.size}"
         }
 
-        val mcq = exercises.count { it.type == "mcq" }
-        val tf = exercises.count { it.type == "true_false" }
-        val op = exercises.count { it.type == "open" }
+        val easy = exercises.count { it.difficulty.equals("easy", true) }
+        val medium = exercises.count { it.difficulty.equals("medium", true) }
+        val hard = exercises.count { it.difficulty.equals("hard", true) }
 
-        if (mcq < 6) error("Need at least 6 MCQ (got $mcq)")
-        if (tf < 5) error("Need at least 5 true_false (got $tf)")
-        if (op < 4) error("Need at least 4 open (got $op)")
+        require(easy == 4) { "Expected 4 easy, got $easy" }
+        require(medium == 8) { "Expected 8 medium, got $medium" }
+        require(hard == 8) { "Expected 8 hard, got $hard" }
+        val totalPoints = exercises.sumOf {
+            it.maxPoints ?: 0.0
+        }
 
-        val hard = exercises.count { it.difficulty == "hard" }
-        if (hard != 2) error("Exactly 2 hard required (got $hard)")
-
-        val notMediumOrHard =
-            exercises.count { it.difficulty != "medium" && it.difficulty != "hard" }
-        if (notMediumOrHard != 0) error("Only 'medium' allowed except 2 'hard'")
+        require(kotlin.math.abs(totalPoints - 20.0) < 0.0001) {
+            "Expected total maxPoints = 20.0, got $totalPoints"
+        }
+        require(exercises.any { it.type == "open" }) {
+            "At least one open exercise is required"
+        }
 
         exercises.forEachIndexed { idx, ex ->
-            val n = ex.options.size
+            val expectedPoints = when (
+                ex.difficulty
+                    ?.trim()
+                    ?.lowercase()
+            ) {
+                "easy" -> 0.5
+                "medium" -> 1.0
+                "hard" -> 1.25
+                else -> error(
+                    "Unknown difficulty '${ex.difficulty}' at #${idx + 1}"
+                )
+            }
+
+            require(
+                kotlin.math.abs(
+                    (ex.maxPoints ?: 0.0) - expectedPoints
+                ) < 0.0001
+            ) {
+                "Invalid maxPoints at #${idx + 1}"
+            }
+
             when (ex.type) {
                 "mcq" -> {
-                    if (n !in 3..6) error("MCQ options must be 3..6 at #${idx + 1} (got $n)")
-                    val ai = ex.answerIndex ?: error("MCQ answerIndex missing at #${idx + 1}")
-                    if (ai !in 0 until n) error("MCQ answerIndex out of range at #${idx + 1}")
+                    require(ex.options.size in 3..6) {
+                        "MCQ options invalid at #${idx + 1}"
+                    }
+
+                    val answerIndex = ex.answerIndex
+                        ?: error("MCQ answerIndex missing at #${idx + 1}")
+
+                    require(answerIndex in ex.options.indices) {
+                        "MCQ answerIndex invalid at #${idx + 1}"
+                    }
                 }
 
                 "true_false" -> {
-                    if (ex.options != listOf(
-                            "Σωστό",
-                            "Λάθος"
-                        )
-                    ) error("TF options must be [Σωστό, Λάθος] at #${idx + 1}")
-                    if (ex.answerIndex !in listOf(
-                            0,
-                            1
-                        )
-                    ) error("TF answerIndex must be 0/1 at #${idx + 1}")
+                    require(ex.options.size == 2) {
+                        "True/false must have exactly 2 options at #${idx + 1}"
+                    }
+
+                    require(ex.answerIndex == 0 || ex.answerIndex == 1) {
+                        "True/false answerIndex invalid at #${idx + 1}"
+                    }
                 }
 
                 "open" -> {
-                    if (ex.options != listOf("(Ελεύθερη απάντηση)")) error("Open options invalid at #${idx + 1}")
-                    if (ex.answerIndex != null) error("Open answerIndex must be null at #${idx + 1}")
+                    require(ex.options.size == 1) {
+                        "Open exercise must have one placeholder option at #${idx + 1}"
+                    }
+
+                    require(ex.answerIndex == null) {
+                        "Open answerIndex must be null at #${idx + 1}"
+                    }
                 }
 
-                else -> error("Unknown exercise type '${ex.type}' at #${idx + 1}")
+                else -> error("Unknown exercise type '${ex.type}'")
+            }
+
+            require(ex.hint?.isNotBlank() == true) {
+                "Hint missing at #${idx + 1}"
+            }
+
+            require(ex.solution?.isNotBlank() == true) {
+                "Solution missing at #${idx + 1}"
+            }
+
+            require((ex.estimatedMinutes ?: 0) > 0) {
+                "estimatedMinutes invalid at #${idx + 1}"
             }
         }
-
-        val coding = exercises.count { ex ->
-            val q = ex.question?.lowercase().orEmpty()
-            val sol = ex.solution?.lowercase().orEmpty()
-            (q.contains("java") && (q.contains("γράψε") || q.contains("υλοποίησε") || q.contains("κώδικ"))) ||
-                    sol.contains("```java")
-        }
-        if (coding < 1) error("Need at least 1 coding exercise (Java)")
     }
 
     private suspend fun repairExercisesToMeetConstraints(
@@ -600,45 +815,83 @@ class PromptLlmClient(
         schemaOnly: String,
     ): List<ExerciseDto> {
         val system = """
-            MODE: UNIT_EXERCISES_REPAIR
-            Return ONLY JSON matching schema (strict).
-            No citations.
+    MODE: UNIT_EXERCISES_REPAIR
+    Return ONLY JSON matching schema (strict).
+    No citations.
 
-            GOAL:
-            Fix the provided exercises so that ALL constraints are satisfied.
+    GOAL:
+    Repair the provided exercise set so that ALL rules below are satisfied.
 
-            IMPORTANT REPAIR STRATEGY:
-            - Produce EXACTLY 16 exercises total.
-            - This must satisfy the required range 16..30.
+    REQUIRED COUNT:
+    - Exactly 20 exercises total.
+    - Exactly 4 easy.
+    - Exactly 8 medium.
+    - Exactly 8 hard.
+    - Include mcq, true_false and open exercises.
+    - At least one exercise MUST be open.
 
-            CONSTRAINTS (must be satisfied):
-            - Exactly 16 exercises total
-            - Exactly 6 mcq
-            - Exactly 5 true_false
-            - Exactly 5 open
-            - At least 1 Java coding exercise among the open exercises
-            - Exactly 2 hard, all others medium
-            - Total estimatedMinutes sum: ${targetMinutes - 3}..${targetMinutes + 3}
-            - mcq options length 3..6, answerIndex valid
-            - true_false options exactly ["Σωστό","Λάθος"]
-            - open options exactly ["(Ελεύθερη απάντηση)"] and answerIndex null
+    SOURCE GROUNDING:
+    - Every exercise must be based ONLY on the provided UNIT.
+    - Do not introduce concepts that are not taught in the UNIT.
+    - Questions must test the actual educational content of this specific unit.
+    - Avoid generic questions that could be reused for unrelated units.
 
-            SELF-CONTAINED EXERCISE RULES:
-            - Every exercise must be fully self-contained.
-            - Never assume the student remembers previous examples, previous exercises, or earlier code from the learning unit.
-            - If a question depends on code, include the full necessary code snippet inside the same exercise.
-            - If an exercise asks for output, bug-fixing, completion, extension, or explanation of code, the code must appear inside that same exercise.
-            - Do not refer to "the code above", "the previous example", "the program shown earlier", or similar wording.
+    DIFFICULTY:
+    - easy: direct recall, recognition or simple application.
+    - medium: understanding, interpretation, comparison or multi-step application.
+    - hard: deeper reasoning, synthesis, problem solving, production or debugging.
 
-            IMPORTANT:
-            You may:
-            - remove some exercises
-            - add missing exercises
-            - adjust estimatedMinutes down/up
-            - rewrite questions if needed
-            But you must NOT introduce content not supported by UNIT_TEXT/QUOTATIONS/IMAGES_CAPTIONS.
-        """.trimIndent()
+    SUBJECT ADAPTATION:
+    - Adapt exercises to the subject of the UNIT.
+    - For language learning, use appropriate vocabulary, grammar,
+      ordering, sentence construction, translation or comprehension tasks.
+    - For programming, include appropriate code reading, debugging,
+      reasoning and code-writing tasks.
+    - If the UNIT teaches programming, at least one open exercise
+      MUST require writing code.
+    - Use the programming language actually taught in the UNIT.
+    - NEVER assume Java.
+    - For non-programming units, do NOT create programming exercises.
 
+    SELF-CONTAINED:
+    - Every exercise must be understandable on its own.
+    - If code is required to answer a question, include the necessary
+      code inside that question.
+    - Never refer to previous exercises or hidden context.
+
+    HINT:
+    - Every exercise must have a useful hint.
+    - A hint must guide the learner without directly revealing the answer.
+
+    SOLUTION:
+    - Every exercise must have a correct solution.
+    - Open exercises must provide an exemplary expected answer.
+    - Code solutions must contain code when code is required.
+
+    SCORING:
+    - easy: maxPoints = 0.5
+    - medium: maxPoints = 1.0
+    - hard: maxPoints = 1.25
+    - Total maxPoints MUST equal exactly 20.0.
+
+    TIME:
+    - estimatedMinutes must be realistic for an average learner.
+    - Easy exercises should normally require less time than medium exercises.
+    - Hard/open/problem-solving exercises may require more time.
+
+    FORMAT:
+    - mcq: 3..6 options and valid answerIndex.
+    - true_false: exactly 2 options and answerIndex 0 or 1.
+    - open: answerIndex must be null.
+    - Every exercise must contain hint, explanation and solution.
+
+    CODE FORMAT:
+    - When code is required, use a Markdown fenced code block.
+    - Use the correct programming-language tag.
+    - NEVER hardcode Java unless the UNIT actually teaches Java.
+
+    You may rewrite, remove or add exercises as necessary.
+""".trimIndent()
         val user = """
             Filename: $fileName
             Language: $language
@@ -655,7 +908,7 @@ class PromptLlmClient(
             system = system,
             user = user,
             schemaOnly = schemaOnly,
-            maxOutputTokens = 5200
+            maxOutputTokens = 6500
         )
 
         val resp = callOpenAIResponsesWithRetry(req) ?: return emptyList()
@@ -706,146 +959,128 @@ class PromptLlmClient(
         return "uploads/$documentId/images/${file.name}"
     }
 
-    private fun isCodingExercise(ex: ExerciseDto): Boolean {
-        val q = ex.question.orEmpty().lowercase()
-        val sol = ex.solution.orEmpty().lowercase()
-
-        return q.contains("```java") ||
-                sol.contains("```java") ||
-                (
-                        q.contains("java") && listOf(
-                            "γράψε", "υλοποίησε", "κώδικ", "πρόγραμμα",
-                            "write", "implement", "code", "program", "complete"
-                        ).any { q.contains(it) }
-                        )
-    }
-
-    private fun normalizeExercisesToTimeBudget(
-        exercises: List<ExerciseDto>,
-        targetMinutes: Int,
-        tolerance: Int = 3,
-    ): List<ExerciseDto> {
-        val minTotal = targetMinutes - tolerance
-        val maxTotal = targetMinutes + tolerance
-
-        fun total(xs: List<ExerciseDto>) = xs.sumOf { it.estimatedMinutes ?: 0 }
-
-        if (total(exercises) in minTotal..maxTotal) return exercises
-        if (total(exercises) < minTotal) return exercises
-
-        val kept = exercises.toMutableList()
-
-        fun hasCoding(xs: List<ExerciseDto>): Boolean = xs.any(::isCodingExercise)
-
-        fun okVariety(xs: List<ExerciseDto>): Boolean {
-            val mcq = xs.count { it.type == "mcq" }
-            val tf = xs.count { it.type == "true_false" }
-            val op = xs.count { it.type == "open" }
-            val hard = xs.count { it.difficulty == "hard" }
-            return mcq == 6 && tf == 5 && op == 5 && hard == 2 && hasCoding(xs) && xs.size == 16
-        }
-
-        var i = kept.size - 1
-        while (i >= 0 && total(kept) > maxTotal) {
-            val candidate = kept.toMutableList().also { it.removeAt(i) }
-            if (candidate.size == 16 && okVariety(candidate)) {
-                kept.removeAt(i)
-                i = minOf(i, kept.size - 1)
-                continue
-            }
-            i--
-        }
-
-        var safety = 500
-        while (total(kept) > maxTotal && safety-- > 0) {
-            val idx = kept.indexOfFirst { ex ->
-                val cur = ex.estimatedMinutes ?: 0
-                ex.difficulty != "hard" && cur > minAllowed(ex)
-            }.takeIf { it >= 0 } ?: break
-
-            val ex = kept[idx]
-            val cur = ex.estimatedMinutes ?: 0
-            kept[idx] = ex.copy(estimatedMinutes = cur - 1)
-        }
-
-        return kept
-    }
-
-    private fun minAllowed(ex: ExerciseDto): Int {
-        return when (ex.type) {
-            "mcq" -> 2
-            "true_false" -> 1
-            "open" -> 3
-            else -> 1
-        }
-    }
-
-    suspend fun generatePreviewUnitFromPdfChunkWithCarry(
+    suspend fun generatePreviewUnitsFromPdfChunkWithCarry(
         pdfChunkFile: File,
         language: String,
         fileName: String,
         unitNumber: Int,
         carry: String,
-    ): UnitWithCarryDto {
+        isLastChunk: Boolean,
+    ): UnitsWithCarryDto {
         val fileId = uploadPdfToOpenAI(pdfChunkFile)
-            ?: return UnitWithCarryDto(unit = null, carry = carry.take(3000))
+            ?: return UnitsWithCarryDto(
+                units = emptyList(),
+                carry = carry.take(8000)
+            )
 
-        val schema = unitWithCarrySchemaJson()
-        val captionLang = if (language.lowercase().startsWith("el")) "Greek" else "English"
+        val schema = unitsWithCarrySchemaJson()
+        val outputLanguage = language.ifBlank { "en" }
 
         val system = """
             MODE: PREVIEW_UNIT_FROM_CHUNK_WITH_CARRY
             Return ONLY JSON matching schema (strict).
             No citations.
 
-            GOAL:
-            - Use CURRENT_CHUNK (attached PDF) + CARRY_FROM_PREVIOUS.
-            - Create EXACTLY 1 small learning unit for ONE distinct concept from CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+         GOAL:
+            - Read CURRENT_CHUNK together with CARRY_FROM_PREVIOUS.
+            - Identify ALL meaningful educational concepts contained in this material.
+            - Create as many focused learning units as educationally appropriate.
+            - Do NOT assume that one PDF chapter equals one learning unit.
+            - One chapter may produce several learning units.
+            - A learning unit must represent one coherent teachable concept or a very small group of tightly related concepts.
+            
+            COMPLETE COVERAGE:
+            - Do not silently discard meaningful educational content.
+            - Every meaningful concept in the processed material must either:
+              1. be taught in one of the returned learning units, or
+              2. remain in carry ONLY when the concept is incomplete and genuinely requires information from the next chunk.
+            - Do not put complete concepts in carry simply because there are many concepts.
+            - Prefer several short learning units instead of one overloaded learning unit.
+            
+            FINAL CHUNK RULE:
+            - IS_LAST_CHUNK tells you whether CURRENT_CHUNK is the final chunk
+              of the uploaded PDF.
+            - When IS_LAST_CHUNK = true:
+              - There is NO next chunk.
+              - carry MUST be returned as an empty string.
+              - Do not postpone any complete educational concept.
+              - Any meaningful concept supported by the remaining carry and
+                CURRENT_CHUNK must be converted into an appropriate learning unit.
+              - Do not invent missing information simply to complete a concept.
+              - If the final pages contain only administrative, bibliographic,
+                incomplete or non-educational fragments, ignore those fragments
+                instead of creating a fake learning unit.
+            - When IS_LAST_CHUNK = false:
+              - carry may contain only genuinely incomplete material that requires
+                the next chunk.
+    
+            UNIT SELECTION:
+            - Create units from educational concepts, not from the document structure.
+            - A heading alone is not a reason to create a unit.
+            - Ignore table of contents, copyright text, acknowledgements,
+              bibliography, author biography, headers, footers and administrative material.
+            - Do not create learning units about what the author or document is doing.
+            
+            EDUCATIONAL STYLE:
+            - Rewrite the source as direct teaching material for a learner.
+            - Never say:
+              "the author says",
+              "the author explains",
+              "the document says",
+              "according to the author",
+              "in this PDF",
+              "in this chapter",
+              "on this page".
+            - SmartTutor must teach the concept directly.
+            
+            UNIT LENGTH:
+            - Keep each learning unit concise and learner-friendly.
+            - Prefer 3 to 6 short paragraphs.
+            - Target approximately 180–450 words per learning unit.
+            - Avoid repetition and unnecessary introductions.
+            - Do not overload one unit with several major concepts.
 
-            Do NOT merge multiple concepts into one unit.
-            
-            If the chunk contains multiple concepts, choose the next uncovered concept and put the remaining concepts in carry.
-            
-            ONE CONCEPT = ONE UNIT.
-            
-            Examples:
-            - byte = separate unit
-            - short = separate unit
-            - int = separate unit
-            - long = separate unit
-            - float = separate unit
-            - double = separate unit
-            - char = separate unit
-            - boolean = separate unit
-            - if = separate unit
-            - if...else = separate unit
-            - switch = separate unit
-            - while = separate unit
-            - do-while = separate unit
-            - for = separate unit
-            
-            - If not enough for a full unit, return unit=null and put dense notes in carry (<=8000 chars).
 
             TEXT:
-            - Greek (if language=el), exam-focused, no fluff.
+            - LANGUAGE:
+                - Output language code: $outputLanguage
+                - Write the title, learning material, explanations and captions in the language specified above.
+                - Do not translate the learning material into another language.
+                - If the language is unknown or unsupported, use English.
+                
+                CONTENT:
+                - Do NOT assume that the document is about Java or programming.
+                - Teach the concept in depth using only information supported by the source PDF.
+                - Include definitions, explanations, rules, warnings, edge cases and examples when relevant.
+                - Examples must be appropriate for the subject of the document.
+
             - Do NOT summarize.
             - Teach the concept in depth.
             - Include definitions, rules, warnings, edge cases, and examples from the PDF.
             - Include at least 2 examples.
-            - Include at least 1 Java code block when the concept supports code.
+            - - Include code blocks ONLY when programming/code is relevant to the source material.
+            - Never invent programming examples for non-programming subjects.
+            - If code is appropriate, use the programming language found in the source material.
+            - Do not assume Java.
             - Never say "according to the author", "in the table", "in figure", "on page", or "in this chapter".
             - Rewrite as standalone learning material.
-            - 5-10 paragraphs separated by \n.
-            - 350–1200 words.
-            - Prefer at least 2 fenced Java code blocks when the topic supports code examples.
-            - For theory-heavy topics, 1 fenced Java code block is enough.
+           
+           UNIT LENGTH:
+           - Keep the learning unit concise and learner-friendly.
+           - Prefer 3 to 6 short paragraphs.
+           - Target approximately 180–450 words.
+           - Use more words only when the concept genuinely requires them.
+           - Avoid repetition and unnecessary introductory text.
+           - Do not overload one learning unit with several major ideas.
+           - If the material becomes too large, keep the next distinct concept in carry.
+           
             - Do not add an image just to satisfy formatting.
 
             IMAGES:
             - Include 0 or 1 educational diagram image only if it clearly helps understanding.
             - Prefer NO image over a wrong, cropped, incomplete, or confusing image.
             - images[0].relativePath = null
-            - images[0].caption MUST be in $captionLang.
+            - images[0].caption MUST use the same language as the learning unit: $outputLanguage.
             - images[0].prompt MUST be in ENGLISH.
             - All diagram labels and text inside the image MUST be in ENGLISH ONLY.
             - Use short labels (1-3 words per node) to reduce text rendering errors.
@@ -880,13 +1115,14 @@ class PromptLlmClient(
             SELF-CONTAINED EXPLANATION RULES:
             - Every explanation paragraph must be self-contained.
             - Never refer to "previous example", "above code", "the code we saw earlier", or "as mentioned before".
-            - If you include multiple Java code examples, each code block MUST be independently understandable.
-            - Do not assume the learner remembers previous code blocks.
-            - If a later example needs context, repeat the necessary code/context briefly inside that example's explanation.
-
+            - Do not assume the learner remembers previous examples.
+            - If a later example needs context, repeat the necessary context briefly.
+            
             CODE EXAMPLE INDEPENDENCE:
-            - Each Java code block is a standalone example.
-            - Never create an example that depends on variables, methods, or classes defined only in a previous example unless they are repeated again in the same example.
+            - When programming examples are relevant, every code block must be independently understandable.
+            - Never make one code example depend on variables, methods, functions, classes, labels, registers, or other definitions that exist only in a previous example.
+            - Use the programming language actually present in the source material.
+            - Never assume Java.
             - Avoid phrases like "continue the previous program" or "modify the code above".
 
             DIAGRAM QUALITY RULES:
@@ -912,9 +1148,10 @@ class PromptLlmClient(
             - exercises MUST be [] here.
 
             CODE FORMAT RULE:
-            - Every Java statement MUST be on a new line.
-            - NEVER write multiple Java statements on the same line.
-            - Always include line breaks inside code blocks.
+            - When code is present, format it clearly using Markdown fenced code blocks.
+            - Use the correct programming-language tag.
+            - Keep statements/instructions clearly separated when appropriate for that language.
+            - Never assume Java.
 
             ANTI-HALLUCINATION:
             - Use ONLY what is supported by CURRENT_CHUNK + carry.
@@ -923,10 +1160,11 @@ class PromptLlmClient(
         val user = """
             Filename: $fileName
             Language: $language
-
+            IS_LAST_CHUNK: $isLastChunk
+        
             CARRY_FROM_PREVIOUS:
-            ${carry.take(3000)}
-
+            ${carry.take(8000)}
+        
             CURRENT_CHUNK:
             (see attached PDF)
         """.trimIndent()
@@ -937,74 +1175,93 @@ class PromptLlmClient(
             system = system,
             user = user,
             schemaOnly = schema,
-            maxOutputTokens = 2400
+            maxOutputTokens = 8000
         )
 
         onRawHook?.invoke("preview_request", req)
 
         val resp = callOpenAIResponsesWithRetry(req)
-            ?: return UnitWithCarryDto(unit = null, carry = carry.take(3000))
+            ?: return UnitsWithCarryDto(
+                units = emptyList(),
+                carry = carry.take(8000)
+            )
 
         onRawHook?.invoke("preview_response", resp)
 
         if (!ensureCompleted(resp)) {
-            return UnitWithCarryDto(unit = null, carry = carry.take(3000))
+            return UnitsWithCarryDto(
+                units = emptyList(),
+                carry = carry.take(8000)
+            )
         }
 
         val raw = extractOutputJson(resp)
-            ?: return UnitWithCarryDto(unit = null, carry = carry.take(3000))
+            ?: return UnitsWithCarryDto(
+                units = emptyList(),
+                carry = carry.take(8000)
+            )
 
         val unwrapped = unwrapIfJsonString(raw)
         val out = extractFirstJsonObjectOrNull(unwrapped)
 
         if (out == null || !isValidJson(out)) {
-            val mergedCarry = buildString {
-                if (carry.isNotBlank()) appendLine(carry.trim())
-                appendLine("[PREVIEW_INVALID_JSON]")
-            }.trim().take(3000)
-            return UnitWithCarryDto(unit = null, carry = mergedCarry)
+//            val mergedCarry = buildString {
+//                if (carry.isNotBlank()) appendLine(carry.trim())
+//                appendLine("[PREVIEW_INVALID_JSON]")
+//            }.trim().take(3000)
+            return UnitsWithCarryDto(
+                units = emptyList(),
+                carry = carry.take(8000)
+            )
         }
 
         val dto = runCatching {
-            json.decodeFromString(UnitWithCarryDto.serializer(), out)
+            json.decodeFromString(
+                UnitsWithCarryDto.serializer(),
+                out
+            )
         }.getOrElse {
-            val mergedCarry = buildString {
-                if (carry.isNotBlank()) appendLine(carry.trim())
-                appendLine("MODEL_OUTPUT_DECODE_FAILED_PREVIEW:")
-                appendLine(out.take(2000))
-            }.trim().take(3000)
-            return UnitWithCarryDto(unit = null, carry = mergedCarry)
+            onRawHook?.invoke(
+                "preview_decode_error",
+                it.message ?: "decode failed"
+            )
+
+            return UnitsWithCarryDto(
+                units = emptyList(),
+                carry = carry.take(8000)
+            )
         }
 
-        val fixedUnit = dto.unit?.copy(
-            numbering = unitNumber,
-            quotations = dto.unit?.quotations?.take(2) ?: emptyList(),
-            images = dto.unit?.images?.take(2) ?: emptyList(),
-            exercises = emptyList()
-        )
+        val validUnits = dto.units?.mapIndexedNotNull { index, unit ->
 
-        val text = fixedUnit?.textInfo.orEmpty().trim()
-        val paragraphs = text.split(Regex("""\n\s*\n"""))
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
+            val fixedUnit = unit.copy(
+                numbering = unitNumber + index,
+                quotations = unit.quotations.take(2),
+                images = unit.images.take(1),
+                exercises = emptyList()
+            )
 
-        val wordCount = text.split(Regex("""\s+""")).count { it.isNotBlank() }
-        val codeBlocks = Regex("```java[\\s\\S]*?```").findAll(text).count()
+            val text = fixedUnit.textInfo.orEmpty().trim()
 
-        val hasEnoughText = paragraphs.size >= 2 && wordCount >= 180
-        val hasCodeOrEnoughTheory = (codeBlocks >= 1) || (wordCount >= 260)
+            val paragraphs =
+                text.split(Regex("""\n\s*\n""")).map { it.trim() }.filter { it.isNotBlank() }
 
-        if (fixedUnit != null && (!hasEnoughText || !hasCodeOrEnoughTheory)) {
-            val mergedCarry = buildString {
-                if (carry.isNotBlank()) appendLine(carry.trim())
-                if (text.isNotBlank()) appendLine(text)
-            }.trim().take(3000)
-            return UnitWithCarryDto(unit = null, carry = mergedCarry)
+            val wordCount = text.split(Regex("""\s+""")).count { it.isNotBlank() }
+
+            val hasEnoughText =
+                paragraphs.size >= 2 &&
+                        wordCount >= 150
+
+            if (hasEnoughText) fixedUnit else null
         }
 
-        return dto.copy(
-            unit = fixedUnit,
-            carry = dto.carry.take(3000)
+        return UnitsWithCarryDto(
+            units = validUnits,
+            carry = if (isLastChunk) {
+                ""
+            } else {
+                dto.carry.take(8000)
+            }
         )
     }
 
@@ -1062,6 +1319,12 @@ class PromptLlmClient(
                     backoffMs = (backoffMs * 2).coerceAtMost(35_000L)
                     continue
                 }
+                error(
+                    "OpenAI request failed: " +
+                            "status=$status, " +
+                            "type=${errType ?: "unknown"}, " +
+                            "message=${errMsg ?: text.take(1200)}"
+                )
 
             } catch (t: Throwable) {
                 val retryable = t is java.io.IOException
@@ -1349,61 +1612,95 @@ class PromptLlmClient(
         error("No output_json/json or output_text found")
     }
 
-    private fun unitWithCarrySchemaJson(): String = """
-        {
-          "type":"object",
-          "additionalProperties":false,
-          "required":["unit","carry"],
-          "properties":{
-            "unit":{
-              "type":["object","null"],
+    private fun unitsWithCarrySchemaJson(): String = """
+            {
+              "type":"object",
               "additionalProperties":false,
-              "required":["title","numbering","text","quotations","images","exercises"],
+              "required":["units","carry"],
               "properties":{
-                "title":{"type":"string","minLength":3},
-                "numbering":{"type":"integer","minimum":1},
-                "text":{"type":"string","minLength":2400,"maxLength":5200,"pattern":"(?s).*\\n\\n.*"},
-                "quotations":{
+                "units":{
                   "type":"array",
                   "minItems":0,
-                  "maxItems":2,
+                  "maxItems":12,
                   "items":{
                     "type":"object",
                     "additionalProperties":false,
-                    "required":["text","numbering"],
+                    "required":[
+                      "title",
+                      "numbering",
+                      "text",
+                      "quotations",
+                      "images",
+                      "exercises"
+                    ],
                     "properties":{
-                      "text":{"type":["string","null"]},
-                      "numbering":{"type":["integer","null"]}
+                      "title":{
+                        "type":"string",
+                        "minLength":3
+                      },
+                      "numbering":{
+                        "type":"integer",
+                        "minimum":1
+                      },
+                      "text":{
+                        "type":"string",
+                        "minLength":700,
+                        "maxLength":3000,
+                        "pattern":"(?s).*\\n\\n.*"
+                      },
+                      "quotations":{
+                        "type":"array",
+                        "minItems":0,
+                        "maxItems":2,
+                        "items":{
+                          "type":"object",
+                          "additionalProperties":false,
+                          "required":["text","numbering"],
+                          "properties":{
+                            "text":{"type":["string","null"]},
+                            "numbering":{"type":["integer","null"]}
+                          }
+                        }
+                      },
+                      "images":{
+                        "type":"array",
+                        "minItems":0,
+                        "maxItems":1,
+                        "items":{
+                          "type":"object",
+                          "additionalProperties":false,
+                          "required":[
+                            "relativePath",
+                            "caption",
+                            "numbering",
+                            "prompt"
+                          ],
+                          "properties":{
+                            "relativePath":{"type":["string","null"]},
+                            "caption":{"type":["string","null"]},
+                            "numbering":{"type":["integer","null"]},
+                            "prompt":{"type":["string","null"]}
+                          }
+                        }
+                      },
+                      "exercises":{
+                        "type":"array",
+                        "maxItems":0,
+                        "items":{
+                          "type":"object",
+                          "additionalProperties":false,
+                          "properties":{}
+                        }
+                      }
                     }
                   }
                 },
-                "images":{
-                  "type":"array",
-                  "minItems":0,
-                  "maxItems":2,
-                  "items":{
-                    "type":"object",
-                    "additionalProperties":false,
-                    "required":["relativePath","caption","numbering","prompt"],
-                    "properties":{
-                      "relativePath":{"type":["string","null"]},
-                      "caption":{"type":["string","null"]},
-                      "numbering":{"type":["integer","null"]},
-                      "prompt":{"type":["string","null"]}
-                    }
-                  }
-                },
-                "exercises":{
-                  "type":"array",
-                  "maxItems":0,
-                  "items":{"type":"object","additionalProperties":false,"properties":{}}
+                "carry":{
+                  "type":"string"
                 }
               }
-            },
-            "carry":{"type":"string"}
-          }
-        }
-    """.trimIndent()
+            }
+""".trimIndent()
 
     private fun extractFirstJsonObjectOrNull(raw: String): String? {
         val start = raw.indexOf('{')
@@ -1456,6 +1753,86 @@ class PromptLlmClient(
         val end = s.lastIndexOf('}')
         return if (start >= 0 && end > start) s.substring(start, end + 1) else s
     }
+    private fun adaptiveExercisesOnlySchemaJson(): String = """
+            {
+              "type":"object",
+              "additionalProperties":false,
+              "required":["exercises"],
+              "properties":{
+                "exercises":{
+                  "type":"array",
+                  "minItems":12,
+                  "maxItems":12,
+                  "items":{
+                    "type":"object",
+                    "additionalProperties":false,
+                    "required":[
+                      "type",
+                      "difficulty",
+                      "estimatedMinutes",
+                      "maxPoints",
+                      "question",
+                      "options",
+                      "answerIndex",
+                      "hint",
+                      "explanation",
+                      "solution"
+                    ],
+                    "properties":{
+                      "type":{
+                        "type":"string",
+                        "enum":["mcq","true_false","open"]
+                      },
+                      "difficulty":{
+                        "type":"string",
+                        "enum":["medium","hard"]
+                      },
+                      "estimatedMinutes":{
+                        "type":"integer",
+                        "minimum":1,
+                        "maximum":15
+                      },
+                      "maxPoints":{
+                        "type":"number",
+                        "minimum":1.0,
+                        "maximum":1.25
+                      },
+                      "question":{
+                        "type":"string",
+                        "minLength":10
+                      },
+                      "options":{
+                        "type":"array",
+                        "minItems":1,
+                        "maxItems":6,
+                        "items":{
+                          "type":"string",
+                          "minLength":1
+                        }
+                      },
+                      "answerIndex":{
+                        "type":["integer","null"],
+                        "minimum":0,
+                        "maximum":5
+                      },
+                      "hint":{
+                        "type":"string",
+                        "minLength":5
+                      },
+                      "explanation":{
+                        "type":"string",
+                        "minLength":8
+                      },
+                      "solution":{
+                        "type":"string",
+                        "minLength":5
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """.trimIndent()
 
     private fun unitExercisesOnlySchemaJson(): String = """
         {
@@ -1465,17 +1842,17 @@ class PromptLlmClient(
           "properties":{
             "exercises":{
               "type":"array",
-              "minItems":16,
-              "maxItems":30,
+              "minItems":20,
+              "maxItems":20,
               "items":{
                 "type":"object",
                 "additionalProperties":false,
-                "required":["type","difficulty","estimatedMinutes","points","question","options","answerIndex","hint","explanation","solution"],
+            "required":["type","difficulty","estimatedMinutes","maxPoints","question","options","answerIndex","hint","explanation","solution"],
                 "properties":{
                   "type":{"type":"string","enum":["mcq","true_false","open"]},
-                  "difficulty":{"type":"string","enum":["medium","hard"]},
+                  "difficulty":{"type":"string","enum":["easy","medium","hard"]},
                   "estimatedMinutes":{"type":"integer","minimum":1,"maximum":15},
-                    "points":{"type":"number","minimum":0.5,"maximum":10},
+                   "maxPoints":{"type":"number","minimum":0.5,"maximum":1.25},
                     "question":{"type":"string","minLength":10},
                   "options":{
                     "type":"array",
@@ -1503,47 +1880,80 @@ class PromptLlmClient(
         recentMessages: List<ChatMessageDto>,
         userQuestion: String,
     ): String {
-        val answerLanguage = if (language.lowercase().startsWith("el")) {
-            "Απάντησε στα Ελληνικά."
-        } else {
-            "Answer in English."
-        }
-
+        val answerLanguage = language.trim().ifBlank { "en" }
 
         val recentHistory = recentMessages.takeLast(10).joinToString("\n") { msg ->
             "${msg.sender}: ${msg.text}"
         }
 
         val system = """
-        You are a helpful tutor.
+            MODE: LEARNING_UNIT_TUTOR
         
-        MAIN RULE:
-        - Answer based on the student's uploaded material.
-        - Prefer the CURRENT UNIT when it is relevant.
-        - If the student asks something that relates to another unit from the same material, you may use that broader material context.
-        - Stay as specific as possible to the student's question.
-        - answerLanguage = $answerLanguage
-
-
-        TEACHING STYLE:
-        - First explain the idea simply.
-        - Then, if a Java example would help, include a short self-contained example.
-        - After the code, explain what happens step by step.
-        - If you think that with a code example the user will understand, give an example and then explain the code step by step.
+            You are SmartTutor, an educational tutor helping a learner
+            understand the CURRENT learning unit.
         
-        EXERCISES:
-        - If the student asks about an exercise, guide them with hints first.
+            LANGUAGE:
+            - Default response language code: $answerLanguage
+            - Answer in that language by default.
+            - If the learner explicitly asks you to explain or answer in another
+              language, follow that request.
+            - Preserve technical notation, formulas, code syntax and identifiers
+              when translating them would make them incorrect.
         
-        CODE FORMAT:
-        -  Αν γράψεις κώδικα, βάλ' τον ΠΑΝΤΑ μέσα σε markdown code block με γλώσσα.
-            Παράδειγμα:
-            ```java
-            int counter = 0;
-            while (counter < 5) {
-                counter++;
-            }
-            ```
-    """.trimIndent()
+            PRIMARY SOURCE:
+            - CURRENT_CONTEXT is the main source for your answer.
+            - Base explanations on concepts actually taught in CURRENT_CONTEXT.
+            - Do not invent facts that are not supported by the provided context.
+            - Do not assume the subject is programming.
+            - Do not assume Java.
+        
+            SCOPE:
+            - Focus on the CURRENT learning unit.
+            - If the learner asks something unrelated to the available context,
+              clearly say that it is outside the material currently available
+              instead of inventing an answer.
+            - Never pretend that you can see other parts of the document
+              unless they are included in CURRENT_CONTEXT.
+        
+            TEACHING STYLE:
+            - Explain the idea clearly and directly.
+            - Prefer concise explanations first.
+            - Expand when the learner asks for more detail.
+            - Use examples when they genuinely improve understanding.
+            - Adapt examples to the actual subject of the learning unit.
+            - Do not talk about "the author", "the PDF", "the chapter",
+              or "the document" unless the learner explicitly asks about them.
+            - Teach the concept directly.
+        
+            EXERCISE HELP:
+            - If the learner asks for help with an exercise,
+              do not immediately reveal the final answer unless they explicitly
+              ask for the solution.
+            - First explain the relevant concept or provide a useful hint.
+            - Hints must guide reasoning without giving the answer away.
+            - If the learner asks why an answer was wrong, explain the mistake
+              using the CURRENT_CONTEXT.
+        
+            PROGRAMMING:
+            - Only use code when programming is relevant to CURRENT_CONTEXT
+              or explicitly requested by the learner.
+            - Use the programming language found in the learning unit.
+            - Never assume Java.
+            - Every code example must be self-contained.
+            - Put code inside Markdown fenced code blocks with the correct
+              programming-language tag.
+        
+            LANGUAGE LEARNING:
+            - For language-learning material, preserve the language forms being
+              taught.
+            - Explain grammar, vocabulary, sentence structure or meaning only
+              using concepts appropriate to the CURRENT_CONTEXT.
+        
+            RESPONSE QUALITY:
+            - Do not make up citations or page references.
+            - Do not add unrelated information merely to make the answer longer.
+            - Prefer an educational explanation over a generic encyclopedia answer.
+        """.trimIndent()
 
         val user = """
         FILE NAME:
@@ -1578,19 +1988,11 @@ class PromptLlmClient(
         onRawHook?.invoke("tutor_answer_response", resp)
 
         if (!ensureCompleted(resp)) {
-            return if (language.lowercase().startsWith("el")) {
-                "Δεν μπόρεσα να δημιουργήσω απάντηση αυτή τη στιγμή."
-            } else {
-                "I could not generate an answer at this time."
-            }
+            return "I could not generate an answer at this time."
         }
 
         return extractOutputText(resp).trim().ifBlank {
-            if (language.lowercase().startsWith("el")) {
-                "Δεν βρέθηκε απάντηση."
-            } else {
-                "No answer was generated."
-            }
+            "No answer was generated."
         }
     }
 

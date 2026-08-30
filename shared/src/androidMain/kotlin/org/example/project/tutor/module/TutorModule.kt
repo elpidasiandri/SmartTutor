@@ -26,6 +26,7 @@ import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
+import org.example.project.tutor.useCases.LoadInitialExercisesUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
@@ -71,6 +72,7 @@ val tutorModule = module {
     single { DeleteChatUseCase(get()) }
     factory { GetExerciseStatsUseCase(get()) }
     single { LoadTutorFromPdfUseCase(get(), get()) }
+    single { LoadInitialExercisesUseCase(get()) }
 
     factory {
         GetIdTokenSuspendUseCase(get())
@@ -104,6 +106,7 @@ val tutorModule = module {
             get(),
             get(),
             FirebaseAuth.getInstance(),
+            get(),
             get(),
             get(),
             get(),

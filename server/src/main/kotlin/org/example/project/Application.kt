@@ -87,7 +87,7 @@ fun Application.module() {
         get("/health") { call.respondText("ok") }
 
         staticFiles("/uploads", File("uploads"))
-        pdfRoutes(pdfRepo)
+        pdfRoutes(repo = pdfRepo, llm = llm)
         chatRoutes(chatRepo, llm, progressRepo)
         progressRoutes(progressRepo)
 

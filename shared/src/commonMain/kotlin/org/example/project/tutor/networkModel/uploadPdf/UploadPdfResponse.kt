@@ -65,8 +65,8 @@ data class ExerciseDto(
     @SerialName("hint") val hint: String? = null,
     @SerialName("explanation") val explanation: String? = null,
     @SerialName("solution") val solution: String? = null,
-    @SerialName("maxPoints") val maxPoints: Double?,
-    @SerialName("attempts") val attempts: List<ExerciseAttemptDto> = emptyList()
+    @SerialName("maxPoints") val maxPoints: Double? = null,
+    @SerialName("attempts") val attempts: List<ExerciseAttemptDto> = emptyList(),
 )
 
 @Serializable
@@ -79,9 +79,10 @@ data class ExerciseAttemptDto(
     @SerialName("answeredAtEpochMillis") val answeredAtEpochMillis: Long,
 )
 
+
 @Serializable
-data class UnitWithCarryDto(
-    @SerialName("unit") val unit: LearningUnitDto? = null,
+data class UnitsWithCarryDto(
+    @SerialName("units") val units: List<LearningUnitDto>? = null,
     @SerialName("carry") val carry: String = "",
 )
 

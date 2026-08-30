@@ -19,6 +19,7 @@ import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
+import org.example.project.tutor.useCases.LoadInitialExercisesUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
@@ -42,7 +43,7 @@ class TutorController(
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
     private val addMoreExercisesUseCase: AddMoreExercisesUseCase,
-
+    private val loadInitialExercisesUseCase: LoadInitialExercisesUseCase,
     ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val common = TutorCommonViewModel(
@@ -65,7 +66,8 @@ class TutorController(
         saveExerciseAnswerUseCase = saveExerciseAnswerUseCase,
         markUnitAsReadUseCase = markUnitAsReadUseCase,
         getExerciseStateUseCase = getExerciseStateUseCase,
-        addMoreExercisesUseCase = addMoreExercisesUseCase
+        addMoreExercisesUseCase = addMoreExercisesUseCase,
+        loadInitialExercisesUseCase = loadInitialExercisesUseCase,
     )
 
     val state: StateFlow<TutorState> = common.state

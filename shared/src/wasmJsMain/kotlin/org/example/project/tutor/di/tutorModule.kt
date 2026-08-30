@@ -28,6 +28,7 @@ import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
+import org.example.project.tutor.useCases.LoadInitialExercisesUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.PdfUploadServiceUseCase
@@ -67,6 +68,7 @@ val tutorModule = module {
     factory { UpsertChatProgressUseCase(get()) }
     factory { DeleteChatProgressUseCase(get()) }
     factory { MarkUnitAsReadUseCase(get()) }
+    factory { LoadInitialExercisesUseCase(get()) }
 
     single<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     single<TutorPlatform> {
@@ -107,6 +109,7 @@ val tutorModule = module {
             get(),
             userIdProvider = { AuthUserHolder.currentUser?.uid.orEmpty() },
             saveExerciseAnswerUseCase = get(),
+            get(),
             get(),
             get(),
             get(),

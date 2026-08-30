@@ -19,6 +19,7 @@ import org.example.project.tutor.useCases.AskTutorUseCase
 import org.example.project.tutor.useCases.DeleteChatUseCase
 import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 import org.example.project.tutor.useCases.GetChatByIdUseCase
+import org.example.project.tutor.useCases.LoadInitialExercisesUseCase
 import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
@@ -42,6 +43,7 @@ class TutorIntroViewModel(
     private val markUnitAsReadUseCase: MarkUnitAsReadUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
     private val addMoreExercisesUseCase: AddMoreExercisesUseCase,
+    private val loadInitialExercisesUseCase: LoadInitialExercisesUseCase,
 
     ) : ViewModel() {
 
@@ -64,6 +66,7 @@ class TutorIntroViewModel(
         markUnitAsReadUseCase = markUnitAsReadUseCase,
         getExerciseStateUseCase = getExerciseStateUseCase,
         addMoreExercisesUseCase = addMoreExercisesUseCase,
+        loadInitialExercisesUseCase = loadInitialExercisesUseCase,
     )
 
     init {

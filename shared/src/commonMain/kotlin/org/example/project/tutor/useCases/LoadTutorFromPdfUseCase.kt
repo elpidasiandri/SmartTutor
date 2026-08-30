@@ -1,18 +1,17 @@
 package org.example.project.tutor.useCases
 
+import kotlinx.coroutines.delay
 import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitsPrototypeDomain
 import org.example.project.tutor.mappers.learningUnits.toDomain
+import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
-import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum
-import org.example.project.tutor.template.TemplateDocIds
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
 
 data class TutorLoadResult(
-    val materialId: String,
+    val documentId: String,
     val fileName: String,
-    val languageEnum: LanguageOfLearningUnitsEnum,
-    val templateDocId: String,
+    val language: String,
     val chatId: String,
     val prototype: LearningUnitsPrototypeDomain
 )
@@ -21,76 +20,103 @@ class LoadTutorFromPdfUseCase(
     private val pdfUpload: PdfUploadServiceUseCase,
     private val getToken: GetIdTokenSuspendUseCase,
 ) {
-    suspend fun loadGreekTemplate(
+    suspend fun loadTemplateForPickedPdf(
+        picked: PickedFile,
         userId: String,
         mode: String
     ): TutorLoadResult {
         val token = getToken()
 
-        val languageEnum = LanguageOfLearningUnitsEnum.Greek
-        val templateDocId = TemplateDocIds.forLanguage(languageEnum)
-
-        val chatResponse = pdfUpload.createChatFromDocument(
-            request = CreateChatFromDocumentRequest(
-                userId = userId,
-                documentId = templateDocId,
-                mode = mode
+        val uploadResponse = pdfUpload(
+            file = UploadFile(
+                bytes = picked.bytes,
+                fileName = picked.name,
+                contentType = picked.mimeType.ifBlank {
+                    "application/pdf"
+                }
             ),
             token = token
         )
 
-        val chat = chatResponse.chat
-        val dto = chat.result ?: chat.partialResult
-        ?: error("Chat has no result for $templateDocId")
+        val documentId = uploadResponse.documentId
 
-        return TutorLoadResult(
-            materialId = templateDocId,
-            fileName = "Material java",
-            languageEnum = languageEnum,
-            templateDocId = templateDocId,
-            chatId = chat.chatId,
-            prototype = dto.toDomain()
-        )
-    }
-    suspend fun loadTemplateForPickedPdf(
-        picked: PickedFile,
-        userId: String,
-        mode :String
-    ): TutorLoadResult {
-        val token = getToken()
+        var completedResult:
+                org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto? = null
 
-        val languageEnum = detectLanguage(picked)
-        val templateDocId = TemplateDocIds.forLanguage(languageEnum)
+        var attempts = 0
 
-        val chatResponse = pdfUpload.createChatFromDocument(
-            request = CreateChatFromDocumentRequest(
-                userId = userId,
-                documentId = templateDocId,
-                mode = mode
-            ),
-            token = token
-        )
+        while (
+            completedResult == null &&
+            attempts < 240
+        ) {
+            attempts++
 
-        val chat = chatResponse.chat
-        val dto = chat.result ?: chat.partialResult
-        ?: error("Chat has no result/partialResult for $templateDocId")
+            val status = pdfUpload.getPdfJobStatus(
+                documentId = documentId,
+                token = token
+            )
 
-        return TutorLoadResult(
-            materialId = templateDocId,
-            fileName = picked.name,
-            languageEnum = languageEnum,
-            templateDocId = templateDocId,
-            chatId = chat.chatId,
-            prototype = dto.toDomain()
-        )
-    }
+            when (
+                status.status
+                    .trim()
+                    .lowercase()
+            ) {
+                "done" -> {
+                    completedResult =
+                        status.result
+                            ?: status.partialResult
+                                    ?: error(
+                                "PDF processing completed without learning units"
+                            )
+                }
 
-    private fun detectLanguage(picked: PickedFile): LanguageOfLearningUnitsEnum {
-        val name = picked.name.lowercase()
-        return if (name.contains("en") || name.contains("english")) {
-            LanguageOfLearningUnitsEnum.English
-        } else {
-            LanguageOfLearningUnitsEnum.Greek
+                "error",
+                "failed" -> {
+                    error(
+                        status.error
+                            ?: "PDF processing failed"
+                    )
+                }
+
+                else -> {
+                    delay(2_000)
+                }
+            }
         }
+
+        val dto = completedResult
+            ?: error("PDF processing timed out")
+
+        val chatResponse = pdfUpload.createChatFromDocument(
+            request = CreateChatFromDocumentRequest(
+                userId = userId,
+                documentId = documentId,
+                mode = mode
+            ),
+            token = token
+        )
+
+        val chat = chatResponse.chat
+
+        val chatDto = chat.result
+            ?: chat.partialResult
+            ?: dto
+
+        val language = chatDto.language
+            .orEmpty()
+            .ifBlank {
+                dto.language
+                    .orEmpty()
+                    .ifBlank { "en" }
+            }
+
+        return TutorLoadResult(
+            documentId = documentId,
+            fileName = picked.name,
+            language = language,
+            chatId = chat.chatId,
+            prototype = chatDto.toDomain()
+        )
     }
+
 }

@@ -7,19 +7,29 @@ import io.ktor.http.content.streamProvider
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.request.receiveMultipart
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.example.project.pdf.PromptLlmClient
 import org.example.project.repo.PdfJobRepository
 import org.example.project.tutor.networkModel.uploadPdf.JobStatus
+import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
-fun Route.pdfRoutes(repo: PdfJobRepository) {
+private const val MAX_PDF_SIZE_BYTES = 10L * 1024L * 1024L
+fun Route.pdfRoutes(
+    repo: PdfJobRepository,
+    llm: PromptLlmClient
+) {
+    val exerciseLocks = ConcurrentHashMap<String, Mutex>()
+
     route("/v1/pdfs") {
 
         post("/upload") {
             val multipart = call.receiveMultipart()
 
-            var language = "el"
             var fileName = "upload.pdf"
             var savedFile: File? = null
             var badRequest: String? = null
@@ -29,11 +39,7 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
             multipart.forEachPart { part ->
                 try {
                     when (part) {
-                        is PartData.FormItem -> {
-                            if (part.name == "language") {
-                                language = part.value.trim().ifBlank { "el" }
-                            }
-                        }
+                        is PartData.FormItem -> Unit
 
                         is PartData.FileItem -> {
                             if (part.name == "file") {
@@ -47,9 +53,30 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
                                 val file = File(dir, "source.pdf")
 
                                 part.streamProvider().use { input ->
-                                    file.outputStream().use { out -> input.copyTo(out) }
+                                    file.outputStream().use { out ->
+                                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                        var totalBytes = 0L
+
+                                        while (true) {
+                                            val read = input.read(buffer)
+                                            if (read <= 0) break
+
+                                            totalBytes += read
+
+                                            if (totalBytes > MAX_PDF_SIZE_BYTES) {
+                                                badRequest = "PDF exceeds the maximum allowed size of 10 MB"
+                                                break
+                                            }
+
+                                            out.write(buffer, 0, read)
+                                        }
+                                    }
                                 }
 
+                                if (badRequest != null) {
+                                    file.delete()
+                                    return@forEachPart
+                                }
                                 savedFile = file
                             }
                         }
@@ -77,7 +104,6 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
             repo.createAndEnqueue(
                 documentId = documentId,
                 fileName = fileName,
-                language = language,
                 storagePath = pdf.absolutePath
             )
 
@@ -102,7 +128,118 @@ fun Route.pdfRoutes(repo: PdfJobRepository) {
 
             call.respond(status)
         }
+        post("/{documentId}/units/{unitNumber}/exercises") {
+            val documentId = call.parameters["documentId"]
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing documentId")
+                )
 
+            val unitNumber = call.parameters["unitNumber"]
+                ?.toIntOrNull()
+                ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Invalid unitNumber")
+                )
+
+            if (unitNumber <= 0) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "unitNumber must be greater than zero")
+                )
+                return@post
+            }
+
+            val initialResult = repo.getCompletedResult(documentId)
+                ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    mapOf("error" to "PDF result not found")
+                )
+
+            val initialUnit = initialResult.learningUnits.firstOrNull {
+                it.numbering == unitNumber
+            } ?: return@post call.respond(
+                HttpStatusCode.NotFound,
+                mapOf("error" to "Learning unit not found")
+            )
+
+            /*
+             * Fast path:
+             * exercises were already generated earlier.
+             */
+            if (initialUnit.exercises.isNotEmpty()) {
+                call.respond(
+                    UnitExercisesOnlyDto(
+                        exercises = initialUnit.exercises
+                    )
+                )
+                return@post
+            }
+
+            /*
+             * Prevent two simultaneous requests from generating
+             * the same 20 exercises twice.
+             */
+            val lockKey = "$documentId:$unitNumber"
+
+            val lock = exerciseLocks.computeIfAbsent(lockKey) {
+                Mutex()
+            }
+
+            val exercises = try {
+                lock.withLock {
+                    val currentResult = repo.getCompletedResult(documentId)
+                        ?: error("PDF result disappeared")
+
+                    val currentUnit = currentResult.learningUnits.firstOrNull {
+                        it.numbering == unitNumber
+                    } ?: error("Learning unit disappeared")
+
+                    currentUnit.exercises.ifEmpty {
+                        val generated = llm.generateExercisesForUnit(
+                            unit = currentUnit,
+                            language = currentResult.language
+                                .orEmpty()
+                                .ifBlank { "en" },
+                            fileName = currentResult.prototypeTitle
+                                .orEmpty()
+                                .ifBlank { documentId },
+                            targetMinutes = 55
+                        )
+                        if (generated.isEmpty()) {
+                            error(
+                                "Exercise generation returned no exercises for unit $unitNumber"
+                            )
+                        }
+                        val savedUnit = repo.replaceUnitExercises(
+                            documentId = documentId,
+                            unitNumber = unitNumber,
+                            exercises = generated
+                        ) ?: error(
+                            "Could not save exercises for unit $unitNumber"
+                        )
+
+                        savedUnit.exercises
+                    }
+                }
+            } catch (t: Throwable) {
+                t.printStackTrace()
+
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (t.message ?: "Exercise generation failed"))
+                )
+                return@post
+            } finally {
+                exerciseLocks.remove(lockKey, lock)
+            }
+
+            call.respond(
+                UnitExercisesOnlyDto(
+                    exercises = exercises
+                )
+            )
+        }
         get("/{documentId}/debug/last") {
             val documentId = call.parameters["documentId"]
                 ?: return@get call.respond(

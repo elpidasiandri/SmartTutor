@@ -13,6 +13,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import org.example.project.myProgress.networkModel.ExerciseAnswerProgressDto
 import org.example.project.tutor.models.domainModels.file.UploadFile
+import org.example.project.tutor.networkModel.chatHistory.AddMoreExercisesResponse
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
@@ -20,6 +21,7 @@ import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocument
 import org.example.project.tutor.networkModel.chatHistory.UserChatDto
 import org.example.project.tutor.networkModel.learningUnits.PdfJobStatusRawResponse
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
+import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -30,6 +32,13 @@ class TutorIntroRepoImpl(
     private val auth: FirebaseAuth,
 ) : ITutorRepo {
     private val json = Json { ignoreUnknownKeys = true }
+    override suspend fun getOrGenerateUnitExercises(
+        documentId: String,
+        unitNumber: Int,
+        token: String,
+    ): UnitExercisesOnlyDto {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun uploadFile(
         file: UploadFile,
@@ -192,6 +201,15 @@ class TutorIntroRepoImpl(
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
+    }
+
+    override suspend fun addMoreExercises(
+        chatId: String,
+        userId: String,
+        unitIndex: Int,
+        token: String,
+    ): AddMoreExercisesResponse {
+        TODO("Not yet implemented")
     }
 
     override suspend fun getChats(userId: String): List<UserChatDto> {
