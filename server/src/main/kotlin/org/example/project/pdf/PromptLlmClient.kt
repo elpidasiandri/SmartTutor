@@ -1066,7 +1066,6 @@ class PromptLlmClient(
            UNIT LENGTH:
            - Keep the learning unit concise and learner-friendly.
            - Prefer 3 to 6 short paragraphs.
-           - Target approximately 180–450 words.
            - Use more words only when the concept genuinely requires them.
            - Avoid repetition and unnecessary introductory text.
            - Do not overload one learning unit with several major ideas.
@@ -1179,10 +1178,6 @@ class PromptLlmClient(
         onRawHook?.invoke("preview_request", req)
 
         val resp = callOpenAIResponsesWithRetry(req)
-            ?: return UnitsWithCarryDto(
-                units = emptyList(),
-                carry = carry.take(8000)
-            )
 
         onRawHook?.invoke("preview_response", resp)
 
@@ -1548,27 +1543,28 @@ class PromptLlmClient(
         }
     """.trim()
 
-    private fun ensureCompleted(respText: String): Boolean {
-        val root =
-            runCatching { json.parseToJsonElement(respText).jsonObject }.getOrNull()
-                ?: return false
+    private fun ensureCompleted(
+        respText: String
+    ): Boolean {
+        val root = runCatching {
+            json.parseToJsonElement(respText).jsonObject
+        }.getOrNull() ?: return false
 
-        val status = root["status"]?.jsonPrimitive?.content
-
-        if (status == "incomplete") {
-            val reason = (root["incomplete_details"] as? JsonObject)
-                ?.get("reason")?.jsonPrimitive?.content
-            return false
-        }
+        val status = root["status"]
+            ?.jsonPrimitive
+            ?.contentOrNull
+            ?: return false
 
         val errMsg = (root["error"] as? JsonObject)
-            ?.get("message")?.jsonPrimitive?.content
+            ?.get("message")
+            ?.jsonPrimitive
+            ?.contentOrNull
 
         if (!errMsg.isNullOrBlank()) {
             return false
         }
 
-        return true
+        return status == "completed"
     }
 
     private fun extractOutputJson(responsesJson: String): String {
@@ -1600,93 +1596,117 @@ class PromptLlmClient(
     }
 
     private fun unitsWithCarrySchemaJson(): String = """
-            {
-              "type":"object",
-              "additionalProperties":false,
-              "required":["units","carry"],
-              "properties":{
-                "units":{
-                  "type":"array",
-                  "minItems":0,
-                  "maxItems":12,
-                  "items":{
-                    "type":"object",
-                    "additionalProperties":false,
-                    "required":[
-                      "title",
-                      "numbering",
-                      "text",
-                      "quotations",
-                      "images",
-                      "exercises"
-                    ],
-                    "properties":{
-                      "title":{
-                        "type":"string",
-                        "minLength":3
-                      },
-                      "numbering":{
-                        "type":"integer",
-                        "minimum":1
-                      },
-                      "text":{
-                        "type":"string",
-                        "minLength":350,
-                        "maxLength":2500,
-                        "pattern":"(?s).*\\n\\n.*"
-                      },
-                      "quotations":{
-                        "type":"array",
-                        "minItems":0,
-                        "maxItems":2,
-                        "items":{
-                          "type":"object",
-                          "additionalProperties":false,
-                          "required":["text","numbering"],
-                          "properties":{
-                            "text":{"type":["string","null"]},
-                            "numbering":{"type":["integer","null"]}
-                          }
-                        }
-                      },
-                      "images":{
-                        "type":"array",
-                        "minItems":0,
-                        "maxItems":1,
-                        "items":{
-                          "type":"object",
-                          "additionalProperties":false,
-                          "required":[
-                            "relativePath",
-                            "caption",
-                            "numbering",
-                            "prompt"
-                          ],
-                          "properties":{
-                            "relativePath":{"type":["string","null"]},
-                            "caption":{"type":["string","null"]},
-                            "numbering":{"type":["integer","null"]},
-                            "prompt":{"type":["string","null"]}
-                          }
-                        }
-                      },
-                      "exercises":{
-                        "type":"array",
-                        "maxItems":0,
-                        "items":{
-                          "type":"object",
-                          "additionalProperties":false,
-                          "properties":{}
-                        }
-                      }
-                    }
-                  }
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "units",
+    "carry"
+  ],
+  "properties": {
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "numbering",
+          "text",
+          "quotations",
+          "images",
+          "exercises"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "numbering": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          },
+          "quotations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "text",
+                "numbering"
+              ],
+              "properties": {
+                "text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
-                "carry":{
-                  "type":"string"
+                "numbering": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
                 }
               }
             }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "relativePath",
+                "caption",
+                "numbering",
+                "prompt"
+              ],
+              "properties": {
+                "relativePath": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "caption": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "numbering": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "prompt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {}
+            }
+          }
+        }
+      }
+    },
+    "carry": {
+      "type": "string"
+    }
+  }
+}
 """.trimIndent()
 
     private fun extractFirstJsonObjectOrNull(raw: String): String? {

@@ -242,7 +242,7 @@ fun TutorChatUI(
     isLoadingMoreExercises: Boolean,
     onLearningClick: (String, String) -> Unit,
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
-    pdfProcessingProgress: Int?
+    pdfProcessingProgress: Int?,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -377,7 +377,7 @@ fun TutorChatUI(
                             )
                         }
 
-                        if (isLoading || askTutor) {
+                        if (isLoading || askTutor || pdfProcessingProgress != null) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -399,7 +399,9 @@ fun TutorChatUI(
                                     Text(
                                         text = pdfProcessingProgress?.let {
                                             "Preparing your learning material... $it%"
-                                        } ?:waiting_for_response
+                                        } ?: waiting_for_response,
+                                        color = Color.Red,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
@@ -609,7 +611,7 @@ private fun TutorChatContent(
             .getOrNull(selectedExerciseIndex)
             ?.isAnswered == true
 
-    val nextEnabled = chatData.material.fileUploaded  &&
+    val nextEnabled = chatData.material.fileUploaded &&
             !isLoading &&
             !exercisesLoading &&
             when (selectedTab) {
@@ -624,12 +626,12 @@ private fun TutorChatContent(
                     }
                 }
             }
-    if (currentUnit.title.isNotEmpty()){
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+    ) {
+        if (chatData.material.fileUploaded) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -645,84 +647,84 @@ private fun TutorChatContent(
                     canGoNext = nextEnabled,
                 )
             }
-            Spacer(modifier = Modifier.height(spacing8))
+        }
 
-            when (selectedTab) {
-                TutorTab.Learning -> {
+        Spacer(modifier = Modifier.height(spacing8))
 
-                    val config = koinInject<AppConfig>()
+        when (selectedTab) {
+            TutorTab.Learning -> {
 
-                    LearningMessagesList(
+                val config = koinInject<AppConfig>()
+
+                LearningMessagesList(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = spacing8),
+                    chatMessages = chatMessages,
+                    baseUrl = config.baseUrl
+                )
+            }
+
+            TutorTab.Exercises -> {
+                if (exercisesLoading) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+
+                            Spacer(
+                                modifier = Modifier.height(12.dp)
+                            )
+
+                            Text("Generating exercises...")
+                        }
+                    }
+                } else if (currentUnit.exercises.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No exercises available")
+                    }
+                } else {
+                    ExercisesTab(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
                             .padding(horizontal = spacing8),
-                        chatMessages = chatMessages,
-                        baseUrl = config.baseUrl
+                        exercises = currentUnit.exercises,
+                        selectedExerciseIndex = selectedExerciseIndex,
+                        onExerciseAnswered = onExerciseAnswered,
+                        onAskTutorForOpenExercise = onAskTutorForOpenExercise,
+                        exerciseTutorAnswers = exerciseTutorAnswers,
+                        answeredExerciseKeys = answeredExerciseKeys,
+                        currentUnitIndex = currentIndex,
+                        onMoreExercisesClick = onMoreExercisesClick,
+                        isLoadingMoreExercises = isLoadingMoreExercises,
                     )
                 }
-
-                TutorTab.Exercises -> {
-                    if (exercisesLoading) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                CircularProgressIndicator()
-
-                                Spacer(
-                                    modifier = Modifier.height(12.dp)
-                                )
-
-                                Text("Generating exercises...")
-                            }
-                        }
-                    } else if (currentUnit.exercises.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("No exercises available")
-                        }
-                    } else {
-                        ExercisesTab(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .padding(horizontal = spacing8),
-                            exercises = currentUnit.exercises,
-                            selectedExerciseIndex = selectedExerciseIndex,
-                            onExerciseAnswered = onExerciseAnswered,
-                            onAskTutorForOpenExercise = onAskTutorForOpenExercise,
-                            exerciseTutorAnswers = exerciseTutorAnswers,
-                            answeredExerciseKeys = answeredExerciseKeys,
-                            currentUnitIndex = currentIndex,
-                            onMoreExercisesClick = onMoreExercisesClick,
-                            isLoadingMoreExercises = isLoadingMoreExercises,
-                        )
-                    }
-                }
             }
+        }
 
-            if (selectedTab == TutorTab.Learning) {
-                TutorInputSection(
-                    fileUploaded = chatData.material.fileUploaded,
-                    userMessageState = userMessageState,
-                    onUserMessageChangeLocal = onUserMessageChangeLocal,
-                    onSendClick = onSendClick,
-                    onUploadPdfClick = onUploadPdfClick,
-                    isLoading = isLoading
-                )
-            }
-    }
-
+        if (selectedTab == TutorTab.Learning) {
+            TutorInputSection(
+                fileUploaded = chatData.material.fileUploaded,
+                userMessageState = userMessageState,
+                onUserMessageChangeLocal = onUserMessageChangeLocal,
+                onSendClick = onSendClick,
+                onUploadPdfClick = onUploadPdfClick,
+                isLoading = isLoading
+            )
+        }
     }
 }
 
