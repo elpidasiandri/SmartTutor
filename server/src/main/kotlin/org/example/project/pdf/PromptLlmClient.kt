@@ -1031,49 +1031,77 @@ class PromptLlmClient(
               "on this page".
             - SmartTutor must teach the concept directly.
             
-            UNIT LENGTH:
-            - Keep each learning unit concise and learner-friendly.
-            - Prefer 3 to 6 short paragraphs.
-            - Target approximately 100–300 words per learning unit.
-            - Avoid repetition and unnecessary introductions.
-            - Do not overload one unit with several major concepts.
-
-
-            TEXT:
-            - LANGUAGE:
-                - Output language code: $outputLanguage
-                - Write the title, learning material, explanations and captions in the language specified above.
-                - Do not translate the learning material into another language.
-                - If the language is unknown or unsupported, use English.
-                
-                CONTENT:
-                - Do NOT assume that the document is about Java or programming.
-                - Teach the concept in depth using only information supported by the source PDF.
-                - Include definitions, explanations, rules, warnings, edge cases and examples when relevant.
-                - Examples must be appropriate for the subject of the document.
-
-            - Do NOT summarize.
-            - Teach the concept in depth.
-            - Include definitions, rules, warnings, edge cases, and examples from the PDF.
-            - Include at least 2 examples.
-            - - Include code blocks ONLY when programming/code is relevant to the source material.
-            - Never invent programming examples for non-programming subjects.
-            - If code is appropriate, use the programming language found in the source material.
-            - Do not assume Java.
-            - Never say "according to the author", "in the table", "in figure", "on page", or "in this chapter".
-            - Rewrite as standalone learning material.
-           
-           UNIT LENGTH:
-           - Keep the learning unit concise and learner-friendly.
-           - Prefer 3 to 6 short paragraphs.
-           - Use more words only when the concept genuinely requires them.
-           - Avoid repetition and unnecessary introductory text.
-           - Do not overload one learning unit with several major ideas.
-           - If the material becomes too large, keep the next distinct concept in carry.
-           
-            - Do not add an image just to satisfy formatting.
+        TEXT QUALITY AND TEACHING COMPLETENESS:
+        
+        LANGUAGE:
+        - Output language code: $outputLanguage
+        - Write the title, theory, explanations and captions in that language.
+        - Preserve programming keywords, identifiers, syntax, formulas and technical notation when translation would make them incorrect.
+        - Do not translate the educational material into another language unless necessary for understanding.
+        
+        CORE PURPOSE:
+        - UNIT_TEXT is the actual lesson from which the learner will study.
+        - It must contain enough theory for the learner to understand the concept without needing to reopen the PDF.
+        - Do NOT write a short summary.
+        - Do NOT merely mention important terms.
+        - Explain them.
+        
+        COVERAGE OF THE CONCEPT:
+        - Identify the main concept of the learning unit and ALL important sub-concepts that belong to it and are supported by CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+        - Do not omit a fundamental member of a group merely to keep the text short.
+        - If the source teaches a category or collection of related items, explain the important members individually.
+        
+        EXAMPLE:
+        - If a programming source teaches primitive data types, do not write only that "int is used for integers".
+        - If supported by the source, explain the relevant types individually, such as integer types, floating-point types, characters and booleans, including their purpose and meaningful differences.
+        - This example illustrates completeness only. Never assume Java or programming when the source is about another subject.
+        
+        EXPLANATION REQUIREMENTS:
+        For each important concept or sub-concept, include when supported by the source:
+        - what it is,
+        - what it is used for,
+        - how it works,
+        - important distinctions from closely related concepts,
+        - rules or constraints,
+        - common mistakes, warnings or edge cases,
+        - at least one useful example when an example improves understanding.
+        
+        RELATIONSHIPS:
+        - When several concepts form a family, taxonomy, process, sequence, comparison or hierarchy, explain their relationship.
+        - Do not teach isolated facts when the source presents them as connected concepts.
+        
+        EXAMPLES:
+        - Include concrete examples throughout the theory, not only at the end.
+        - Prefer examples that demonstrate the concept rather than merely restating the definition.
+        - If the source is programming-related, use self-contained code examples in the programming language actually present in the source.
+        - Never assume Java.
+        - If the material is not programming-related, do not invent code examples.
+        - Do not force exactly two examples when the concept needs more or fewer; include enough examples to teach the material clearly.
+        
+        SOURCE GROUNDING:
+        - Use only information supported by CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+        - You may reorganize and rewrite the information pedagogically.
+        - Do not add factual details that are not supported by the source.
+        - Do not omit important source-supported information merely to satisfy a short word target.
+        
+        STYLE:
+        - Teach directly to the learner.
+        - Use clear paragraphs and, when useful, short bullet lists or compact comparisons.
+        - Prefer clarity and completeness over artificial brevity.
+        - Avoid filler, repetition and long introductions.
+        - Never say "the author says", "the document explains", "in this PDF", "on this page", "in this chapter", or similar phrases.
+                   
+        UNIT LENGTH:
+        - Keep each learning unit focused and learner-friendly.
+        - A unit should cover one coherent educational concept or one tightly related concept family.
+        - Prefer approximately 180–500 words when that is sufficient.
+        - A unit MAY be longer when the source contains several essential sub-concepts that must be taught together.
+        - Never omit fundamental information only to satisfy a word target.
+        - If the material contains a second distinct major concept, create another learning unit instead of overloading the current one.
+        - Avoid repetition and unnecessary introductory text.
 
             IMAGES:
+            - Do not add an image just to satisfy formatting.
             - Include 0 or 1 educational diagram image only if it clearly helps understanding.
             - Prefer NO image over a wrong, cropped, incomplete, or confusing image.
             - images[0].relativePath = null
@@ -1167,7 +1195,7 @@ class PromptLlmClient(
         """.trimIndent()
 
         val req = buildResponsesRequestWithPdfFile(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-luna",
             fileId = fileId,
             system = system,
             user = user,
@@ -1983,7 +2011,7 @@ class PromptLlmClient(
     """.trimIndent()
 
         val req = buildTextResponsesRequest(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-luna",
             system = system,
             user = user,
             maxOutputTokens = 500
