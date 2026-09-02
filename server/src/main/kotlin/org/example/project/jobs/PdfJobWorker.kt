@@ -46,7 +46,14 @@ class PdfJobWorker(
             repo.setProgress(job.documentId, 1)
             repo.heartbeat(job.documentId, workerId)
 
-            val pdf = File(job.storagePath)
+            val normalizedStoragePath =
+                job.storagePath.removePrefix("/app/")
+
+            val pdf = File(normalizedStoragePath)
+
+            require(pdf.exists()) {
+                "Uploaded PDF not found at ${pdf.absolutePath}"
+            }
 
             val documentText = PDDocument.load(pdf).use { document ->
                 PDFTextStripper().getText(document)
