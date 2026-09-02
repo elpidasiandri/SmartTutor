@@ -161,7 +161,7 @@ class PromptLlmClient(
         """.trimIndent()
 
         val request = buildResponsesRequest(
-            model = "gpt-4o-2024-08-06",
+            model = "gpt-4o-mini",
             system = system,
             user = user,
             schemaOnly = openExerciseEvaluationSchemaJson(),
@@ -408,7 +408,7 @@ class PromptLlmClient(
     """.trimIndent()
 
         val req = buildResponsesRequest(
-            model = "gpt-4o-2024-08-06",
+            model = "gpt-4o-mini",
             system = system,
             user = user,
             schemaOnly = schema,
@@ -546,7 +546,7 @@ class PromptLlmClient(
 
 
         val req = buildResponsesRequest(
-            model = "gpt-4o-2024-08-06",
+            model = "gpt-4o-mini",
             system = system,
             user = user,
             schemaOnly = schema,
@@ -607,7 +607,7 @@ class PromptLlmClient(
     }
 
     private fun normalizeExercisePoints(
-        exercises: List<ExerciseDto>
+        exercises: List<ExerciseDto>,
     ): List<ExerciseDto> {
         return exercises.map { exercise ->
             val points = when (
@@ -626,8 +626,9 @@ class PromptLlmClient(
             )
         }
     }
+
     private fun validateAdaptiveExercisesOrThrow(
-        exercises: List<ExerciseDto>
+        exercises: List<ExerciseDto>,
     ) {
         require(exercises.size == 12) {
             "Expected exactly 12 adaptive exercises, got ${exercises.size}"
@@ -704,6 +705,7 @@ class PromptLlmClient(
             }
         }
     }
+
     private fun validateExercisesOrThrow(
         exercises: List<ExerciseDto>,
         targetMinutes: Int,
@@ -904,7 +906,7 @@ class PromptLlmClient(
         """.trimIndent()
 
         val req = buildResponsesRequest(
-            model = "gpt-4o-2024-08-06",
+            model = "gpt-4o-mini",
             system = system,
             user = user,
             schemaOnly = schemaOnly,
@@ -1019,6 +1021,14 @@ class PromptLlmClient(
               bibliography, author biography, headers, footers and administrative material.
             - Do not create learning units about what the author or document is doing.
             
+            UNIT CREATION:
+            - Create as many learning units as required to teach all meaningful concepts.
+            - Never reduce the number of units merely to make the response shorter.
+            - If a chunk contains several distinct major concepts, create separate units.
+            - If a concept contains several tightly related fundamental sub-concepts,
+              keep them together only when they form one coherent lesson.
+            - Coverage is more important than minimizing the number of units.
+            
             EDUCATIONAL STYLE:
             - Rewrite the source as direct teaching material for a learner.
             - Never say:
@@ -1093,11 +1103,14 @@ class PromptLlmClient(
                    
         UNIT LENGTH:
         - Keep each learning unit focused and learner-friendly.
-        - A unit should cover one coherent educational concept or one tightly related concept family.
+        - A learning unit should cover one coherent educational concept
+          or one tightly related concept family.
         - Prefer approximately 180–500 words when that is sufficient.
-        - A unit MAY be longer when the source contains several essential sub-concepts that must be taught together.
+        - A unit MAY be longer when the source contains several essential
+          sub-concepts that must be taught together.
         - Never omit fundamental information only to satisfy a word target.
-        - If the material contains a second distinct major concept, create another learning unit instead of overloading the current one.
+        - If the material contains a second distinct major concept,
+          create another learning unit instead of overloading the current one.
         - Avoid repetition and unnecessary introductory text.
 
             IMAGES:
@@ -1161,9 +1174,10 @@ class PromptLlmClient(
             - Do not create invalid parent-child relationships.
 
             TARGET COVERAGE:
-            - Across the whole book, aim to cover the major exam topics.
-            - Prefer creating a unit whenever you see a new major topic heading, rule, or algorithm.
-            - Avoid merging unrelated topics into one unit.
+            - Across the whole document, cover all meaningful educational concepts.
+            - Create a new unit when a distinct teachable concept begins.
+            - Do not create a unit only because a new heading appears.
+            - Do not merge unrelated concepts into one learning unit.
 
             QUOTATIONS:
             - quotations MUST be [] or 1..2 items.
@@ -1195,7 +1209,7 @@ class PromptLlmClient(
         """.trimIndent()
 
         val req = buildResponsesRequestWithPdfFile(
-            model = "gpt-5.6-luna",
+            model = "gpt-4o-mini",
             fileId = fileId,
             system = system,
             user = user,
@@ -1572,7 +1586,7 @@ class PromptLlmClient(
     """.trim()
 
     private fun ensureCompleted(
-        respText: String
+        respText: String,
     ): Boolean {
         val root = runCatching {
             json.parseToJsonElement(respText).jsonObject
@@ -1788,6 +1802,7 @@ class PromptLlmClient(
         val end = s.lastIndexOf('}')
         return if (start >= 0 && end > start) s.substring(start, end + 1) else s
     }
+
     private fun adaptiveExercisesOnlySchemaJson(): String = """
             {
               "type":"object",
@@ -2011,7 +2026,7 @@ class PromptLlmClient(
     """.trimIndent()
 
         val req = buildTextResponsesRequest(
-            model = "gpt-5.6-luna",
+            model = "gpt-4o-mini",
             system = system,
             user = user,
             maxOutputTokens = 500

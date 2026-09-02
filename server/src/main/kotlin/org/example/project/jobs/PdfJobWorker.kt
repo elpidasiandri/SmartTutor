@@ -67,7 +67,7 @@ class PdfJobWorker(
             val chunks = PdfChunker.splitPdfIntoChunks(
                 input = pdf,
                 outDir = chunksDir,
-                pagesPerChunk = 6,
+                pagesPerChunk = 15,
                 overlapPages = 0
             )
 
