@@ -477,6 +477,15 @@ class PromptLlmClient(
             - Exactly 8 exercises with difficulty = "medium"
             - Exactly 8 exercises with difficulty = "hard"
 
+            FINAL COUNT CHECK:
+            - Before returning the JSON, count the exercises.
+            - Return exactly 20 exercises.
+            - Verify that difficulty counts are exactly:
+              easy = 4
+              medium = 8
+              hard = 8.
+            - Do not return the response until these counts are correct.
+
             SOURCE GROUNDING:
             - EVERY exercise must be based ONLY on this learning unit.
             - Do not introduce concepts that do not appear in UNIT_TEXT, quotations or image captions.
@@ -831,6 +840,16 @@ class PromptLlmClient(
     - Exactly 8 hard.
     - Include mcq, true_false and open exercises.
     - At least one exercise MUST be open.
+    
+    FINAL VALIDATION BEFORE RETURNING JSON:
+    - Count the exercises yourself before returning the response.
+    - The final array MUST contain exactly 20 items.
+    - Difficulty counts MUST be exactly:
+      - easy = 4
+      - medium = 8
+      - hard = 8
+    - Do not return the JSON until these counts are satisfied.
+    - If the original set has the wrong difficulty distribution, rewrite or relabel exercises as necessary while preserving pedagogical appropriateness.
 
     SOURCE GROUNDING:
     - Every exercise must be based ONLY on the provided UNIT.

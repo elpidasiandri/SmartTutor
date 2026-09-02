@@ -18,7 +18,7 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-private const val MAX_PDF_SIZE_BYTES = 10L * 1024L * 1024L
+private const val MAX_PDF_SIZE_BYTES = 100L * 1024L * 1024L
 fun Route.pdfRoutes(
     repo: PdfJobRepository,
     llm: PromptLlmClient
@@ -64,7 +64,7 @@ fun Route.pdfRoutes(
                                             totalBytes += read
 
                                             if (totalBytes > MAX_PDF_SIZE_BYTES) {
-                                                badRequest = "PDF exceeds the maximum allowed size of 10 MB"
+                                                badRequest = "PDF exceeds the maximum allowed size of 100 MB"
                                                 break
                                             }
 
