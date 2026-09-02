@@ -47,32 +47,40 @@ class PdfJobWorker(
             repo.heartbeat(job.documentId, workerId)
 
             val pdf = File(job.storagePath)
+
             val documentText = PDDocument.load(pdf).use { document ->
                 PDFTextStripper().getText(document)
             }
 
-            if (documentText.isBlank()) {
-                repo.completeError(
-                    job.documentId,
-                    "Could not extract text from PDF. Scanned PDFs are not supported yet."
-                )
-                return
-            }
-
-            val detectedLanguage = LanguageDetector.detect(documentText)
+            val detectedLanguage =
+                if (documentText.isBlank()) {
+                    "en"
+                } else {
+                    LanguageDetector.detect(documentText)
+                }
 
             repo.setProgress(job.documentId, 3)
+            repo.heartbeat(job.documentId, workerId)
 
-            val chunksDir = File("uploads/${job.documentId}/chunks")
+            val chunksDir = File(
+                pdf.parentFile,
+                "chunks"
+            ).apply {
+                mkdirs()
+            }
+
             val chunks = PdfChunker.splitPdfIntoChunks(
                 input = pdf,
                 outDir = chunksDir,
-                pagesPerChunk = 15,
+                pagesPerChunk = 6,
                 overlapPages = 0
             )
 
             if (chunks.isEmpty()) {
-                repo.completeError(job.documentId, "PDF split produced 0 chunks")
+                repo.completeError(
+                    job.documentId,
+                    "No PDF chunks could be created"
+                )
                 return
             }
 
@@ -80,71 +88,174 @@ class PdfJobWorker(
             val units = mutableListOf<LearningUnitDto>()
             var unitNumber = 1
 
-
             for ((i, chunk) in chunks.withIndex()) {
-                repo.heartbeat(job.documentId, workerId)
 
-                val p = 5 + (
-                        (i + 1).toDouble() /
-                                chunks.size.toDouble() * 65.0
-                        ).toInt()
+                repo.heartbeat(
+                    job.documentId,
+                    workerId
+                )
+
+                val progress =
+                    5 + (
+                            ((i + 1).toDouble() / chunks.size) * 65.0
+                            ).toInt()
 
                 repo.setProgress(
                     job.documentId,
-                    p
+                    progress
                 )
-                val isLastChunk = i == chunks.lastIndex
-                val preview = try {
-                    llm.generatePreviewUnitsFromPdfChunkWithCarry(
-                        pdfChunkFile = chunk,
-                        language = detectedLanguage,
-                        fileName = job.fileName,
-                        unitNumber = unitNumber,
-                        carry = carry,
-                        isLastChunk = isLastChunk
-                    )
-                } catch (t: Throwable) {
-                    throw IllegalStateException(
-                        "Failed to process PDF chunk ${i + 1}/${chunks.size}",
-                        t
-                    )
-                }
 
-                carry = preview.carry
+                val isLastChunk =
+                    i == chunks.lastIndex
 
-                val generatedUnits = preview.units
-                    .orEmpty()
-                    .map { unit ->
-                        unit.copy(
-                            isRead = false,
-                            exercises = emptyList()
-                        )
+                /*
+                 * A chunk may occasionally fail because the LLM returns
+                 * incomplete output, invalid JSON, a temporary API error,
+                 * or another transient response.
+                 *
+                 * Do NOT immediately fail the whole PDF.
+                 *
+                 * Retry this SAME chunk up to 3 times.
+                 */
+                val resolvedPreview = run {
+
+                    var lastError: Throwable? = null
+
+                    for (attempt in 1..3) {
+
+                        try {
+                            val result =
+                                llm.generatePreviewUnitsFromPdfChunkWithCarry(
+                                    pdfChunkFile = chunk,
+                                    language = detectedLanguage,
+                                    fileName = job.fileName,
+                                    unitNumber = unitNumber,
+                                    carry = carry,
+                                    isLastChunk = isLastChunk
+                                )
+
+                            /*
+                             * Success.
+                             * Exit the retry block immediately.
+                             */
+                            return@run result
+
+                        } catch (t: Throwable) {
+
+                            lastError = t
+
+                            println(
+                                "PDF chunk ${i + 1}/${chunks.size} " +
+                                        "failed on attempt $attempt/3: " +
+                                        (t.message ?: t::class.simpleName)
+                            )
+
+                            t.printStackTrace()
+
+                            /*
+                             * Retry only when another attempt remains.
+                             */
+                            if (attempt < 3) {
+                                kotlinx.coroutines.delay(
+                                    1500L * attempt
+                                )
+
+                                repo.heartbeat(
+                                    job.documentId,
+                                    workerId
+                                )
+                            }
+                        }
                     }
 
-                if (generatedUnits.isEmpty()) {
-                    continue
-                }
+                    /*
+                     * IMPORTANT:
+                     *
+                     * We do NOT skip this chunk.
+                     *
+                     * If all 3 complete generation attempts fail,
+                     * we fail the job because otherwise part of the PDF
+                     * would silently disappear from the learning material.
+                     */
+                    val causeMessage =
+                        lastError?.message
+                            ?.takeIf { it.isNotBlank() }
+                            ?: lastError
+                                ?.javaClass
+                                ?.simpleName
+                            ?: "Unknown error"
 
-                generatedUnits.forEach { generatedUnit ->
-                    val fixedUnit = generatedUnit.copy(
-                        numbering = unitNumber
+                    throw IllegalStateException(
+                        "Failed to process PDF chunk " +
+                                "${i + 1}/${chunks.size} " +
+                                "after 3 attempts: $causeMessage",
+                        lastError
                     )
-
-                    units.add(fixedUnit)
-                    unitNumber++
                 }
 
-                repo.savePartialResult(
-                    documentId = job.documentId,
-                    partial = LearningUnitsPrototypeDto(
-                        prototypeTitle = job.fileName.removeSuffix(".pdf"),
-                        language = detectedLanguage,
-                        totalUnits = units.size,
-                        learningUnits = units.toList()
-                    ),
-                    progress = p.coerceAtMost(85)
-                )
+                /*
+                 * Update carry only AFTER the chunk was processed successfully.
+                 *
+                 * If an attempt fails, the old carry remains untouched
+                 * and is sent again when retrying the same chunk.
+                 */
+                carry = resolvedPreview.carry
+
+                val generatedUnits =
+                    resolvedPreview.units
+                        .orEmpty()
+                        .map { generatedUnit ->
+                            generatedUnit.copy(
+                                isRead = false,
+                                exercises = emptyList()
+                            )
+                        }
+
+                /*
+                 * A chunk is allowed to produce zero units.
+                 *
+                 * Example:
+                 * - bibliography
+                 * - contents
+                 * - administrative pages
+                 * - continuation of an incomplete concept stored in carry
+                 *
+                 * Therefore zero units from ONE chunk is not an error.
+                 */
+                if (generatedUnits.isNotEmpty()) {
+
+                    generatedUnits.forEach { generatedUnit ->
+
+                        units.add(
+                            generatedUnit.copy(
+                                numbering = unitNumber
+                            )
+                        )
+
+                        unitNumber++
+                    }
+
+                    val partialResult =
+                        LearningUnitsPrototypeDto(
+                            prototypeTitle =
+                                job.fileName.substringBeforeLast("."),
+                            language = detectedLanguage,
+                            totalUnits = units.size,
+                            learningUnits = units.toList()
+                        )
+
+                    repo.savePartialResult(
+                        documentId = job.documentId,
+                        partial = partialResult,
+                        progress = progress
+                    )
+                }
             }
+
+            /*
+             * If the whole PDF finished but not even one educational
+             * learning unit was produced, something went wrong.
+             */
             if (units.isEmpty()) {
                 repo.completeError(
                     job.documentId,
@@ -153,19 +264,38 @@ class PdfJobWorker(
                 return
             }
 
-            val result = LearningUnitsPrototypeDto(
-                prototypeTitle = job.fileName.removeSuffix(".pdf"),
-                language = detectedLanguage,
-                totalUnits = units.size,
-                learningUnits = units.toList()
+            val result =
+                LearningUnitsPrototypeDto(
+                    prototypeTitle =
+                        job.fileName.substringBeforeLast("."),
+                    language = detectedLanguage,
+                    totalUnits = units.size,
+                    learningUnits = units.toList()
+                )
+
+            repo.setProgress(
+                job.documentId,
+                100
             )
 
-            repo.setProgress(job.documentId, 100)
-            repo.completeSuccess(job.documentId, result)
+            repo.completeSuccess(
+                job.documentId,
+                result
+            )
 
         } catch (t: Throwable) {
+
             t.printStackTrace()
-            repo.completeError(job.documentId, t.message ?: "Unknown error")
+
+            val message =
+                t.message
+                    ?.takeIf { it.isNotBlank() }
+                    ?: t.javaClass.simpleName
+
+            repo.completeError(
+                job.documentId,
+                message
+            )
         }
     }
 }
