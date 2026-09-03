@@ -82,6 +82,7 @@ data class ExerciseAttemptDto(
 
 @Serializable
 data class UnitsWithCarryDto(
+    @SerialName("prototype_title") val prototypeTitle: String? = null,
     @SerialName("units") val units: List<LearningUnitDto>? = null,
     @SerialName("carry") val carry: String = "",
 )

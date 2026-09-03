@@ -35,10 +35,17 @@ fun List<UserChatDto>.toChatHistoryDomain(): ChatHistoryDomain {
                 ?: chat.partialResult?.learningUnits
                 ?: emptyList()
 
+            val title = chat.result?.prototypeTitle?.takeIf { it.isNotBlank() }
+                ?: chat.partialResult
+                    ?.prototypeTitle
+                    ?.takeIf { it.isNotBlank() } ?: chat.title
+
             SubjectHistoryDomain(
                 subjectId = chat.chatId,
-                title = chat.partialResult?.prototypeTitle ?: "",
-                learningUnits = units.map { it.toDomain() }
+                title = title,
+                learningUnits = units.map {
+                    it.toDomain()
+                }
             )
         }
     )
@@ -252,6 +259,7 @@ fun ExerciseDto.toDomain(): ExerciseDomain {
         },
     )
 }
+
 fun ExerciseAttemptDto.toDomain(): LearningUnitExerciseStatsDomain {
     return LearningUnitExerciseStatsDomain(
         attemptNumber = attemptNumber,

@@ -92,8 +92,10 @@ class PdfJobWorker(
             }
 
             var carry = ""
+            var prototypeTitle: String? = null
             val units = mutableListOf<LearningUnitDto>()
             var unitNumber = 1
+
 
             for ((i, chunk) in chunks.withIndex()) {
 
@@ -204,23 +206,26 @@ class PdfJobWorker(
                     )
                 }
 
-                /*
-                 * Update carry only AFTER the chunk was processed successfully.
-                 *
-                 * If an attempt fails, the old carry remains untouched
-                 * and is sent again when retrying the same chunk.
-                 */
                 carry = resolvedPreview.carry
 
-                val generatedUnits =
-                    resolvedPreview.units
-                        .orEmpty()
-                        .map { generatedUnit ->
-                            generatedUnit.copy(
-                                isRead = false,
-                                exercises = emptyList()
-                            )
-                        }
+                val candidateTitle =
+                    resolvedPreview.prototypeTitle
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() }
+
+                if (
+                    prototypeTitle.isNullOrBlank() &&
+                    candidateTitle != null
+                ) {
+                    prototypeTitle = candidateTitle
+                }
+
+                val generatedUnits = resolvedPreview.units.orEmpty().map { generatedUnit ->
+                    generatedUnit.copy(
+                        isRead = false,
+                        exercises = emptyList()
+                    )
+                }
 
                 /*
                  * A chunk is allowed to produce zero units.
@@ -248,8 +253,7 @@ class PdfJobWorker(
 
                     val partialResult =
                         LearningUnitsPrototypeDto(
-                            prototypeTitle =
-                                job.fileName.substringBeforeLast("."),
+                            prototypeTitle = prototypeTitle?.takeIf { it.isNotBlank() } ?: job.fileName.substringBeforeLast("."),
                             language = detectedLanguage,
                             totalUnits = units.size,
                             learningUnits = units.toList()
@@ -277,8 +281,7 @@ class PdfJobWorker(
 
             val result =
                 LearningUnitsPrototypeDto(
-                    prototypeTitle =
-                        job.fileName.substringBeforeLast("."),
+                    prototypeTitle = prototypeTitle?.takeIf { it.isNotBlank() } ?: job.fileName.substringBeforeLast("."),
                     language = detectedLanguage,
                     totalUnits = units.size,
                     learningUnits = units.toList()

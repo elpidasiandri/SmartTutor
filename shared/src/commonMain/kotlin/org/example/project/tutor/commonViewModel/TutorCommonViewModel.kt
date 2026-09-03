@@ -830,7 +830,22 @@ class TutorCommonViewModel(
 
                 val refreshedChats = getAllHistoryChatUseCase(userId())
 
-
+                val refreshedChatHistory =
+                    refreshedChats
+                        .toChatHistoryDomain()
+                        .let { history ->
+                            history.copy(
+                                subjects = history.subjects.map { subject ->
+                                    if (subject.subjectId == res.chatId) {
+                                        subject.copy(
+                                            title = subjectTitle
+                                        )
+                                    } else {
+                                        subject
+                                    }
+                                }
+                            )
+                        }
                 track(
                     name = PDF_UPLOADED,
                     params = mapOf(

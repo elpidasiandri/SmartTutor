@@ -1044,6 +1044,22 @@ class PromptLlmClient(
         - One chapter may produce several learning units.
         - A learning unit must represent one coherent teachable concept
           or a very small group of tightly related concepts.
+          
+        PROTOTYPE TITLE:
+        - Generate a short, generic educational title for the overall material.
+        - The title must describe the main subject being taught, not the filename.
+        - Base it ONLY on the educational content visible in CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+        - Prefer a broad course-style title rather than a chapter title.
+        - Do not use the PDF filename unless it already clearly represents the actual subject.
+        - Do not include file extensions.
+        - Do not include words like "PDF", "document", "material", "notes", "chapter" or "file".
+        - Write the title in the output language: $outputLanguage.
+        - Keep it concise, usually 3 to 9 words.
+        - Examples of style only:
+          - "Βασικές Αρχές Προγραμματισμού σε Java"
+          - "Ιταλική Γραμματική και Χρήση Προθέσεων"
+          - "Θεμελιώδεις Έννοιες Κυτταρικής Βιολογίας"
+        - Do NOT copy these examples unless they actually match the source.
 
         COMPLETE COVERAGE:
         - Do not silently discard meaningful educational content.
@@ -1341,6 +1357,22 @@ class PromptLlmClient(
                 Read CURRENT_CHUNK together with CARRY_FROM_PREVIOUS
                 and generate all meaningful educational learning units
                 supported by the material.
+                
+            PROTOTYPE TITLE:
+            - Generate a concise generic educational title for the material.
+            - Base the title on the actual educational subject taught in
+              CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+            - Do NOT use the filename as the title.
+            - Do NOT include words such as:
+              PDF, document, material, notes, file, chapter.
+            - Prefer a broad course-style title rather than a narrow chapter title.
+            - Write the title in language code: $outputLanguage.
+            - Keep it concise, usually 3 to 9 words.
+            - Examples of STYLE only:
+              "Βασικές Αρχές Προγραμματισμού σε Java"
+              "Ιταλική Γραμματική και Χρήση Προθέσεων"
+              "Θεμελιώδεις Έννοιες Κυτταρικής Βιολογίας"
+            - Never copy an example unless it actually matches the source.
 
                 COMPLETE COVERAGE:
                 - Do not silently discard educational content.
@@ -1466,6 +1498,7 @@ class PromptLlmClient(
                 }
 
         return UnitsWithCarryDto(
+            prototypeTitle = dto.prototypeTitle?.trim()?.takeIf { it.isNotBlank() },
             units = validUnits,
             carry = if (isLastChunk) {
                 ""
@@ -1848,11 +1881,15 @@ class PromptLlmClient(
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "prototype_title",
     "units",
     "carry"
   ],
-  "properties": {
-    "units": {
+"properties": {
+  "prototype_title": {
+    "type": "string"
+  },
+  "units": {
       "type": "array",
       "items": {
         "type": "object",
@@ -1866,6 +1903,7 @@ class PromptLlmClient(
           "exercises"
         ],
         "properties": {
+        
           "title": {
             "type": "string"
           },
