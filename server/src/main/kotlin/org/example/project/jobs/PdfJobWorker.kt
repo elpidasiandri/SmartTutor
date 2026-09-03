@@ -149,6 +149,10 @@ class PdfJobWorker(
 
                         } catch (t: Throwable) {
 
+                            if (t is kotlinx.coroutines.CancellationException) {
+                                throw t
+                            }
+
                             lastError = t
 
                             println(
@@ -291,6 +295,14 @@ class PdfJobWorker(
             )
 
         } catch (t: Throwable) {
+
+            if (t is kotlinx.coroutines.CancellationException) {
+                println(
+                    "Worker cancelled while processing ${job.documentId}. " +
+                            "Leaving job recoverable."
+                )
+                throw t
+            }
 
             t.printStackTrace()
 

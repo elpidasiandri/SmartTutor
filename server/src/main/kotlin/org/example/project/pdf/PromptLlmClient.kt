@@ -472,10 +472,16 @@ class PromptLlmClient(
 
             Generate EXACTLY 20 exercises for this learning unit.
 
-            DIFFICULTY DISTRIBUTION:
-            - Exactly 4 exercises with difficulty = "easy"
-            - Exactly 8 exercises with difficulty = "medium"
-            - Exactly 8 exercises with difficulty = "hard"
+            DIFFICULTY DISTRIBUTION AND ORDER:
+            - Generate EXACTLY 20 exercises.
+            - Exercises 1 to 4 MUST have difficulty = "easy".
+            - Exercises 5 to 12 MUST have difficulty = "medium".
+            - Exercises 13 to 20 MUST have difficulty = "hard".
+            - Preserve this exact order in the returned exercises array.
+            - Therefore the final distribution MUST be:
+              easy = 4
+              medium = 8
+              hard = 8.
 
             FINAL COUNT CHECK:
             - Before returning the JSON, count the exercises.
@@ -574,9 +580,12 @@ class PromptLlmClient(
         val raw = extractOutputJson(resp)
         val out = coerceToJsonObjectString(raw)
         val dto = json.decodeFromString(UnitExercisesOnlyDto.serializer(), out)
-        val normalizedExercises = normalizeExercisePoints(
-            dto.exercises
-        )
+        val normalizedExercises =
+            normalizeExercisePoints(
+                normalizeInitialExerciseDifficulties(
+                    dto.exercises
+                )
+            )
         val validated = runCatching {
             validateExercisesOrThrow(
                 normalizedExercises,
@@ -600,7 +609,9 @@ class PromptLlmClient(
             )
 
             val normalizedRepaired = normalizeExercisePoints(
-                repaired
+                normalizeInitialExerciseDifficulties(
+                    repaired
+                )
             )
 
             validateExercisesOrThrow(
@@ -632,6 +643,28 @@ class PromptLlmClient(
 
             exercise.copy(
                 maxPoints = points
+            )
+        }
+    }
+
+    private fun normalizeInitialExerciseDifficulties(
+        exercises: List<ExerciseDto>,
+    ): List<ExerciseDto> {
+
+        if (exercises.size != 20) {
+            return exercises
+        }
+
+        return exercises.mapIndexed { index, exercise ->
+
+            val normalizedDifficulty = when (index) {
+                in 0..3 -> "easy"
+                in 4..11 -> "medium"
+                else -> "hard"
+            }
+
+            exercise.copy(
+                difficulty = normalizedDifficulty
             )
         }
     }
@@ -833,13 +866,16 @@ class PromptLlmClient(
     GOAL:
     Repair the provided exercise set so that ALL rules below are satisfied.
 
-    REQUIRED COUNT:
+    REQUIRED COUNT AND ORDER:
     - Exactly 20 exercises total.
-    - Exactly 4 easy.
-    - Exactly 8 medium.
-    - Exactly 8 hard.
-    - Include mcq, true_false and open exercises.
-    - At least one exercise MUST be open.
+    - Exercises 1 to 4 MUST be easy.
+    - Exercises 5 to 12 MUST be medium.
+    - Exercises 13 to 20 MUST be hard.
+    - Preserve this exact order.
+    - Final counts MUST be exactly:
+      easy = 4
+      medium = 8
+      hard = 8.
     
     FINAL VALIDATION BEFORE RETURNING JSON:
     - Count the exercises yourself before returning the response.
@@ -988,315 +1024,446 @@ class PromptLlmClient(
         carry: String,
         isLastChunk: Boolean,
     ): UnitsWithCarryDto {
+
         val fileId = uploadPdfToOpenAI(pdfChunkFile)
-            ?: error(
-                "Could not upload PDF chunk to OpenAI"
-            )
+
         val schema = unitsWithCarrySchemaJson()
+
         val outputLanguage = language.ifBlank { "en" }
 
         val system = """
-            MODE: PREVIEW_UNIT_FROM_CHUNK_WITH_CARRY
-            Return ONLY JSON matching schema (strict).
-            No citations.
+        MODE: PREVIEW_UNIT_FROM_CHUNK_WITH_CARRY
+        Return ONLY JSON matching schema (strict).
+        No citations.
 
-         GOAL:
-            - Read CURRENT_CHUNK together with CARRY_FROM_PREVIOUS.
-            - Identify ALL meaningful educational concepts contained in this material.
-            - Create as many focused learning units as educationally appropriate.
-            - Do NOT assume that one PDF chapter equals one learning unit.
-            - One chapter may produce several learning units.
-            - A learning unit must represent one coherent teachable concept or a very small group of tightly related concepts.
-            
-            COMPLETE COVERAGE:
-            - Do not silently discard meaningful educational content.
-            - Every meaningful concept in the processed material must either:
-              1. be taught in one of the returned learning units, or
-              2. remain in carry ONLY when the concept is incomplete and genuinely requires information from the next chunk.
-            - Do not put complete concepts in carry simply because there are many concepts.
-            - Prefer several short learning units instead of one overloaded learning unit.
-            
-            FINAL CHUNK RULE:
-            - IS_LAST_CHUNK tells you whether CURRENT_CHUNK is the final chunk
-              of the uploaded PDF.
-            - When IS_LAST_CHUNK = true:
-              - There is NO next chunk.
-              - carry MUST be returned as an empty string.
-              - Do not postpone any complete educational concept.
-              - Any meaningful concept supported by the remaining carry and
-                CURRENT_CHUNK must be converted into an appropriate learning unit.
-              - Do not invent missing information simply to complete a concept.
-              - If the final pages contain only administrative, bibliographic,
-                incomplete or non-educational fragments, ignore those fragments
-                instead of creating a fake learning unit.
-            - When IS_LAST_CHUNK = false:
-              - carry may contain only genuinely incomplete material that requires
-                the next chunk.
-    
-            UNIT SELECTION:
-            - Create units from educational concepts, not from the document structure.
-            - A heading alone is not a reason to create a unit.
-            - Ignore table of contents, copyright text, acknowledgements,
-              bibliography, author biography, headers, footers and administrative material.
-            - Do not create learning units about what the author or document is doing.
-            
-            UNIT CREATION:
-            - Create as many learning units as required to teach all meaningful concepts.
-            - Never reduce the number of units merely to make the response shorter.
-            - If a chunk contains several distinct major concepts, create separate units.
-            - If a concept contains several tightly related fundamental sub-concepts,
-              keep them together only when they form one coherent lesson.
-            - Coverage is more important than minimizing the number of units.
-            
-            EDUCATIONAL STYLE:
-            - Rewrite the source as direct teaching material for a learner.
-            - Never say:
-              "the author says",
-              "the author explains",
-              "the document says",
-              "according to the author",
-              "in this PDF",
-              "in this chapter",
-              "on this page".
-            - SmartTutor must teach the concept directly.
-            
+        GOAL:
+        - Read CURRENT_CHUNK together with CARRY_FROM_PREVIOUS.
+        - Identify ALL meaningful educational concepts contained in this material.
+        - Create as many focused learning units as educationally appropriate.
+        - Do NOT assume that one PDF chapter equals one learning unit.
+        - One chapter may produce several learning units.
+        - A learning unit must represent one coherent teachable concept
+          or a very small group of tightly related concepts.
+
+        COMPLETE COVERAGE:
+        - Do not silently discard meaningful educational content.
+        - Every meaningful concept in the processed material must either:
+          1. be taught in one of the returned learning units, or
+          2. remain in carry ONLY when the concept is incomplete
+             and genuinely requires information from the next chunk.
+        - Do not put complete concepts in carry simply because there are many concepts.
+        - Prefer several focused learning units instead of one overloaded learning unit.
+
+        FINAL CHUNK RULE:
+        - IS_LAST_CHUNK tells you whether CURRENT_CHUNK is the final chunk.
+        - When IS_LAST_CHUNK = true:
+          - There is NO next chunk.
+          - carry MUST be returned as an empty string.
+          - Do not postpone any complete educational concept.
+          - Any meaningful concept supported by remaining carry + CURRENT_CHUNK
+            must be converted into a learning unit.
+          - Do not invent missing information.
+          - Ignore administrative, bibliographic or incomplete fragments
+            that are not educationally useful.
+        - When IS_LAST_CHUNK = false:
+          - carry may contain only genuinely incomplete material
+            that requires the next chunk.
+
+        UNIT SELECTION:
+        - Create units from educational concepts,
+          not from the structure of the document.
+        - A heading alone is not a reason to create a unit.
+        - Ignore table of contents, copyright text, acknowledgements,
+          bibliography, author biography, headers, footers
+          and administrative material.
+        - Do not create units about what the author or document is doing.
+
+        UNIT CREATION:
+        - Create as many learning units as required
+          to teach all meaningful concepts.
+        - Never reduce the number of units merely to shorten the response.
+        - If a chunk contains several distinct major concepts,
+          create separate units.
+        - If a concept contains tightly related fundamental sub-concepts,
+          keep them together only when they form one coherent lesson.
+        - Coverage is more important than minimizing the number of units.
+
+        EDUCATIONAL STYLE:
+        - Rewrite the source as direct teaching material.
+        - Never say:
+          "the author says",
+          "the author explains",
+          "the document says",
+          "according to the author",
+          "in this PDF",
+          "in this chapter",
+          "on this page".
+        - Teach the concept directly.
+
         TEXT QUALITY AND TEACHING COMPLETENESS:
-        
+
         LANGUAGE:
         - Output language code: $outputLanguage
-        - Write the title, theory, explanations and captions in that language.
-        - Preserve programming keywords, identifiers, syntax, formulas and technical notation when translation would make them incorrect.
-        - Do not translate the educational material into another language unless necessary for understanding.
-        
+        - Write title, theory, explanations and captions in that language.
+        - Preserve programming keywords, identifiers, syntax,
+          formulas and technical notation when translation would make them incorrect.
+
         CORE PURPOSE:
-        - UNIT_TEXT is the actual lesson from which the learner will study.
-        - It must contain enough theory for the learner to understand the concept without needing to reopen the PDF.
+        - UNIT_TEXT is the actual lesson the learner studies.
+        - It must contain enough theory for understanding
+          without reopening the PDF.
         - Do NOT write a short summary.
         - Do NOT merely mention important terms.
         - Explain them.
-        
+
         COVERAGE OF THE CONCEPT:
-        - Identify the main concept of the learning unit and ALL important sub-concepts that belong to it and are supported by CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
-        - Do not omit a fundamental member of a group merely to keep the text short.
-        - If the source teaches a category or collection of related items, explain the important members individually.
-        
-        EXAMPLE:
-        - If a programming source teaches primitive data types, do not write only that "int is used for integers".
-        - If supported by the source, explain the relevant types individually, such as integer types, floating-point types, characters and booleans, including their purpose and meaningful differences.
-        - This example illustrates completeness only. Never assume Java or programming when the source is about another subject.
-        
+        - Identify the main concept and ALL important sub-concepts
+          supported by CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+        - Do not omit fundamental members of a group.
+        - If the source teaches a category or collection,
+          explain the important members individually.
+
         EXPLANATION REQUIREMENTS:
-        For each important concept or sub-concept, include when supported by the source:
+        For each important concept or sub-concept,
+        include when supported by the source:
         - what it is,
         - what it is used for,
         - how it works,
-        - important distinctions from closely related concepts,
+        - important distinctions,
         - rules or constraints,
-        - common mistakes, warnings or edge cases,
-        - at least one useful example when an example improves understanding.
-        
+        - common mistakes or warnings,
+        - useful examples.
+
         RELATIONSHIPS:
-        - When several concepts form a family, taxonomy, process, sequence, comparison or hierarchy, explain their relationship.
-        - Do not teach isolated facts when the source presents them as connected concepts.
-        
+        - When concepts form a family, taxonomy, process,
+          sequence, comparison or hierarchy,
+          explain their relationship.
+
         EXAMPLES:
-        - Include concrete examples throughout the theory, not only at the end.
-        - Prefer examples that demonstrate the concept rather than merely restating the definition.
-        - If the source is programming-related, use self-contained code examples in the programming language actually present in the source.
+        - Include concrete examples throughout the theory.
+        - Prefer examples that demonstrate the concept.
+        - If programming-related,
+          use the programming language actually present in the source.
         - Never assume Java.
-        - If the material is not programming-related, do not invent code examples.
-        - Do not force exactly two examples when the concept needs more or fewer; include enough examples to teach the material clearly.
-        
+        - If not programming-related,
+          do not invent code examples.
+
         SOURCE GROUNDING:
-        - Use only information supported by CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
-        - You may reorganize and rewrite the information pedagogically.
-        - Do not add factual details that are not supported by the source.
-        - Do not omit important source-supported information merely to satisfy a short word target.
-        
+        - Use only information supported by
+          CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+        - You may reorganize and rewrite pedagogically.
+        - Do not add unsupported factual details.
+        - Do not omit important information merely to satisfy a short word target.
+
         STYLE:
         - Teach directly to the learner.
-        - Use clear paragraphs and, when useful, short bullet lists or compact comparisons.
+        - Use clear paragraphs.
+        - Use bullets or compact comparisons when useful.
         - Prefer clarity and completeness over artificial brevity.
-        - Avoid filler, repetition and long introductions.
-        - Never say "the author says", "the document explains", "in this PDF", "on this page", "in this chapter", or similar phrases.
-                   
+        - Avoid filler and repetition.
+
         UNIT LENGTH:
-        - Keep each learning unit focused and learner-friendly.
-        - A learning unit should cover one coherent educational concept
+        - Keep each unit focused and learner-friendly.
+        - One unit should cover one coherent educational concept
           or one tightly related concept family.
-        - Prefer approximately 180–500 words when that is sufficient.
-        - A unit MAY be longer when the source contains several essential
-          sub-concepts that must be taught together.
-        - Never omit fundamental information only to satisfy a word target.
-        - If the material contains a second distinct major concept,
-          create another learning unit instead of overloading the current one.
-        - Avoid repetition and unnecessary introductory text.
+        - Prefer approximately 180–500 words when sufficient.
+        - A unit MAY be longer when needed for completeness.
+        - Never omit fundamental information to satisfy a word target.
+        - If a second distinct major concept begins,
+          create another learning unit.
 
-            IMAGES:
-            - Do not add an image just to satisfy formatting.
-            - Include 0 or 1 educational diagram image only if it clearly helps understanding.
-            - Prefer NO image over a wrong, cropped, incomplete, or confusing image.
-            - images[0].relativePath = null
-            - images[0].caption MUST use the same language as the learning unit: $outputLanguage.
-            - images[0].prompt MUST be in ENGLISH.
-            - All diagram labels and text inside the image MUST be in ENGLISH ONLY.
-            - Use short labels (1-3 words per node) to reduce text rendering errors.
+        IMAGES:
+        - Include 0 or 1 educational diagram only when it clearly helps.
+        - Prefer NO image over a wrong or confusing image.
+        - images[0].relativePath = null
+        - caption must use language: $outputLanguage
+        - image prompt must be in ENGLISH.
+        - Diagram labels must be in ENGLISH ONLY.
+        - Use short labels.
 
-            IMAGE SUITABILITY:
-            - Generate an image only for simple conceptual diagrams such as taxonomy trees, type groups, operator classification, or simple control-flow diagrams.
-            - Do not generate an image for code-heavy explanations, syntax summaries, or topics requiring many text labels.
-            - If a correct and complete diagram is unlikely, return no image.
+        IMAGE SUITABILITY:
+        - Use images only for simple conceptual diagrams.
+        - Avoid images for code-heavy explanations
+          or dense syntax summaries.
+        - If a correct diagram is unlikely, return no image.
 
-            LAYOUT SAFETY RULES:
-            - Main idea should be centered.
-            - Center the full composition in the frame.
-            - Everything must fit fully inside the frame with large margins.
-            - No cropped nodes, no cropped arrows, no cropped text.
-            - Use large readable font.
-            - Maximum 5 nodes for flowcharts.
-            - Maximum 6 nodes for concept maps.
-            - Maximum 8 nodes for very simple taxonomy diagrams.
-            - Prefer simple straight connectors.
-            - Avoid crossing lines.
-            - Ensure the full diagram is visible.
-            - Prefer square or landscape composition if portrait risks cropping.
-            - Reduce content instead of shrinking text.
+        LAYOUT SAFETY:
+        - Keep the full diagram centered.
+        - Large margins.
+        - No cropped text, arrows or nodes.
+        - Prefer simple layouts.
+        - Reduce content rather than shrinking text.
 
-            TEXT RENDERING RULES:
-            - Use only uppercase/lowercase English labels.
-            - Avoid long sentences inside the diagram.
-            - Do not include paragraphs inside the image.
-            - Do not include code syntax unless the image is specifically a syntax chart.
-            - For syntax charts, use large simple text and very few examples.
+        SELF-CONTAINED EXPLANATIONS:
+        - Every explanation must be self-contained.
+        - Never depend on a previous example.
+        - Repeat necessary context when needed.
 
-            SELF-CONTAINED EXPLANATION RULES:
-            - Every explanation paragraph must be self-contained.
-            - Never refer to "previous example", "above code", "the code we saw earlier", or "as mentioned before".
-            - Do not assume the learner remembers previous examples.
-            - If a later example needs context, repeat the necessary context briefly.
-            
-            CODE EXAMPLE INDEPENDENCE:
-            - When programming examples are relevant, every code block must be independently understandable.
-            - Never make one code example depend on variables, methods, functions, classes, labels, registers, or other definitions that exist only in a previous example.
-            - Use the programming language actually present in the source material.
-            - Never assume Java.
-            - Avoid phrases like "continue the previous program" or "modify the code above".
+        CODE EXAMPLE INDEPENDENCE:
+        - Every code block must be independently understandable.
+        - Never depend on variables, classes, functions,
+          labels or registers defined only in another example.
+        - Use the actual programming language in the source.
+        - Never assume Java.
 
-            DIAGRAM QUALITY RULES:
-            - The diagram MUST represent concepts exactly as described in the UNIT_TEXT.
-            - Do NOT invent new concepts not present in the text.
-            - Do NOT duplicate labels.
-            - Every label must appear only once unless repetition is logically required.
-            - Ensure all major concepts mentioned in the explanation are represented.
-            - Relationships between nodes must be logical.
-            - Do not omit key nodes.
-            - Do not create invalid parent-child relationships.
+        TARGET COVERAGE:
+        - Across the document, cover all meaningful educational concepts.
+        - Create a new unit when a distinct teachable concept begins.
+        - Do not create a unit only because a heading appears.
+        - Do not merge unrelated concepts.
 
-            TARGET COVERAGE:
-            - Across the whole document, cover all meaningful educational concepts.
-            - Create a new unit when a distinct teachable concept begins.
-            - Do not create a unit only because a new heading appears.
-            - Do not merge unrelated concepts into one learning unit.
+        QUOTATIONS:
+        - quotations MUST be [] or contain at most 2 items.
+        - If unsure, return quotations: [].
 
-            QUOTATIONS:
-            - quotations MUST be [] or 1..2 items.
-            - quotations[i].text MUST be a single STRING. If unsure: quotations: [].
+        EXERCISES:
+        - exercises MUST be [] here.
 
-            EXERCISES:
-            - exercises MUST be [] here.
+        CODE FORMAT:
+        - If code is present,
+          use Markdown fenced code blocks.
+        - Use the correct programming-language tag.
+        - Never assume Java.
 
-            CODE FORMAT RULE:
-            - When code is present, format it clearly using Markdown fenced code blocks.
-            - Use the correct programming-language tag.
-            - Keep statements/instructions clearly separated when appropriate for that language.
-            - Never assume Java.
-
-            ANTI-HALLUCINATION:
-            - Use ONLY what is supported by CURRENT_CHUNK + carry.
-        """.trimIndent()
+        ANTI-HALLUCINATION:
+        - Use ONLY what is supported by CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+    """.trimIndent()
 
         val user = """
-            Filename: $fileName
-            Language: $language
-            IS_LAST_CHUNK: $isLastChunk
-        
-            CARRY_FROM_PREVIOUS:
-            ${carry.take(8000)}
-        
-            CURRENT_CHUNK:
-            (see attached PDF)
-        """.trimIndent()
+        Filename: $fileName
+        Language: $language
+        IS_LAST_CHUNK: $isLastChunk
 
-        val req = buildResponsesRequestWithPdfFile(
-            model = "gpt-4o-mini",
-            fileId = fileId,
-            system = system,
-            user = user,
-            schemaOnly = schema,
-            maxOutputTokens = 8000
-        )
+        CARRY_FROM_PREVIOUS:
+        ${carry.take(8000)}
 
-        onRawHook?.invoke("preview_request", req)
+        CURRENT_CHUNK:
+        (see attached PDF)
+    """.trimIndent()
 
-        val resp = callOpenAIResponsesWithRetry(req)
-
-        onRawHook?.invoke("preview_response", resp)
-
-        if (!ensureCompleted(resp)) {
-            error(
-                "Preview generation returned an incomplete response"
+        suspend fun generateAndDecode(tag: String, systemPrompt: String): UnitsWithCarryDto {
+            val request = buildResponsesRequestWithPdfFile(
+                model = "gpt-4o-mini",
+                fileId = fileId,
+                system = systemPrompt,
+                user = user,
+                schemaOnly = schema,
+                maxOutputTokens = 12000
             )
+
+            onRawHook?.invoke("${tag}_request", request)
+
+            val response = callOpenAIResponsesWithRetry(request)
+
+            onRawHook?.invoke("${tag}_response", response)
+
+            if (!ensureCompleted(response)) {
+                error(
+                    "$tag generation returned an incomplete response"
+                )
+            }
+
+            val raw = extractOutputJson(response)
+
+            val unwrapped = unwrapIfJsonString(raw)
+
+            val jsonObject = extractFirstJsonObjectOrNull(unwrapped) ?: error(
+                "$tag generation did not contain a JSON object"
+            )
+
+            if (!isValidJson(jsonObject)) {
+                error(
+                    "$tag generation returned invalid JSON"
+                )
+            }
+
+            return try {
+                json.decodeFromString(
+                    UnitsWithCarryDto.serializer(),
+                    jsonObject
+                )
+
+            } catch (t: Throwable) {
+
+                if (t is kotlinx.coroutines.CancellationException) {
+                    throw t
+                }
+
+                onRawHook?.invoke(
+                    "${tag}_decode_error",
+                    t.message ?: "decode failed"
+                )
+
+                throw IllegalStateException("$tag generation could not be decoded", t)
+            }
         }
 
-        val raw = extractOutputJson(resp)
-
-        val unwrapped = unwrapIfJsonString(raw)
-        val out = extractFirstJsonObjectOrNull(unwrapped)
-
-        if (out == null || !isValidJson(out)) {
-            error(
-                "Preview generation returned invalid JSON"
+        val dto = try {
+            generateAndDecode(
+                tag = "preview",
+                systemPrompt = system
             )
-        }
 
-        val dto = runCatching {
-            json.decodeFromString(
-                UnitsWithCarryDto.serializer(),
-                out
-            )
-        }.getOrElse {
+        } catch (t: Throwable) {
+
+            /*
+             * Cancellation is not an LLM failure.
+             */
+            if (
+                t is kotlinx.coroutines.CancellationException
+            ) {
+                throw t
+            }
+
             onRawHook?.invoke(
-                "preview_decode_error",
-                it.message ?: "decode failed"
+                "preview_primary_failed",
+                t.message ?: t::class.simpleName.orEmpty()
             )
 
-            throw IllegalStateException(
-                "Could not decode generated learning units",
-                it
+            /*
+             * FALLBACK GENERATION
+             *
+             * Used when primary generation returns:
+             * - incomplete response
+             * - invalid JSON
+             * - missing JSON object
+             * - DTO decode failure
+             */
+            val fallbackSystem = """
+                MODE: PREVIEW_UNIT_FALLBACK
+
+                Return ONLY valid JSON matching the supplied schema.
+                Do not output Markdown around the JSON.
+                Do not output explanations outside the JSON.
+                No citations.
+
+                GOAL:
+                Read CURRENT_CHUNK together with CARRY_FROM_PREVIOUS
+                and generate all meaningful educational learning units
+                supported by the material.
+
+                COMPLETE COVERAGE:
+                - Do not silently discard educational content.
+                - Create as many learning units as educationally necessary.
+                - Do not force one unit per page or chapter.
+                - If several distinct concepts exist,
+                  create separate learning units.
+                - Never reduce the number of units merely to shorten the response.
+
+                UNIT CONTENT:
+                - Each unit must teach one coherent educational concept
+                  or one tightly related concept family.
+                - UNIT_TEXT is the lesson the learner studies.
+                - Explain important definitions, rules,
+                  distinctions and examples.
+                - Explain important sub-concepts.
+                - Do not omit fundamental members of a concept family.
+
+                SOURCE GROUNDING:
+                - Use ONLY information supported by
+                  CURRENT_CHUNK + CARRY_FROM_PREVIOUS.
+                - Do not invent missing facts.
+                - Ignore administrative text,
+                  bibliography, copyright,
+                  headers and footers.
+
+                LANGUAGE:
+                - Output language code: $outputLanguage
+                - Write titles and theory in that language.
+                - Preserve code, identifiers,
+                  formulas and technical notation.
+
+                PROGRAMMING:
+                - If the source teaches programming,
+                  use the programming language actually present.
+                - Never assume Java.
+                - Code examples must be self-contained.
+
+                UNIT SIZE:
+                - Prefer approximately 180–450 words when sufficient.
+                - A unit may be longer when necessary.
+                - If another distinct major concept begins,
+                  create another unit.
+
+                RELIABILITY:
+                - quotations may be [].
+                - images may be [].
+                - exercises MUST be [].
+                - Prefer empty arrays instead of unnecessary complex output.
+                - Every returned unit MUST contain:
+                  title,
+                  numbering,
+                  text,
+                  quotations,
+                  images,
+                  exercises.
+
+                CARRY:
+                - IS_LAST_CHUNK = $isLastChunk
+
+                - If IS_LAST_CHUNK = false:
+                  carry may contain ONLY genuinely incomplete material.
+
+                - If IS_LAST_CHUNK = true:
+                  carry MUST be "".
+                  There is no next chunk.
+                  Convert remaining complete educational concepts
+                  into learning units.
+
+                STYLE:
+                - Teach directly to the learner.
+                - Never say:
+                  "the author says",
+                  "the document explains",
+                  "in this PDF",
+                  "in this chapter".
+
+                FINAL CHECK:
+                - Output valid JSON only.
+                - Match the schema exactly.
+                - exercises = [].
+                - Use empty arrays when quotations/images are unnecessary.
+                - Preserve meaningful supported educational concepts.
+            """.trimIndent()
+
+            generateAndDecode(
+                tag = "preview_fallback",
+                systemPrompt = fallbackSystem
             )
         }
-        val validUnits = dto.units?.mapIndexedNotNull { index, unit ->
 
-            val fixedUnit = unit.copy(
-                numbering = unitNumber + index,
-                quotations = unit.quotations.take(2),
-                images = unit.images.take(1),
-                exercises = emptyList()
-            )
+        val validUnits =
+            dto.units
+                .orEmpty()
+                .mapIndexedNotNull { index, unit ->
 
-            val text = fixedUnit.textInfo.orEmpty().trim()
+                    val title =
+                        unit.title
+                            ?.trim()
+                            .orEmpty()
 
-            val paragraphs =
-                text.split(Regex("""\n\s*\n""")).map { it.trim() }.filter { it.isNotBlank() }
+                    val text =
+                        unit.textInfo
+                            ?.trim()
+                            .orEmpty()
 
-            val wordCount = text.split(Regex("""\s+""")).count { it.isNotBlank() }
+                    if (
+                        title.isBlank() ||
+                        text.isBlank()
+                    ) {
+                        null
+                    } else {
 
-            val hasEnoughText =
-                paragraphs.size >= 2 &&
-                        wordCount >= 80
-
-            if (hasEnoughText) fixedUnit else null
-        }
+                        unit.copy(
+                            title = title,
+                            textInfo = text,
+                            numbering = unitNumber + index,
+                            quotations = unit.quotations.take(2),
+                            images = unit.images.take(1),
+                            exercises = emptyList()
+                        )
+                    }
+                }
 
         return UnitsWithCarryDto(
             units = validUnits,
@@ -1507,40 +1674,60 @@ class PromptLlmClient(
         }.getOrNull() ?: (null to null)
     }
 
-    private suspend fun uploadPdfToOpenAI(pdfFile: File): String? {
-        val respText = runCatching {
-            openAiPermits.withPermit {
-                val resp = http.submitFormWithBinaryData(
-                    url = "https://api.openai.com/v1/files",
-                    formData = formData {
-                        append("purpose", "user_data")
-                        append(
-                            key = "file",
-                            value = pdfFile.readBytes(),
-                            headers = Headers.build {
-                                append(HttpHeaders.ContentType, "application/pdf")
-                                append(
-                                    HttpHeaders.ContentDisposition,
-                                    "form-data; name=\"file\"; filename=\"${pdfFile.name}\""
-                                )
-                            }
-                        )
-                    }
-                ) {
-                    header(HttpHeaders.Authorization, "Bearer $apiKey")
-                }
+    private suspend fun uploadPdfToOpenAI(pdfFile: File): String {
 
-                resp.bodyAsText()
+        val resp = openAiPermits.withPermit {
+            http.submitFormWithBinaryData(
+                url = "https://api.openai.com/v1/files",
+                formData = formData {
+                    append("purpose", "user_data")
+                    append(
+                        key = "file",
+                        value = pdfFile.readBytes(),
+                        headers = Headers.build {
+                            append(
+                                HttpHeaders.ContentType,
+                                "application/pdf"
+                            )
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                "form-data; name=\"file\"; filename=\"${pdfFile.name}\""
+                            )
+                        }
+                    )
+                }
+            ) {
+                header(
+                    HttpHeaders.Authorization,
+                    "Bearer $apiKey"
+                )
             }
-        }.getOrElse {
-            onRawHook?.invoke("pdf_upload_exception", it.message ?: "upload failed")
-            return null
         }
 
-        val root = runCatching { json.parseToJsonElement(respText).jsonObject }.getOrNull()
-            ?: return null
+        val status = resp.status.value
+        val body = resp.bodyAsText()
 
-        return root["id"]?.jsonPrimitive?.content
+        if (status !in 200..299) {
+            error(
+                "PDF upload failed: status=$status body=${body.take(1200)}"
+            )
+        }
+
+        val root = runCatching {
+            json.parseToJsonElement(body).jsonObject
+        }.getOrElse {
+            error(
+                "PDF upload returned invalid JSON: ${body.take(1200)}"
+            )
+        }
+
+        return root["id"]
+            ?.jsonPrimitive
+            ?.contentOrNull
+            ?.takeIf { it.isNotBlank() }
+            ?: error(
+                "PDF upload response did not contain a file id"
+            )
     }
 
     private fun buildResponsesRequestWithPdfFile(
