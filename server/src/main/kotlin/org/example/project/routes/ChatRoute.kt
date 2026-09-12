@@ -18,7 +18,6 @@ import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
-import org.example.project.tutor.networkModel.chatHistory.OpenExerciseEvaluationDto
 import java.util.UUID
 
 fun Route.chatRoutes(
@@ -109,8 +108,10 @@ fun Route.chatRoutes(
 
                 application.log.info("UNIT=${unit.title}")
 
-                val stats = progressRepo.getExerciseStats(userId)
-
+                val stats = progressRepo.getExerciseStats(
+                    userId = userId,
+                    chatId = chatId,
+                )
                 val currentUnitStats = stats.firstOrNull {
                     it.unitIndex == unitIndex
                 }

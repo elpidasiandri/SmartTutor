@@ -61,10 +61,12 @@ class WebProgressRepoImpl(
 
 
     override suspend fun getExerciseStats(
-        userId: String
+        userId: String,
+        chatId: String,
     ): List<LearningUnitExerciseStatsDto> {
         return httpClient.get("$baseUrl/v1/progress/exercise-stats") {
             parameter("userId", userId)
+            parameter("chatId", chatId)
         }.body()
     }
 

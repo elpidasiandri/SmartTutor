@@ -444,6 +444,7 @@ class FirestoreProgressRepository(
 
     override suspend fun getExerciseStats(
         userId: String,
+        chatId: String,
     ): List<LearningUnitExerciseStatsDto> {
 
         val snap = usersCol.document(userId)
@@ -479,6 +480,7 @@ class FirestoreProgressRepository(
         }
 
         return allAnswers
+            .filter { it.chatId == chatId }
             .groupBy { it.unitIndex to it.unitTitle }
             .map { (unit, unitAnswers) ->
 

@@ -11,6 +11,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import org.example.project.myProgress.networkModel.ChatProgressDto
+import org.example.project.myProgress.networkModel.LearningUnitExerciseStatsDto
 import org.example.project.myProgress.networkModel.UserProgressOverviewDto
 
 class ProgressRepoImpl(
@@ -50,6 +51,13 @@ class ProgressRepoImpl(
             header("Authorization", "Bearer $token")
             parameter("userId", userId)
         }
+    }
+
+    override suspend fun getExerciseStats(
+        userId: String,
+        chatId: String,
+    ): List<LearningUnitExerciseStatsDto> {
+        TODO("Not yet implemented")
     }
 
 }

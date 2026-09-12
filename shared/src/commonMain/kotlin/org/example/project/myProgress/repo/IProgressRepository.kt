@@ -28,5 +28,8 @@ interface IProgressRepository {
     fun deleteChatProgress(userId: String, chatId: String)
     suspend fun saveExerciseAnswer(userId: String, answer: ExerciseAnswerProgressDto)
 
-    suspend fun getExerciseStats(userId: String): List<LearningUnitExerciseStatsDto>
+    suspend fun getExerciseStats(
+        userId: String,
+        chatId: String,
+    ): List<LearningUnitExerciseStatsDto>
 }

@@ -537,7 +537,19 @@ private fun LearningUnitRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { exercisesExpanded = !exercisesExpanded }
+                    .clickable {
+                        exercisesExpanded = true
+
+                        /*
+                         * Ανοίγει το Exercises section του unit.
+                         *
+                         * Αν δεν υπάρχουν ακόμα exercises,
+                         * το ViewModel θα τα φορτώσει/generated.
+                         *
+                         * Αν υπάρχουν ήδη, ανοίγει το πρώτο.
+                         */
+                        onExerciseClick(0)
+                    }
                     .background(
                         when {
                             isExercisesSelected -> Color(0xFFEDE7F6)

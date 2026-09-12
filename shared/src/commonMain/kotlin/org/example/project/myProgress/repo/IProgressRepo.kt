@@ -9,6 +9,9 @@ interface IProgressRepo {
     suspend fun getChatProgressList(userId: String): List<ChatProgressDto>
     suspend fun upsertChatProgress(progress: ChatProgressDto, userId: String, token: String)
     suspend fun deleteChatProgress(chatId: String, userId: String, token: String)
-    suspend fun getExerciseStats(userId: String): List<LearningUnitExerciseStatsDto>
+    suspend fun getExerciseStats(
+        userId: String,
+        chatId: String,
+    ): List<LearningUnitExerciseStatsDto>
 
 }

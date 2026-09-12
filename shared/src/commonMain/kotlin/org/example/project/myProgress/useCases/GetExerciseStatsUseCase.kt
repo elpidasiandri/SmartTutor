@@ -8,9 +8,11 @@ class GetExerciseStatsUseCase(
 ) {
     suspend operator fun invoke(
         userId: String,
+        chatId: String,
     ): List<LearningUnitExerciseStatsDto> {
         return repo.getExerciseStats(
             userId = userId,
+            chatId = chatId,
         )
     }
 }

@@ -30,9 +30,23 @@ fun Route.progressRoutes(progressRepo: IProgressRepository) {
 
         get("/exercise-stats") {
             val userId = call.request.queryParameters["userId"]
-                ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing userId"))
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing userId")
+                )
 
-            call.respond(progressRepo.getExerciseStats(userId))
+            val chatId = call.request.queryParameters["chatId"]
+                ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Missing chatId")
+                )
+
+            call.respond(
+                progressRepo.getExerciseStats(
+                    userId = userId,
+                    chatId = chatId
+                )
+            )
         }
 
         get("/overview") {
