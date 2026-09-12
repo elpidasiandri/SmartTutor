@@ -310,6 +310,7 @@ fun SubjectHistoryItem(
             subject.learningUnits.forEachIndexed { index, lu ->
                 LearningUnitRow(
                     title = "${unit_title} ${index + 1}: ${lu.title}",
+                    chatId = subject.subjectId,
                     isRead = lu.isRead,
                     unitIndex = index,
                     exercises = lu.exercises,
@@ -320,7 +321,7 @@ fun SubjectHistoryItem(
                     onExerciseClick = { exerciseIndex ->
                         onExercisesClick(lu.title, subject.subjectId, exerciseIndex)
                     },
-                    isCurrentUnit  = index == currentIndex,
+                    isCurrentUnit = index == currentIndex,
                     selectedTab = selectedTab,
                     selectedExerciseIndex = selectedExerciseIndex,
                 )
@@ -421,6 +422,7 @@ private fun DeleteSubjectDialog(
 @Composable
 private fun LearningUnitRow(
     title: String,
+    chatId: String,
     isRead: Boolean,
     unitIndex: Int,
     exercises: List<ExerciseDomain>,
@@ -445,7 +447,9 @@ private fun LearningUnitRow(
 
     val exercisesCompleted = exercises.isNotEmpty() &&
             exercises.indices.all { exerciseIndex ->
-                answeredExerciseKeys.contains("$unitIndex-$exerciseIndex")
+                answeredExerciseKeys.contains(
+                    "$chatId-$unitIndex-$exerciseIndex"
+                )
             }
 
     val unitCompleted = learningCompleted && exercisesCompleted
@@ -589,13 +593,11 @@ private fun LearningUnitRow(
             if (exercisesExpanded) {
                 exercises.forEachIndexed { exerciseIndex, _ ->
                     val exerciseCompleted =
-                        answeredExerciseKeys.contains("$unitIndex-$exerciseIndex")
+                        answeredExerciseKeys.contains("$chatId-$unitIndex-$exerciseIndex")
                     val isExerciseSelected =
-                                selectedTab == TutorTab.Exercises &&
-                                selectedExerciseIndex == exerciseIndex
+                        selectedTab == TutorTab.Exercises && selectedExerciseIndex == exerciseIndex
                     val exerciseUnlocked =
-                        exerciseIndex == 0 ||
-                                answeredExerciseKeys.contains("$unitIndex-${exerciseIndex - 1}")
+                        exerciseIndex == 0 || answeredExerciseKeys.contains("$chatId-$unitIndex-${exerciseIndex - 1}")
 
                     Row(
                         modifier = Modifier
@@ -603,12 +605,12 @@ private fun LearningUnitRow(
                             .background(
                                 color = when {
                                     isExerciseSelected -> Color(0xFFD1C4E9)
-                                    !exerciseUnlocked  -> Color(0xFFE0E0E0)
+                                    !exerciseUnlocked -> Color(0xFFE0E0E0)
                                     else -> Color.Transparent
                                 },
                                 shape = RoundedCornerShape(spacing8)
                             )
-                            .clickable(enabled = exerciseUnlocked ) { onExerciseClick(exerciseIndex) }
+                            .clickable(enabled = exerciseUnlocked) { onExerciseClick(exerciseIndex) }
                             .padding(
                                 start = spacing24,
                                 top = spacing8,
