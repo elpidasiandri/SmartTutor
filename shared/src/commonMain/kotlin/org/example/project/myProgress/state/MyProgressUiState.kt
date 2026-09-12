@@ -31,10 +31,14 @@ data class MyProgressState(
 
     val event: MyProgressEvents = MyProgressEvents.None,
     val uiEvent: MyProgressUiEvents = MyProgressUiEvents.None,
+
     val totalCorrectAnswers: Int = 0,
     val totalWrongAnswers: Int = 0,
-    val totalPartialAnswers: Int = 0 ,
+    val totalPartialAnswers: Int = 0,
+
     val unitExerciseStats: List<LearningUnitExerciseStatsUi> = emptyList(),
+
+    val pdfProgress: List<PdfProgressUi> = emptyList(),
 )
 
 data class MyProgressChatItem(
@@ -43,7 +47,25 @@ data class MyProgressChatItem(
     val progressPercent: Int,
     val lastActivityEpochMillis: Long = 0L,
 )
+data class PdfProgressUi(
+    val chatId: String,
+    val documentId: String,
+    val title: String,
 
+    val progressPercent: Int,
+
+    val totalUnits: Int,
+    val readUnits: Int,
+
+    val totalExercises: Int,
+    val answeredExercises: Int,
+
+    val correctCount: Int,
+    val wrongCount: Int,
+    val partialCount: Int,
+
+    val unitExerciseStats: List<LearningUnitExerciseStatsUi> = emptyList(),
+)
 data class ExerciseAnswerProgressDomain(
     val chatId: String,
     val userId: String,
@@ -65,6 +87,7 @@ data class ExerciseQuestionStatsDomain(
     val attemptsCount: Int,
     val correctCount: Int,
     val wrongCount: Int,
+    val partialCount: Int,
     val lastSelectedAnswer: String,
     val correctAnswer: String,
     val attempts: List<LearningUnitExerciseStatsDomain>,
@@ -77,12 +100,12 @@ fun ExerciseQuestionStatsDto.toDomain(): ExerciseQuestionStatsDomain {
         attemptsCount = attemptsCount,
         correctCount = correctCount,
         wrongCount = wrongCount,
+        partialCount = partialCount,
         lastSelectedAnswer = lastSelectedAnswer,
         correctAnswer = correctAnswer,
         attempts = attempts.map { it.toDomain() },
     )
 }
-
 fun ExerciseAnswerProgressDto.toDomain(): ExerciseAnswerProgressDomain {
     return ExerciseAnswerProgressDomain(
         chatId = chatId,

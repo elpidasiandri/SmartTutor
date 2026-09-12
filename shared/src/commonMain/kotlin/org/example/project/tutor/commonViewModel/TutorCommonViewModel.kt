@@ -261,6 +261,7 @@ class TutorCommonViewModel(
                             })
                     )
                 }
+                saveProgress()
             }.onFailure {
                 _state.update {
                     it.copy(
@@ -1706,8 +1707,10 @@ class TutorCommonViewModel(
     private fun buildCurrentProgress(): ChatProgressUpsertDomain {
         val totalUnits = _state.value.allUnits.size
         val currentIndex = _state.value.currentIndex
-        val progressPercent =
-            if (totalUnits > 0) ((currentIndex + 1) * 100) / totalUnits else 0
+
+        val progressPercent = if (totalUnits > 0) {
+                ((currentIndex + 1) * 100) / totalUnits
+            } else { 0 }
 
         return ChatProgressUpsertDomain(
             chatId = _state.value.activeChatId,
@@ -1722,19 +1725,16 @@ class TutorCommonViewModel(
             lastActivityEpochMillis = Clock.System.now().toEpochMilliseconds(),
             progressPercent = progressPercent,
             units = _state.value.allUnits.mapIndexed { index, unit ->
-                UnitReadProgressDomain(
-                    unitIndex = index,
-                    unitTitle = unit.title,
-                    isRead = unit.isRead,
-                    totalExercises = unit.exercises.size,
-                    totalMaxPoints = unit.exercises.sumOf { exercise ->
-                        exercise.maxPoints
-                    }
-                )
-            }
+                    UnitReadProgressDomain(
+                        unitIndex = index,
+                        unitTitle = unit.title,
+                        isRead = unit.isRead,
+                        totalExercises = unit.exercises.size,
+                        totalMaxPoints = unit.exercises.sumOf { exercise -> exercise.maxPoints }
+                    )
+                }
         )
     }
-
     private fun startNewChat() {
         track(
             name = NEW_CHAT_STARTED,
