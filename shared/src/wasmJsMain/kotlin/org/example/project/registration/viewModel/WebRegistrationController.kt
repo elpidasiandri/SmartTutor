@@ -49,30 +49,26 @@ class WebRegistrationController(
     }
 
     private fun login(email: String, password: String) {
-        //todo elpida fix
-        if (email == "elpisian1@cs.duth.gr" ||email=="lmous@cs.duth.gr" )
-        {
-            scope.launch {
-                registrationUseCases.logIn(email, password) { success, message ->
-                    if (success) {
-                        WebStorageHelper.saveTokenExpiry()
-                        navigateToTutorScreen()
-                    } else {
-                        when (message) {
-                            "EMAIL_NOT_VERIFIED" -> {
-                                stateForErrorMessage(
-                                    "Please verify your email first. Check your inbox and then log in again."
-                                )
-                            }
+        scope.launch {
+            registrationUseCases.logIn(email, password) { success, message ->
+                if (success) {
+                    WebStorageHelper.saveTokenExpiry()
+                    navigateToTutorScreen()
+                } else {
+                    when (message) {
+                        "EMAIL_NOT_VERIFIED" -> {
+                            stateForErrorMessage(
+                                "Please verify your email first. Check your inbox and then log in again."
+                            )
+                        }
 
-                            else -> {
-                                stateForErrorMessage()
-                            }
+                        else -> {
+                            stateForErrorMessage()
                         }
                     }
                 }
             }
-        } else  stateForErrorMessage("Παρακαλώ προσπαθήστε σε λίγες ώρες. Αυτή την στιγμή γίνονται κάποιες αλλαγές στον server μας")
+        }
     }
 
     private fun navigateToTutorScreen() {

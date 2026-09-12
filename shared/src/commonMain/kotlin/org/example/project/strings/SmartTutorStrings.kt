@@ -51,9 +51,6 @@ object SmartTutorStrings {
     //errors
     const val invalid_email = "Email must contain '@' and '.'"
 
-    //    const val invalid_email_duth = "Email must be a valid @cs.duth.gr account"
-    const val invalid_email_duth = "Το email πρέπει να είναι ένας έγκυρος λογαριασμός @cs.duth.gr"
-
     //    const val username_not_empty = "Username cannot be empty"
     const val username_not_empty = "Το όνομα χρήστη δεν μπορεί να είναι κενό"
 

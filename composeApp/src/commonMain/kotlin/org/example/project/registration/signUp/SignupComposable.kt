@@ -40,8 +40,8 @@ fun SignupComposable(
     var password1 by remember { mutableStateOf("") }
     var password2 by remember { mutableStateOf("") }
 
-    val isEmailValid = Validation.isValidDuthEmail(email)
-    val isEmail2Valid = Validation.isValidDuthEmail(email2)
+    val isEmailValid = Validation.isValidEmail(email)
+    val isEmail2Valid = Validation.isValidEmail(email2)
 
     val isUsernameValid = username.isNotBlank()
     val isPassword1Valid = Validation.isValidPassword(password1)
@@ -64,7 +64,7 @@ fun SignupComposable(
         EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
 
         if (!isEmailValid && email.isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email_duth)
+            ErrorTextComposable(SmartTutorStrings.invalid_email)
         }
         EmailTextFieldComposable(
             value = email2,
@@ -73,7 +73,7 @@ fun SignupComposable(
         )
 
         if (!isEmail2Valid && email2.isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email_duth)
+            ErrorTextComposable(SmartTutorStrings.invalid_email)
         }
 
         if (

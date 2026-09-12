@@ -542,17 +542,12 @@ private fun LearningUnitRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        exercisesExpanded = true
-
-                        /*
-                         * Ανοίγει το Exercises section του unit.
-                         *
-                         * Αν δεν υπάρχουν ακόμα exercises,
-                         * το ViewModel θα τα φορτώσει/generated.
-                         *
-                         * Αν υπάρχουν ήδη, ανοίγει το πρώτο.
-                         */
-                        onExerciseClick(0)
+                        if (exercisesExpanded) {
+                            exercisesExpanded = false
+                        } else {
+                            exercisesExpanded = true
+                            onExerciseClick(0)
+                        }
                     }
                     .background(
                         when {

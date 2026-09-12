@@ -39,7 +39,7 @@ fun LoginComposable(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val isEmailValid = Validation.isValidDuthEmail(email)
+    val isEmailValid = Validation.isValidEmail(email)
     val isPasswordValid = Validation.isValidPassword(password)
     val isFormValid = isEmailValid && isPasswordValid
     val containerModifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth()
@@ -55,7 +55,7 @@ fun LoginComposable(
             isWebUi = isWebUi
         )
         if (!isEmailValid && email.trim().isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email_duth)
+            ErrorTextComposable(SmartTutorStrings.invalid_email)
         }
 
         Spacer(Modifier.height(spacing12))
