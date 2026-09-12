@@ -93,9 +93,23 @@ class MyProgressCommonViewModel(
                 val overview = getProgressOverviewUseCase(userId)
                 val chatProgressList = getChatProgressListUseCase(userId)
 
-                val latestChat = chatProgressList.maxByOrNull { it.lastActivityEpochMillis }
-                val exerciseStats = getExerciseStateUseCase(userId)
-                val statsByUnitIndex = exerciseStats.associateBy { it.unitIndex }
+                val latestChat = chatProgressList.maxByOrNull {
+                    it.lastActivityEpochMillis
+                }
+
+                val exerciseStats =
+                    if (latestChat != null) {
+                        getExerciseStateUseCase(
+                            userId = userId,
+                            chatId = latestChat.chatId,
+                        )
+                    } else {
+                        emptyList()
+                    }
+
+                val statsByUnitIndex = exerciseStats.associateBy {
+                    it.unitIndex
+                }
 
                 val unitExerciseStatsUi = latestChat?.units.orEmpty().map { chatUnit ->
                     val exerciseState = statsByUnitIndex[chatUnit.unitIndex]
