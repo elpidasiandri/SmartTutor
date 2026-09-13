@@ -34,7 +34,11 @@ object SmartTutorStrings {
 
     val login: String
         get() = localized("Login", "Σύνδεση")
-
+    val change_language: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Change language"
+            AppLanguage.GREEK -> "Αλλαγή γλώσσας"
+        }
     val confirm_password: String
         get() = localized(
             "Confirm Password",

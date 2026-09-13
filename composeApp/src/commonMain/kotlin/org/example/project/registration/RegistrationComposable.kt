@@ -1,19 +1,21 @@
 package org.example.project.registration
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import org.example.project.components.LanguageSelector
 import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.registration.login.LoginComposable
 import org.example.project.registration.reset.ResetPasswordComposable
 import org.example.project.registration.signUp.SignupComposable
+import org.example.project.strings.AppLanguage
 import org.example.project.strings.LanguageManager
 import org.example.project.strings.SmartTutorStrings
 
@@ -30,6 +32,7 @@ fun RegistrationComposable(
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val selectedLanguage by LanguageManager.language.collectAsState()
+    var showLanguageMenu by remember { mutableStateOf(false) }
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -48,72 +51,121 @@ fun RegistrationComposable(
             onMessageDismiss()
         }
     }
-
-    Column(
-        modifier = Modifier
-            .padding(spacing16),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        LanguageSelector(
-            selectedLanguage = selectedLanguage,
-            onLanguageSelected = { language ->
-                LanguageManager.setLanguage(language)
+        Column(
+            modifier = Modifier
+                .padding(spacing16),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+
+            TabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        text = {
+                            Text(
+                                when (title) {
+                                    RegistrationScreens.Login ->
+                                        SmartTutorStrings.login
+
+                                    RegistrationScreens.SignUp ->
+                                        SmartTutorStrings.signup
+                                }
+                            )
+                        },
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index }
+                    )
+                }
             }
-        )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(24.dp))
 
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    text = {
-                        Text(
-                            when (title) {
-                                RegistrationScreens.Login ->
-                                    SmartTutorStrings.login
+            when (selectedTab) {
+                0 -> {
+                    var showReset by remember { mutableStateOf(false) }
 
-                                RegistrationScreens.SignUp ->
-                                    SmartTutorStrings.signup
+                    if (showReset) {
+                        ResetPasswordComposable(
+                            onBackToLogin = { showReset = false },
+                            resetPassword = { email -> resetPassword(email) },
+                            isWebUi = isWebUi
+                        )
+                    } else {
+                        LoginComposable(
+                            login = { email, password ->
+                                onLogin(email, password)
+                            },
+                            isWebUi = isWebUi,
+                            onForgotPasswordClick = {
+                                showReset = true
                             }
                         )
-                    },
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index }
+                    }
+                }
+
+                1 -> SignupComposable(
+                    isWebUi = isWebUi,
+                    signUp = { email, password, username ->
+                        onSignUp(email, password, username)
+                    }
                 )
             }
-        }
 
-        Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        when (selectedTab) {
-            0 -> {
-                var showReset by remember { mutableStateOf(false) }
-                if (showReset) {
-                    ResetPasswordComposable(
-                        onBackToLogin = { showReset = false },
-                        resetPassword = { email -> resetPassword(email) },
-                        isWebUi = isWebUi
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                TextButton(
+                    onClick = {
+                        showLanguageMenu = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null
                     )
-                } else {
-                    LoginComposable(
-                        login = { email, password ->
-                            onLogin(email, password)
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(text = SmartTutorStrings.change_language)
+                }
+
+                DropdownMenu(
+                    expanded = showLanguageMenu,
+                    onDismissRequest = {
+                        showLanguageMenu = false
+                    }
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text("English")
                         },
-                        isWebUi = isWebUi,
-                        onForgotPasswordClick = {
-                            showReset = true
-                        })
+                        onClick = {
+                            LanguageManager.setLanguage(AppLanguage.ENGLISH)
+                            showLanguageMenu = false
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text("Ελληνικά")
+                        },
+                        onClick = {
+                            LanguageManager.setLanguage(AppLanguage.GREEK)
+                            showLanguageMenu = false
+                        }
+                    )
                 }
             }
 
-            1 -> SignupComposable(
-                isWebUi = isWebUi,
-                signUp = { email, password, username ->
-                    onSignUp(email, password, username)
-                }
-            )
         }
     }
+
+
 }
 
 enum class RegistrationScreens {
