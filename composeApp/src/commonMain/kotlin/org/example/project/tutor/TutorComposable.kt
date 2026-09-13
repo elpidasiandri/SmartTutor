@@ -397,6 +397,7 @@ fun TutorChatUI(
                                     CircularProgressIndicator()
                                     Spacer(modifier = Modifier.height(12.dp))
 
+
                                     Text(
                                         text = pdfProcessingProgress?.let {
                                             SmartTutorStrings.preparing_learning_material(it)
@@ -404,6 +405,20 @@ fun TutorChatUI(
                                         color = Color.Red,
                                         fontWeight = FontWeight.Bold
                                     )
+
+                                    if (pdfProcessingProgress != null) {
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Text(
+                                            text = SmartTutorStrings.large_material_may_take_time,
+                                            color = Color.White,
+                                            fontSize = 14.sp
+                                        )
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        LoadingBubblesComposable()
+                                    }
                                 }
                             }
                         }

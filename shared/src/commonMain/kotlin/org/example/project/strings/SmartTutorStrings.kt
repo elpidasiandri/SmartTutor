@@ -315,18 +315,6 @@ object SmartTutorStrings {
             "Η σωστή απάντηση της ερώτησης είναι:"
         )
 
-    val progress_chat: String
-        get() = localized(
-            "Questions in chat",
-            "Ερωτήσεις στο chat"
-        )
-
-    val overall_progress: String
-        get() = localized(
-            "You have completed:",
-            "Έχεις ολοκληρώσει το:"
-        )
-
     val excersize_title: String
         get() = localized(
             "Exercise",
@@ -345,12 +333,6 @@ object SmartTutorStrings {
             "σωστές και"
         )
 
-    val sum_answers: String
-        get() = localized(
-            "Total responses",
-            "Συνολικές απαντήσεις"
-        )
-
     val wrong_: String
         get() = localized(
             "wrong",
@@ -363,28 +345,10 @@ object SmartTutorStrings {
             "Σωστές"
         )
 
-    val where_: String
-        get() = localized(
-            "where",
-            "όπου"
-        )
-
-    val wrong_parial: String
-        get() = localized(
-            "wrong and partially correct",
-            "λάθος και μερικώς σωστές"
-        )
-
     val you_answered: String
         get() = localized(
             "You answered",
             "Απάντησες"
-        )
-
-    val you_answered_times: String
-        get() = localized(
-            "times",
-            "φορές"
         )
 
     val progress_passed: String
@@ -420,7 +384,14 @@ object SmartTutorStrings {
             "Waiting for a response....",
             "Αναμονή για απάντηση...."
         )
+    val large_material_may_take_time: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH ->
+                "Large learning materials may take a little longer to process. Please wait while SmartTutor prepares your material."
 
+            AppLanguage.GREEK ->
+                "Το μεγάλο εκπαιδευτικό υλικό μπορεί να χρειαστεί λίγο περισσότερο χρόνο για να επεξεργαστεί. Παρακαλώ περιμένετε όσο το SmartTutor προετοιμάζει το υλικό σας."
+        }
     val learning_tab: String
         get() = localized(
             "Learning",
@@ -454,12 +425,6 @@ object SmartTutorStrings {
     // ---------------------------------------------------------
     // EXERCISE TAB
     // ---------------------------------------------------------
-
-    val excersize_not_found: String
-        get() = localized(
-            "No exercises found.",
-            "Δεν βρέθηκαν ασκήσεις."
-        )
 
     val excercise: String
         get() = localized(
@@ -575,22 +540,10 @@ object SmartTutorStrings {
             "Πρώτα πρέπει να ολοκληρώσεις όλες τις ασκήσεις της ενότητας και μετά μπορείς να απαντήσεις ξανά."
         )
 
-    val and_: String
-        get() = localized(
-            "and",
-            "και"
-        )
-
     val the_correct_answer_is: String
         get() = localized(
             "The correct answer is",
             "Η σωστή απάντηση είναι"
-        )
-
-    val my_progress_attemps_that_u_did: String
-        get() = localized(
-            "The attempts you made in total are",
-            "Οι προσπάθειες που έκανες συνολικά είναι"
         )
 
     val all_answers: String
@@ -677,7 +630,7 @@ object SmartTutorStrings {
 
     fun units_read(
         read: Int,
-        total: Int
+        total: Int,
     ): String =
         localized(
             "$read/$total units read",
@@ -686,7 +639,7 @@ object SmartTutorStrings {
 
     fun exercises_answered(
         answered: Int,
-        total: Int
+        total: Int,
     ): String =
         localized(
             "$answered/$total exercises answered",
@@ -704,7 +657,7 @@ object SmartTutorStrings {
         )
 
     fun delete_material_info(
-        subjectTitle: String
+        subjectTitle: String,
     ): String =
         localized(
             "This will delete \"$subjectTitle\" and all its units and chat history. This cannot be undone.",
@@ -717,12 +670,12 @@ object SmartTutorStrings {
             "Ακύρωση"
         )
 
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
 // LOADING / EXERCISES
 // ---------------------------------------------------------
 
     fun preparing_learning_material(
-        progress: Int
+        progress: Int,
     ): String =
         localized(
             "Preparing your learning material... $progress%",
@@ -828,9 +781,6 @@ object SmartTutorStrings {
             "Exercise completed",
             "Η άσκηση ολοκληρώθηκε"
         )
-
-
-
 
 
 }
