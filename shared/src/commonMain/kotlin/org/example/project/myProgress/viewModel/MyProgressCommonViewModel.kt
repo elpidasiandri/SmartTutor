@@ -17,6 +17,7 @@ import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 
 class MyProgressCommonViewModel(
     private val scope: CoroutineScope,
@@ -26,6 +27,7 @@ class MyProgressCommonViewModel(
     private val getProgressOverviewUseCase: GetProgressOverviewUseCase,
     private val getChatProgressListUseCase: GetChatProgressListUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
+    private val getChatByIdUseCase: GetChatByIdUseCase,
 ) {
     private val _state = MutableStateFlow(MyProgressState())
     val state: StateFlow<MyProgressState> = _state
@@ -99,38 +101,55 @@ class MyProgressCommonViewModel(
                 val overview = getProgressOverviewUseCase(userId)
 
                 val chatProgressList = getChatProgressListUseCase(userId)
-                val pdfProgressList = chatProgressList.map { chat ->
 
+                val pdfProgressList = chatProgressList.map { chat ->
+                    val fullChat = getChatByIdUseCase(chatId = chat.chatId, userId = userId)
+                    val sourceUnits =
+                        fullChat.result?.learningUnits ?: fullChat.partialResult?.learningUnits
+                        ?: emptyList()
                     val exerciseStats =
                         getExerciseStateUseCase(userId = userId, chatId = chat.chatId)
                     val statsByUnitIndex = exerciseStats.associateBy { it.unitIndex }
 
-                    val unitStats =
-                        chat.units.map { chatUnit ->
-                            val exerciseState = statsByUnitIndex[chatUnit.unitIndex]
-                            val questions =
-                                exerciseState?.questions?.map { it.toDomain() }.orEmpty()
-                            val answeredUniqueExercises =
-                                questions.map { it.exerciseIndex }.distinct().size
-                            val awardedPoints = questions.sumOf { question ->
-                                question.attempts.maxByOrNull { it.attemptNumber }?.awardedPoints
-                                    ?: 0.0
-                            }
+                    val unitStats = chat.units.map { chatUnit ->
 
-                            LearningUnitExerciseStatsUi(
-                                unitIndex = chatUnit.unitIndex,
-                                unitTitle = chatUnit.unitTitle,
-                                correctCount = exerciseState?.correctCount ?: 0,
-                                wrongCount = exerciseState?.wrongCount ?: 0,
-                                totalAnswered = answeredUniqueExercises,
-                                totalExercises = chatUnit.totalExercises,
-                                totalMaxPoints = chatUnit.totalMaxPoints,
-                                awardedPoints = awardedPoints,
-                                isRead = chatUnit.isRead,
-                                questions = questions
-                            )
+                        val sourceUnit = sourceUnits.getOrNull(chatUnit.unitIndex)
+                        val exerciseState = statsByUnitIndex[chatUnit.unitIndex]
+                        val questions = exerciseState?.questions?.map { it.toDomain() }.orEmpty()
+                        val answeredUniqueExercises =
+                            questions.map { it.exerciseIndex }.distinct().size
+
+
+                        val actualExercises = sourceUnit?.exercises.orEmpty()
+
+                        val totalExercises = maxOf(
+                            20,
+                            actualExercises.size,
+                            chatUnit.totalExercises,
+                            answeredUniqueExercises
+                        )
+
+                        val actualTotalMaxPoints = actualExercises.sumOf { it.maxPoints ?: 0.0 }
+
+                        val totalMaxPoints = maxOf(actualTotalMaxPoints, chatUnit.totalMaxPoints)
+
+                        val awardedPoints = questions.sumOf { question ->
+                            question.attempts.maxByOrNull { it.attemptNumber }?.awardedPoints ?: 0.0
                         }
 
+                        LearningUnitExerciseStatsUi(
+                            unitIndex = chatUnit.unitIndex,
+                            unitTitle = chatUnit.unitTitle,
+                            correctCount = exerciseState?.correctCount ?: 0,
+                            wrongCount = exerciseState?.wrongCount ?: 0,
+                            totalAnswered = answeredUniqueExercises,
+                            totalExercises = totalExercises,
+                            totalMaxPoints = totalMaxPoints,
+                            awardedPoints = awardedPoints,
+                            isRead = chatUnit.isRead,
+                            questions = questions
+                        )
+                    }
                     val totalLearningUnits = unitStats.size
                     val readLearningUnits = unitStats.count { it.isRead }
                     val totalExercises = unitStats.sumOf { it.totalExercises }

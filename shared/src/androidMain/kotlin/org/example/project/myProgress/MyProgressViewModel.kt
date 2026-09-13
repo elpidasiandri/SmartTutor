@@ -11,6 +11,7 @@ import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
 import org.example.project.myProgress.viewModel.MyProgressCommonViewModel
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 
 class MyProgressViewModel(
     private val ioDispatcher: CoroutineScope,
@@ -20,6 +21,7 @@ class MyProgressViewModel(
     private val getProgressOverviewUseCase: GetProgressOverviewUseCase,
     private val getChatProgressListUseCase: GetChatProgressListUseCase,
     private val getExerciseStatsUseCase: GetExerciseStatsUseCase,
+    private val getChatByIdUseCase: GetChatByIdUseCase,
     ) : ViewModel() {
     val common = MyProgressCommonViewModel(
         scope = ioDispatcher,
@@ -28,7 +30,8 @@ class MyProgressViewModel(
         platform = platform,
         getProgressOverviewUseCase = getProgressOverviewUseCase,
         getChatProgressListUseCase = getChatProgressListUseCase,
-        getExerciseStateUseCase = getExerciseStatsUseCase
+        getExerciseStateUseCase = getExerciseStatsUseCase,
+        getChatByIdUseCase = getChatByIdUseCase,
     )
     val state: StateFlow<MyProgressState> = common.state
 

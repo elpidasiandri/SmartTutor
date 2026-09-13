@@ -11,6 +11,7 @@ import org.example.project.myProgress.repo.ProgressRepoImpl
 import org.example.project.myProgress.useCases.GetChatProgressListUseCase
 import org.example.project.myProgress.useCases.GetExerciseStatsUseCase
 import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -19,6 +20,7 @@ val myProgressModule = module {
     single { GetProgressOverviewUseCase(get()) }
     single { GetChatProgressListUseCase(get()) }
     single { GetExerciseStatsUseCase(get()) }
+    factory { GetChatByIdUseCase(get()) }
     factory<IProgressRepo> {
         ProgressRepoImpl(
             httpClient = get(),
@@ -35,7 +37,8 @@ val myProgressModule = module {
             platform = get(),
             getProgressOverviewUseCase = get(),
             getChatProgressListUseCase = get(),
-            get()
+            get(),
+            get(),
         )
     }
 }

@@ -10,11 +10,13 @@ import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.WebAnalyticsTrackerImpl
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
+import org.example.project.tutor.useCases.GetChatByIdUseCase
 import org.koin.dsl.module
 
 val myProgressModule = module {
     factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
     factory { GetProgressOverviewUseCase(get()) }
+    factory { GetChatByIdUseCase(get()) }
     factory { GetChatProgressListUseCase(get()) }
     factory { GetExerciseStatsUseCase(get()) }
     single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
@@ -48,6 +50,7 @@ val myProgressModule = module {
 
     factory {
         MyProgressController(
+            get(),
             get(),
             get(),
             get(),

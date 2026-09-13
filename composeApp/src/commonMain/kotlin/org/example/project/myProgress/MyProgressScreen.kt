@@ -292,16 +292,18 @@ private fun PdfExerciseDetails(
                         Text(
                             text = "$answers_left " + "$remaining " + "$answers_left_of_questions"
                         )
+                        if (unit.totalMaxPoints > 0.0) {
+                            Text(
+                                text = "$grade_info : " + "${unit.awardedPoints}/" + "${unit.totalMaxPoints} " + "($gradePercent%)",
+                                color = if (failed) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
 
-                        Text(
-                            text = "$grade_info : " + "${unit.awardedPoints}/" + "${unit.totalMaxPoints} " + "($gradePercent%)",
-                            color = if (failed) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
-                            fontWeight = FontWeight.Bold
-                        )
 
                         when {
                             failed -> {
