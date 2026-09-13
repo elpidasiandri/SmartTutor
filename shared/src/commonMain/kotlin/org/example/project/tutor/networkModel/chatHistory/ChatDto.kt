@@ -48,7 +48,8 @@ data class ChatMessageDto(
     @SerialName("unitNumber") val unitNumber: Int? = null,
     @SerialName("unitTitle") val unitTitle: String? = null,
     @SerialName("createdAtEpochMillis") val createdAtEpochMillis: Long,
-)
+
+    )
 
 @Serializable
 data class AskTutorRequest(
@@ -73,6 +74,9 @@ data class AskTutorRequest(
 
     @SerialName("exerciseIndex")
     val exerciseIndex: Int? = null,
+    @SerialName("exerciseQuestion") val exerciseQuestion: String? = null,
+    @SerialName("suggestedSolution") val suggestedSolution: String? = null,
+    @SerialName("maxPoints") val maxPoints: Double? = null,
 )
 
 @Serializable

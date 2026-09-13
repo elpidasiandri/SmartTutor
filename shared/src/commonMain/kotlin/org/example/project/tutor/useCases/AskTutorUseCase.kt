@@ -19,6 +19,9 @@ class AskTutorUseCase(
         saveToChat: Boolean,
         isExerciseEvaluation: Boolean = false,
         exerciseIndex: Int? = null,
+        exerciseQuestion: String? = null,
+        suggestedSolution: String? = null,
+        maxPoints: Double? = null,
     ): AskTutorResponse {
         return repo.askTutor(
             chatId = chatId,
@@ -33,7 +36,10 @@ class AskTutorUseCase(
                 responseLanguage = when (LanguageManager.language.value) {
                     AppLanguage.GREEK -> "el"
                     AppLanguage.ENGLISH -> "en"
-                }
+                },
+                exerciseQuestion = exerciseQuestion,
+                suggestedSolution = suggestedSolution,
+                maxPoints = maxPoints,
             ),
             token = token
         )

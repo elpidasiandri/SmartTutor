@@ -1262,6 +1262,9 @@ class TutorCommonViewModel(
                     saveToChat = false,
                     isExerciseEvaluation = true,
                     exerciseIndex = event.exerciseIndex,
+                    exerciseQuestion = event.question,
+                    suggestedSolution = event.suggestedSolution,
+                    maxPoints = event.maxPoints,
                 )
 
                 val evaluation = response.evaluation

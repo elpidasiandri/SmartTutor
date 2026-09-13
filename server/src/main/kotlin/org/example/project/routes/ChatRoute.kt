@@ -230,19 +230,29 @@ fun Route.chatRoutes(
              * ΑΞΙΟΛΟΓΗΣΗ ΑΝΟΙΧΤΗΣ ΑΣΚΗΣΗΣ
              */
             if (req.isExerciseEvaluation) {
-                val exerciseIndex = req.exerciseIndex
-                    ?: return@post call.respond(
-                        HttpStatusCode.BadRequest,
-                        mapOf("error" to "Missing exerciseIndex")
-                    )
+                val question = req.exerciseQuestion
+                    ?.trim()
+                    .orEmpty()
 
-                val exercise = unit.exercises.getOrNull(exerciseIndex)
-                    ?: return@post call.respond(
-                        HttpStatusCode.BadRequest,
-                        mapOf("error" to "Invalid exerciseIndex")
-                    )
+                val suggestedSolution = req.suggestedSolution
+                    ?.trim()
+                    .orEmpty()
 
-                val maxPoints = exercise.maxPoints ?: 0.0
+                val maxPoints = req.maxPoints ?: 0.0
+
+                if (question.isBlank()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing exerciseQuestion")
+                    )
+                }
+
+                if (suggestedSolution.isBlank()) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Missing suggestedSolution")
+                    )
+                }
 
                 if (maxPoints <= 0.0) {
                     return@post call.respond(
@@ -259,8 +269,8 @@ fun Route.chatRoutes(
                     language = responseLanguage,
                     fileName = chat.title,
                     unitTitle = unit.title.orEmpty(),
-                    question = exercise.question.orEmpty(),
-                    suggestedSolution = exercise.solution.orEmpty(),
+                    question = question,
+                    suggestedSolution = suggestedSolution,
                     userAnswer = messageText,
                     maxPoints = maxPoints,
                 )

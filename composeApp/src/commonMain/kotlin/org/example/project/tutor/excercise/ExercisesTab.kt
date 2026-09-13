@@ -380,7 +380,6 @@ private fun ExerciseCard(
                 Button(
                     onClick = {
                         if (canAnswerNow) {
-                            showCorrectAnswer = true
                             onAskTutorForOpenExercise(
                                 index,
                                 exercise.question,
