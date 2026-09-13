@@ -84,7 +84,7 @@ fun ExercisesTab(
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
 ) {
-    val hasAnsweredAllExercisesInUnit = exercises.all { it.isAnswered }
+    val currentAttemptRound = (exercises.minOfOrNull { it.attemptsCount } ?: 0) + 1
     val safeIndex = selectedExerciseIndex.coerceIn(0, exercises.lastIndex)
     val exercise = exercises[safeIndex]
     val isLastExercise = safeIndex == exercises.lastIndex
@@ -97,11 +97,11 @@ fun ExercisesTab(
         verticalArrangement = Arrangement.spacedBy(spacing12)
     ) {
         Text(
-            text = "$excercise ${safeIndex + 1}/${exercises.size}",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp
+            text = "$current_attemp $currentAttemptRound",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = AppColors.Purple
         )
-
         ExerciseCard(
             index = safeIndex,
             exercise = exercise,
@@ -110,7 +110,7 @@ fun ExercisesTab(
             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
             answeredExerciseKeys = answeredExerciseKeys,
             currentUnitIndex = currentUnitIndex,
-            hasAnsweredAllExercisesInUnit = hasAnsweredAllExercisesInUnit,
+            currentAttemptRound = currentAttemptRound,
         )
 
     }
@@ -143,8 +143,7 @@ private fun ExerciseCard(
     ) -> Unit,
     answeredExerciseKeys: Set<String>,
     currentUnitIndex: Int,
-    hasAnsweredAllExercisesInUnit: Boolean,
-
+    currentAttemptRound: Int,
     ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
@@ -152,10 +151,15 @@ private fun ExerciseCard(
     var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
     var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
+
+
     val latestAttempt = exercise.latestAttempt
+    val exerciseAttemptsCount = exercise.attemptsCount
+    val canAnswerNow = exerciseAttemptsCount < currentAttemptRound
+    val isTemporarilyLocked = !canAnswerNow
+
     val answered = latestAttempt != null
-    val isTemporarilyLocked = answered && !hasAnsweredAllExercisesInUnit
-    val canAnswerNow = !answered || hasAnsweredAllExercisesInUnit
+
     val type = exercise.type
     var showCorrectAnswer by rememberSaveable(index) { mutableStateOf(false) }
     val startedAt = remember(exercise.question) {
@@ -242,7 +246,7 @@ private fun ExerciseCard(
 
                     }
 
-                if (!hasAnsweredAllExercisesInUnit) {
+                if (isTemporarilyLocked) {
                     Text(
                         text = attemp_info_retry,
                         fontSize = 12.sp,
