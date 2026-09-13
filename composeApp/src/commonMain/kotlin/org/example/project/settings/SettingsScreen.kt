@@ -19,15 +19,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import org.example.project.components.LanguageSelector
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing48
 import org.example.project.dimens.Dimens.spacing8
+import org.example.project.strings.LanguageManager
 import org.example.project.strings.SmartTutorStrings.change_password_title
 import org.example.project.strings.SmartTutorStrings.delete_account
 import org.example.project.strings.SmartTutorStrings.settings_title
@@ -40,6 +44,7 @@ fun SettingsScreen(
     onDeleteAccountClick: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val selectedLanguage by LanguageManager.language.collectAsState()
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -70,6 +75,30 @@ fun SettingsScreen(
             Icon(Icons.Default.Lock, contentDescription = null)
             Spacer(Modifier.width(spacing12))
             Text(change_password_title, fontSize = 18.sp)
+        }
+
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+        Spacer(
+            Modifier.height(spacing24)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing16)
+        ) {
+            Text(
+                text = "Language / Γλώσσα",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            LanguageSelector(
+                selectedLanguage = selectedLanguage,
+                onLanguageSelected = { language ->
+                    LanguageManager.setLanguage(language)
+                }
+            )
         }
 
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)

@@ -78,6 +78,7 @@ import org.koin.compose.koinInject
 import kotlin.String
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.foundation.clickable
+import org.example.project.strings.SmartTutorStrings
 
 @Composable
 fun TutorScreen(
@@ -398,7 +399,7 @@ fun TutorChatUI(
 
                                     Text(
                                         text = pdfProcessingProgress?.let {
-                                            "Preparing your learning material... $it%"
+                                            SmartTutorStrings.preparing_learning_material(it)
                                         } ?: waiting_for_response,
                                         color = Color.Red,
                                         fontWeight = FontWeight.Bold
@@ -683,7 +684,7 @@ private fun TutorChatContent(
                                 modifier = Modifier.height(12.dp)
                             )
 
-                            Text("Generating exercises...")
+                            Text(SmartTutorStrings.generating_exercises)
                         }
                     }
                 } else if (currentUnit.exercises.isEmpty()) {
@@ -693,7 +694,7 @@ private fun TutorChatContent(
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No exercises available")
+                        Text(SmartTutorStrings.no_exercises_available)
                     }
                 } else {
                     ExercisesTab(

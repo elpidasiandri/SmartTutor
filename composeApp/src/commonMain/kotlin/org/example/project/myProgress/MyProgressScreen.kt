@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.example.project.myProgress.state.MyProgressState
 import org.example.project.myProgress.state.PdfProgressUi
+import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.all_answers
 import org.example.project.strings.SmartTutorStrings.answers_left
 import org.example.project.strings.SmartTutorStrings.answers_left_of_questions
@@ -88,7 +89,7 @@ fun MyProgressScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = SmartTutorStrings.back
                         )
                     }
                 }
@@ -104,7 +105,7 @@ fun MyProgressScreen(
         ) {
             item {
                 Text(
-                    text = "Πρόοδος ανά υλικό",
+                    text =  SmartTutorStrings.progress_by_material,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -143,7 +144,9 @@ private fun PdfProgressCard(
                     Spacer(Modifier.height(6.dp))
 
                     Text(
-                        text = "Πρόοδος: ${pdf.progressPercent}%",
+                        text = SmartTutorStrings.progress_percent(
+                            pdf.progressPercent
+                        ),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -152,12 +155,18 @@ private fun PdfProgressCard(
                     Spacer(Modifier.height(4.dp))
 
                     Text(
-                        text = "${pdf.readUnits}/${pdf.totalUnits} ενότητες διαβασμένες",
+                        text = SmartTutorStrings.units_read(
+                            read = pdf.readUnits,
+                            total = pdf.totalUnits
+                        ),
                         style = MaterialTheme.typography.bodySmall
                     )
 
                     Text(
-                        text = "${pdf.answeredExercises}/${pdf.totalExercises} ασκήσεις απαντημένες",
+                        text = SmartTutorStrings.exercises_answered(
+                            answered = pdf.answeredExercises,
+                            total = pdf.totalExercises
+                        ),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

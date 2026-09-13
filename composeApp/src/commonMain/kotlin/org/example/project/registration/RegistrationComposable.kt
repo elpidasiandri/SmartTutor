@@ -7,12 +7,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import org.example.project.components.LanguageSelector
 import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.registration.login.LoginComposable
 import org.example.project.registration.reset.ResetPasswordComposable
 import org.example.project.registration.signUp.SignupComposable
+import org.example.project.strings.LanguageManager
+import org.example.project.strings.SmartTutorStrings
 
 @Composable
 fun RegistrationComposable(
@@ -26,6 +29,7 @@ fun RegistrationComposable(
     isWebUi: Boolean,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
+    val selectedLanguage by LanguageManager.language.collectAsState()
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -50,11 +54,29 @@ fun RegistrationComposable(
             .padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        LanguageSelector(
+            selectedLanguage = selectedLanguage,
+            onLanguageSelected = { language ->
+                LanguageManager.setLanguage(language)
+            }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         TabRow(selectedTabIndex = selectedTab) {
             tabs.forEachIndexed { index, title ->
                 Tab(
-                    text = { Text(title.name) },
+                    text = {
+                        Text(
+                            when (title) {
+                                RegistrationScreens.Login ->
+                                    SmartTutorStrings.login
+
+                                RegistrationScreens.SignUp ->
+                                    SmartTutorStrings.signup
+                            }
+                        )
+                    },
                     selected = selectedTab == index,
                     onClick = { selectedTab = index }
                 )

@@ -47,6 +47,7 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing4
 import org.example.project.dimens.Dimens.spacing8
+import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.chat_history_title
 import org.example.project.strings.SmartTutorStrings.delete_button
 import org.example.project.strings.SmartTutorStrings.excersize_title
@@ -410,12 +411,16 @@ private fun DeleteSubjectDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete material?") },
+        title = { Text(SmartTutorStrings.delete_material_title) },
         text = {
-            Text("This will delete “$subjectTitle” and all its units and chat history. This cannot be undone.")
+            Text(
+                SmartTutorStrings.delete_material_info(
+                    subjectTitle
+                )
+            )
         },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Delete") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = onConfirm) { Text(SmartTutorStrings.delete_button) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(SmartTutorStrings.cancel) } }
     )
 }
 

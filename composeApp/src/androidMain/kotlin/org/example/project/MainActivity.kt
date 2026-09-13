@@ -10,6 +10,8 @@ import com.google.firebase.auth.FirebaseAuth
 import org.example.project.storage.StorageHelper
 import org.example.project.registration.di.registrationModule
 import org.example.project.registrationScreen.RegistrationActivity
+import org.example.project.strings.AndroidLanguageStorage
+import org.example.project.strings.LanguageManager
 import org.example.project.tutorScreen.TutorActivity
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -19,6 +21,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        LanguageManager.initialize(
+            AndroidLanguageStorage(
+                applicationContext
+            )
+        )
         startKoin {
             androidContext(this@MainActivity)
             modules(registrationModule)

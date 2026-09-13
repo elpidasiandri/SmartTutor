@@ -15,6 +15,8 @@ import org.example.project.registration.AuthUserHolder
 import org.example.project.registration.firebase.FirebaseContext
 import org.example.project.registration.firebase.module.firebaseModule
 import org.example.project.registration.firebase.onAuthStateChanged
+import org.example.project.strings.LanguageManager
+import org.example.project.strings.WebLanguageStorage
 import org.example.project.tutor.di.tutorModule
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,6 +25,10 @@ import org.koin.core.context.startKoin
 @OptIn(ExperimentalComposeUiApi::class)
 object WebApp : KoinComponent {
     fun start() {
+        LanguageManager.initialize(
+            WebLanguageStorage()
+        )
+
         startKoin {
             modules(
                 firebaseModule,
