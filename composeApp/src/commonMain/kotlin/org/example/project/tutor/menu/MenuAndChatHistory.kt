@@ -358,7 +358,7 @@ private fun SubjectHeaderRow(
             modifier = Modifier.weight(1f)
         )
 
-//        MoreButton(onClick = onMoreClick, Modifier.height(16.dp).width(24.dp))
+        MoreButton(onClick = onMoreClick, Modifier.height(16.dp).width(24.dp))
 
         if (subject.learningUnits.isNotEmpty()) {
             Icon(
