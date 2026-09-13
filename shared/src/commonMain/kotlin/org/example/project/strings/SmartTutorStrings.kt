@@ -369,13 +369,6 @@ object SmartTutorStrings {
             "Failed",
             "Αποτυχία"
         )
-
-    val progress_unit_not_completed: String
-        get() = localized(
-            "The unit has not been completed yet",
-            "Η ενότητα δεν έχει ολοκληρωθεί ακόμη"
-        )
-
     val progress_unit_not_completed_see_answers: String
         get() = localized(
             "To see what you answered and the correct answer, go to \"My Progress\" from the menu.",

@@ -59,7 +59,6 @@ import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.of_which
 import org.example.project.strings.SmartTutorStrings.progress_failed
 import org.example.project.strings.SmartTutorStrings.progress_passed
-import org.example.project.strings.SmartTutorStrings.progress_unit_not_completed
 import org.example.project.strings.SmartTutorStrings.total_atempts_title
 import org.example.project.strings.SmartTutorStrings.unit_progress_title
 import org.example.project.strings.SmartTutorStrings.unit_title
@@ -324,14 +323,6 @@ private fun PdfExerciseDetails(
                                     text = progress_passed,
                                     color = Color(0xFF2E7D32),
                                     fontWeight = FontWeight.ExtraBold
-                                )
-                            }
-
-                            answered > 0 -> {
-                                Text(
-                                    text = progress_unit_not_completed,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
