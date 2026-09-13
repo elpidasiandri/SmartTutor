@@ -433,18 +433,30 @@ fun Route.chatRoutes(
 
         delete("/{chatId}") {
             val userId = call.request.queryParameters["userId"]
-                ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing userId")
+                ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Missing userId"
+                )
 
             val chatId = call.parameters["chatId"]
-                ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing chatId")
+                ?: return@delete call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Missing chatId"
+                )
 
             try {
-                chatRepo.deleteChat(userId, chatId)
+                chatRepo.deleteChat(userId = userId, chatId = chatId)
+
+                progressRepo.deleteChatProgress(userId = userId, chatId = chatId)
+
                 call.respond(HttpStatusCode.OK, mapOf("success" to true))
+
             } catch (t: Throwable) {
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    mapOf("error" to (t.message ?: "Failed to delete chat"))
+                    mapOf(
+                        "error" to (t.message ?: "Failed to delete chat")
+                    )
                 )
             }
         }

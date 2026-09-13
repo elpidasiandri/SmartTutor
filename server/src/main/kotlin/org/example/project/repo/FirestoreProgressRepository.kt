@@ -210,12 +210,7 @@ class FirestoreProgressRepository(
     }
 
     override fun getChatProgressList(userId: String): List<ChatProgressDto> {
-        val snap = usersCol.document(userId)
-            .collection("progress")
-            .document("chats")
-            .collection("items")
-            .get()
-            .get()
+        val snap = usersCol.document(userId).collection("progress").document("chats").collection("items").get().get()
 
         return snap.documents.map {
             val unitsRaw = it.get("units") as? List<*>
