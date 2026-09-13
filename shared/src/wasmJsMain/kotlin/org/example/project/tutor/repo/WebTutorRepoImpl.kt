@@ -31,6 +31,8 @@ import org.example.project.registration.firebase.FirebaseApp
 import org.example.project.registration.firebase.FirebaseAuth
 import org.example.project.registration.firebase.getAuth
 import org.example.project.registration.firebase.signOut
+import org.example.project.strings.AppLanguage
+import org.example.project.strings.LanguageManager
 import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.AddMoreExercisesResponse
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
@@ -57,6 +59,11 @@ class WebTutorRepoImpl(
         unitNumber: Int,
         token: String,
     ): UnitExercisesOnlyDto {
+
+        val responseLanguage = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "el"
+            AppLanguage.ENGLISH -> "en"
+        }
         val response = httpClient.post(
             "$baseUrl/v1/pdfs/$documentId/units/$unitNumber/exercises"
         ) {
@@ -64,7 +71,7 @@ class WebTutorRepoImpl(
                 HttpHeaders.Authorization,
                 "Bearer $token"
             )
-
+            parameter("responseLanguage", responseLanguage)
             accept(ContentType.Application.Json)
             expectSuccess = false
 
@@ -86,10 +93,22 @@ class WebTutorRepoImpl(
 
         return json.decodeFromString(raw)
     }
-    override suspend fun uploadFile(file: UploadFile, idToken: String): UploadPdfResponse {
+
+    override suspend fun uploadFile(
+        file: UploadFile,
+        idToken: String,
+    ): UploadPdfResponse {
+
+        val responseLanguage = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "el"
+            AppLanguage.ENGLISH -> "en"
+        }
+
         val response = httpClient.submitFormWithBinaryData(
             url = "$baseUrl/v1/pdfs/upload",
             formData = formData {
+                append(key = "responseLanguage", value = responseLanguage)
+
                 append(
                     key = "file",
                     value = file.bytes,
@@ -109,9 +128,13 @@ class WebTutorRepoImpl(
         }
 
         val raw = response.bodyAsText()
+
         if (!response.status.isSuccess()) {
-            error("Upload failed: ${response.status} body=$raw")
+            error(
+                "Upload failed: ${response.status} body=$raw"
+            )
         }
+
         return json.decodeFromString(raw)
     }
 
@@ -190,11 +213,21 @@ class WebTutorRepoImpl(
         chatId: String,
         userId: String,
         unitIndex: Int,
-        token: String
+        token: String,
     ): AddMoreExercisesResponse {
-        return httpClient.post("$baseUrl/v1/chats/$chatId/units/$unitIndex/exercises/more") {
+
+        val responseLanguage = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "el"
+            AppLanguage.ENGLISH -> "en"
+        }
+
+        return httpClient.post(
+            "$baseUrl/v1/chats/$chatId/units/$unitIndex/exercises/more"
+        ) {
             header(HttpHeaders.Authorization, "Bearer $token")
             parameter("userId", userId)
+            parameter("responseLanguage", responseLanguage)
+
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             expectSuccess = false

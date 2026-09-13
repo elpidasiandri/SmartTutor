@@ -54,7 +54,8 @@ data class ChatMessageDto(
 data class AskTutorRequest(
     @SerialName("unitIndex")
     val unitIndex: Int?,
-
+    @SerialName("responseLanguage")
+    val responseLanguage: String,
     @SerialName("message")
     val message: String?,
 

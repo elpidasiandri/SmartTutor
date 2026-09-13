@@ -133,15 +133,14 @@ class PdfJobWorker(
                     for (attempt in 1..3) {
 
                         try {
-                            val result =
-                                llm.generatePreviewUnitsFromPdfChunkWithCarry(
-                                    pdfChunkFile = chunk,
-                                    language = detectedLanguage,
-                                    fileName = job.fileName,
-                                    unitNumber = unitNumber,
-                                    carry = carry,
-                                    isLastChunk = isLastChunk
-                                )
+                            val result = llm.generatePreviewUnitsFromPdfChunkWithCarry(
+                                pdfChunkFile = chunk,
+                                language = job.responseLanguage,
+                                fileName = job.fileName,
+                                unitNumber = unitNumber,
+                                carry = carry,
+                                isLastChunk = isLastChunk
+                            )
 
                             /*
                              * Success.
@@ -253,7 +252,8 @@ class PdfJobWorker(
 
                     val partialResult =
                         LearningUnitsPrototypeDto(
-                            prototypeTitle = prototypeTitle?.takeIf { it.isNotBlank() } ?: job.fileName.substringBeforeLast("."),
+                            prototypeTitle = prototypeTitle?.takeIf { it.isNotBlank() }
+                                ?: job.fileName.substringBeforeLast("."),
                             language = detectedLanguage,
                             totalUnits = units.size,
                             learningUnits = units.toList()
@@ -281,7 +281,8 @@ class PdfJobWorker(
 
             val result =
                 LearningUnitsPrototypeDto(
-                    prototypeTitle = prototypeTitle?.takeIf { it.isNotBlank() } ?: job.fileName.substringBeforeLast("."),
+                    prototypeTitle = prototypeTitle?.takeIf { it.isNotBlank() }
+                        ?: job.fileName.substringBeforeLast("."),
                     language = detectedLanguage,
                     totalUnits = units.size,
                     learningUnits = units.toList()

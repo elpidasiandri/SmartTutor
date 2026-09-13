@@ -23,6 +23,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
         documentId: String,
         fileName: String,
         storagePath: String,
+        responseLanguage: String,
     ) {
         val now = Timestamp.now()
 
@@ -42,7 +43,7 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
                 "partialResultJson" to null,
                 "resultJson" to null,
                 "lastLlmRaw" to null,
-
+                "responseLanguage" to responseLanguage,
                 "createdAt" to now,
                 "updatedAt" to now,
             )
@@ -85,7 +86,8 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
             PdfJob(
                 documentId = doc.id,
                 fileName = doc.getString("fileName") ?: "",
-                storagePath = doc.getString("storagePath") ?: ""
+                storagePath = doc.getString("storagePath") ?: "",
+                responseLanguage = doc.getString("responseLanguage") ?: "en"
             )
         }.sortedBy { it.documentId }
 

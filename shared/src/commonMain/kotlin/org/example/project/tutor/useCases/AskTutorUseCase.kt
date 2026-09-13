@@ -1,5 +1,7 @@
 package org.example.project.tutor.useCases
 
+import org.example.project.strings.AppLanguage
+import org.example.project.strings.LanguageManager
 import org.example.project.tutor.networkModel.chatHistory.AskTutorRequest
 import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.repo.ITutorRepo
@@ -28,6 +30,10 @@ class AskTutorUseCase(
                 saveToChat = saveToChat,
                 isExerciseEvaluation = isExerciseEvaluation,
                 exerciseIndex = exerciseIndex,
+                responseLanguage = when (LanguageManager.language.value) {
+                    AppLanguage.GREEK -> "el"
+                    AppLanguage.ENGLISH -> "en"
+                }
             ),
             token = token
         )

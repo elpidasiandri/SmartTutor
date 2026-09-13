@@ -33,13 +33,17 @@ fun Route.pdfRoutes(
             var fileName = "upload.pdf"
             var savedFile: File? = null
             var badRequest: String? = null
-
+            var responseLanguage = "en"
             val documentId = "doc_" + UUID.randomUUID().toString().replace("-", "")
 
             multipart.forEachPart { part ->
                 try {
                     when (part) {
-                        is PartData.FormItem -> Unit
+                        is PartData.FormItem -> {
+                            if (part.name == "responseLanguage") {
+                                responseLanguage = part.value
+                            }
+                        }
 
                         is PartData.FileItem -> {
                             if (part.name == "file") {
@@ -104,7 +108,8 @@ fun Route.pdfRoutes(
             repo.createAndEnqueue(
                 documentId = documentId,
                 fileName = fileName,
-                storagePath = pdf.absolutePath
+                storagePath = pdf.absolutePath,
+                responseLanguage = responseLanguage
             )
 
             call.respond(
@@ -194,13 +199,13 @@ fun Route.pdfRoutes(
                     val currentUnit = currentResult.learningUnits.firstOrNull {
                         it.numbering == unitNumber
                     } ?: error("Learning unit disappeared")
-
+                    val responseLanguage = resolveTutorLanguage(
+                        call.request.queryParameters["responseLanguage"]
+                    )
                     currentUnit.exercises.ifEmpty {
                         val generated = llm.generateExercisesForUnit(
                             unit = currentUnit,
-                            language = currentResult.language
-                                .orEmpty()
-                                .ifBlank { "en" },
+                            language = responseLanguage,
                             fileName = currentResult.prototypeTitle
                                 .orEmpty()
                                 .ifBlank { documentId },

@@ -10,7 +10,8 @@ interface PdfJobRepository {
     fun createAndEnqueue(
         documentId: String,
         fileName: String,
-        storagePath: String
+        storagePath: String,
+        responseLanguage: String
     )
     fun getCompletedResult(
         documentId: String
@@ -39,5 +40,6 @@ interface PdfJobRepository {
 data class PdfJob(
     val documentId: String,
     val fileName: String,
-    val storagePath: String
+    val storagePath: String,
+    val responseLanguage: String
 )

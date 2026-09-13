@@ -95,6 +95,9 @@ fun Route.chatRoutes(
                 val unitIndex = call.parameters["unitIndex"]?.toIntOrNull()
                     ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Missing unitIndex"))
 
+                val responseLanguage = resolveTutorLanguage(
+                    call.request.queryParameters["responseLanguage"]
+                )
                 application.log.info("MORE EXERCISES userId=$userId chatId=$chatId unitIndex=$unitIndex")
 
                 val chat = chatRepo.getChat(userId, chatId)
@@ -134,7 +137,7 @@ fun Route.chatRoutes(
 
                 val extraExercises = llm.generateAdaptiveExercisesForUnit(
                     unit = unit,
-                    language = chat.language ?: "el",
+                    language = responseLanguage,
                     fileName = chat.title,
                     adaptiveFocus = adaptiveFocus,
                     targetMinutes = 55
@@ -248,8 +251,12 @@ fun Route.chatRoutes(
                     )
                 }
 
+                val responseLanguage = resolveTutorLanguage(
+                    req.responseLanguage
+                )
+
                 val evaluation = llm.gradeOpenExercise(
-                    language = resolveTutorLanguage(chat.language),
+                    language = responseLanguage,
                     fileName = chat.title,
                     unitTitle = unit.title.orEmpty(),
                     question = exercise.question.orEmpty(),
@@ -258,7 +265,7 @@ fun Route.chatRoutes(
                     maxPoints = maxPoints,
                 )
 
-                val resolvedLanguage = resolveTutorLanguage(chat.language)
+                val resolvedLanguage = responseLanguage
 
                 val statusText = when {
                     resolvedLanguage.equals("Greek", ignoreCase = true) -> {
@@ -360,7 +367,7 @@ fun Route.chatRoutes(
                 }
 
             val aiAnswer = llm.answerQuestionForUnit(
-                language = resolveTutorLanguage(chat.language),
+                language = resolveTutorLanguage(req.responseLanguage),
                 fileName = chat.title,
                 unitTitle = unit.title.orEmpty(),
                 tab = req.tab,
@@ -370,9 +377,7 @@ fun Route.chatRoutes(
             )
 
             val aiMessage = ChatMessageDto(
-                messageId = "msg_" + UUID.randomUUID()
-                    .toString()
-                    .replace("-", ""),
+                messageId = "msg_" + UUID.randomUUID().toString().replace("-", ""),
                 chatId = chatId,
                 sender = ChatSender.Ai.value,
                 text = aiAnswer,
