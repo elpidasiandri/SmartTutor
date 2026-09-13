@@ -47,7 +47,14 @@ object SmartTutorStrings {
 
     val signup: String
         get() = localized("Sign Up", "Εγγραφή")
+    val verification_email_sent_info: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH ->
+                "Check your email. We’ve sent you a verification email. It may take a few minutes to arrive. Please also check your Spam folder."
 
+            AppLanguage.GREEK ->
+                "Ελέγξτε το email σας. Σας έχουμε στείλει ένα email επιβεβαίωσης. Μπορεί να χρειαστούν μερικά λεπτά μέχρι να το λάβετε. Ελέγξτε επίσης τον φάκελο ανεπιθύμητης αλληλογραφίας (Spam)."
+        }
     val emailHint: String
         get() = "Email"
 

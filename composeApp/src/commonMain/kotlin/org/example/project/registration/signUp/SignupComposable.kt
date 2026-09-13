@@ -2,9 +2,12 @@ package org.example.project.registration.signUp
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
 import org.example.project.components.errorText.ErrorTextComposable
@@ -27,6 +31,7 @@ import org.example.project.strings.SmartTutorStrings.email_dismatch
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.validation.Validation
+
 
 @Composable
 fun SignupComposable(
@@ -56,10 +61,11 @@ fun SignupComposable(
                 arePasswordsSame && isUsernameValid &&
                 areEmailsSame && isUsernameValid
     }
-
+    var showVerificationInfo by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.padding(spacing16),
-        verticalArrangement = Arrangement.spacedBy(spacing8)
+        verticalArrangement = Arrangement.spacedBy(spacing8),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
 
@@ -133,10 +139,21 @@ fun SignupComposable(
             enabled = isFormValid,
             onClick = {
                 signUp(email.trim(), password1, username)
+                showVerificationInfo = true
             },
             modifier = if (isWebUi) Modifier.width(webSpacing)
                 .padding(vertical = spacing8)
                 .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier
         )
+        if (showVerificationInfo) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = SmartTutorStrings.verification_email_sent_info,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
+
 }
