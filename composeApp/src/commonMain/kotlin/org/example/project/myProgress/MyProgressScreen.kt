@@ -57,17 +57,13 @@ import org.example.project.strings.SmartTutorStrings.grade_info
 import org.example.project.strings.SmartTutorStrings.last_answer
 import org.example.project.strings.SmartTutorStrings.my_progress_title
 import org.example.project.strings.SmartTutorStrings.of_which
-import org.example.project.strings.SmartTutorStrings.overall_progress
-import org.example.project.strings.SmartTutorStrings.progress_chat
 import org.example.project.strings.SmartTutorStrings.progress_failed
 import org.example.project.strings.SmartTutorStrings.progress_passed
 import org.example.project.strings.SmartTutorStrings.progress_unit_not_completed
-import org.example.project.strings.SmartTutorStrings.sum_answers
 import org.example.project.strings.SmartTutorStrings.total_atempts_title
 import org.example.project.strings.SmartTutorStrings.unit_progress_title
 import org.example.project.strings.SmartTutorStrings.unit_title
 import org.example.project.strings.SmartTutorStrings.wrong_
-import org.example.project.strings.SmartTutorStrings.wrong_parial
 import org.example.project.strings.SmartTutorStrings.you_answered
 import org.example.project.strings.SmartTutorStrings.you_answered_of
 import org.example.project.strings.SmartTutorStrings.you_answered_of_answers

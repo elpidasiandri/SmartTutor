@@ -78,6 +78,9 @@ import org.koin.compose.koinInject
 import kotlin.String
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import org.example.project.strings.SmartTutorStrings
 
 @Composable
@@ -893,10 +896,59 @@ fun ChatInputField(
         }
         // Upload PDF button
         if (!fileUploaded) {
-            IconButton(
-                onClick = onUploadPdfClick,
-                enabled = !fileUploaded && !isLoading
-            ) { Icon(Icons.Default.UploadFile, contentDescription = "Upload PDF") }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                        .background(
+                            color = AppColors.Purple.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                ) {
+                    Text(
+                        text = SmartTutorStrings.pdf_upload_info,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.padding(start = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(
+                                AppColors.Purple.copy(alpha = 0.12f),
+                                CircleShape
+                            )
+                    )
+
+                    Spacer(Modifier.width(5.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(AppColors.Purple.copy(alpha = 0.12f), CircleShape)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                IconButton(
+                    onClick = onUploadPdfClick,
+                    enabled = !fileUploaded && !isLoading
+                ) {
+                    Icon(
+                        Icons.Default.UploadFile,
+                        contentDescription = "Upload PDF"
+                    )
+                }
+            }
         }
         // Send
         IconButton(

@@ -268,7 +268,14 @@ object SmartTutorStrings {
             "Not uploaded",
             "Δεν έχει ανέβει"
         )
+    val pdf_upload_info: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH ->
+                "For the best results, upload a PDF with clear, readable content. Low-quality scans or unclear images may not be analyzed correctly by the Tutor."
 
+            AppLanguage.GREEK ->
+                "Για καλύτερα αποτελέσματα, ανεβάστε ένα PDF με καθαρό και ευανάγνωστο περιεχόμενο. Σαρώσεις χαμηλής ποιότητας ή δυσδιάκριτες εικόνες ενδέχεται να μην αναλυθούν σωστά από τον Tutor."
+        }
     // ---------------------------------------------------------
     // PROGRESS
     // ---------------------------------------------------------
@@ -704,24 +711,6 @@ object SmartTutorStrings {
             "Πίσω"
         )
 
-    val open_menu: String
-        get() = localized(
-            "Open menu",
-            "Άνοιγμα μενού"
-        )
-
-    val upload_pdf: String
-        get() = localized(
-            "Upload PDF",
-            "Μεταφόρτωση PDF"
-        )
-
-    val send: String
-        get() = localized(
-            "Send",
-            "Αποστολή"
-        )
-
     val logout: String
         get() = localized(
             "Logout",
@@ -732,54 +721,6 @@ object SmartTutorStrings {
         get() = localized(
             "Progress",
             "Πρόοδος"
-        )
-
-    val expand: String
-        get() = localized(
-            "Expand",
-            "Ανάπτυξη"
-        )
-
-    val expand_unit: String
-        get() = localized(
-            "Expand unit",
-            "Ανάπτυξη ενότητας"
-        )
-
-    val expand_exercises: String
-        get() = localized(
-            "Expand exercises",
-            "Ανάπτυξη ασκήσεων"
-        )
-
-    val more: String
-        get() = localized(
-            "More",
-            "Περισσότερα"
-        )
-
-    val unit_completed: String
-        get() = localized(
-            "Unit completed",
-            "Η ενότητα ολοκληρώθηκε"
-        )
-
-    val learning_completed: String
-        get() = localized(
-            "Learning completed",
-            "Η μάθηση ολοκληρώθηκε"
-        )
-
-    val exercises_completed: String
-        get() = localized(
-            "Exercises completed",
-            "Οι ασκήσεις ολοκληρώθηκαν"
-        )
-
-    val exercise_completed: String
-        get() = localized(
-            "Exercise completed",
-            "Η άσκηση ολοκληρώθηκε"
         )
 
 
