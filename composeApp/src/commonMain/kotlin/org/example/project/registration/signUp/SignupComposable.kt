@@ -35,6 +35,7 @@ import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.webSpacing
+import org.example.project.strings.AppLanguage
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
@@ -45,6 +46,7 @@ import org.example.project.utils.validation.Validation
 fun SignupComposable(
     signUp: (String, String, String) -> Unit,
     isWebUi: Boolean = false,
+    currentLanguage: AppLanguage,
 ) {
     var email by remember { mutableStateOf("") }
     var email2 by remember { mutableStateOf("") }
@@ -53,7 +55,6 @@ fun SignupComposable(
 
     val email2HasOnlyLatinCharacters =
         email2.isNotBlank() && Validation.containsOnlyLatinEmailCharacters(email2)
-
 
     var username by remember { mutableStateOf("") }
     var password1 by remember { mutableStateOf("") }
@@ -76,6 +77,7 @@ fun SignupComposable(
                 areEmailsSame && isUsernameValid
     }
     var showVerificationInfo by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()).padding(spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing8),

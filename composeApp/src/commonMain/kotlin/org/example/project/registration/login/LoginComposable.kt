@@ -25,6 +25,7 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.webSpacing
+import org.example.project.strings.AppLanguage
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.theme.SmartTutorStyles
@@ -35,6 +36,7 @@ fun LoginComposable(
     login: (String, String) -> Unit,
     onForgotPasswordClick: () -> Unit,
     isWebUi: Boolean = false,
+    currentLanguage: AppLanguage,
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

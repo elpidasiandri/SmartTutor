@@ -36,7 +36,6 @@ fun RegistrationComposable(
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
-
     if (showErrorMessage && errorMessage.isNotEmpty()) {
         Box(modifier = Modifier.padding(spacing24)) {
             CustomToastComposable(
@@ -82,38 +81,41 @@ fun RegistrationComposable(
             }
 
             Spacer(Modifier.height(24.dp))
+            key(selectedLanguage) {
+                when (selectedTab) {
+                    0 -> {
+                        var showReset by remember { mutableStateOf(false) }
 
-            when (selectedTab) {
-                0 -> {
-                    var showReset by remember { mutableStateOf(false) }
-
-                    if (showReset) {
-                        ResetPasswordComposable(
-                            onBackToLogin = { showReset = false },
-                            resetPassword = { email -> resetPassword(email) },
-                            isWebUi = isWebUi
-                        )
-                    } else {
-                        LoginComposable(
-                            login = { email, password ->
-                                onLogin(email, password)
-                            },
-                            isWebUi = isWebUi,
-                            onForgotPasswordClick = {
-                                showReset = true
-                            }
-                        )
+                        if (showReset) {
+                            ResetPasswordComposable(
+                                onBackToLogin = { showReset = false },
+                                resetPassword = { email -> resetPassword(email) },
+                                isWebUi = isWebUi,
+                                currentLanguage = selectedLanguage
+                            )
+                        } else {
+                            LoginComposable(
+                                login = { email, password ->
+                                    onLogin(email, password)
+                                },
+                                isWebUi = isWebUi,
+                                onForgotPasswordClick = {
+                                    showReset = true
+                                },
+                                currentLanguage = selectedLanguage
+                            )
+                        }
                     }
+
+                    1 -> SignupComposable(
+                        isWebUi = isWebUi,
+                        signUp = { email, password, username ->
+                            onSignUp(email, password, username)
+                        },
+                        currentLanguage = selectedLanguage
+                    )
                 }
-
-                1 -> SignupComposable(
-                    isWebUi = isWebUi,
-                    signUp = { email, password, username ->
-                        onSignUp(email, password, username)
-                    }
-                )
             }
-
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(

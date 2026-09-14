@@ -28,6 +28,7 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing24
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.webSpacing
+import org.example.project.strings.AppLanguage
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.utils.validation.Validation
@@ -37,6 +38,7 @@ fun ResetPasswordComposable(
     onBackToLogin: () -> Unit,
     resetPassword: (String) -> Unit,
     isWebUi: Boolean,
+    currentLanguage: AppLanguage,
 ) {
     var email by remember { mutableStateOf("") }
     val isEmailValid = Validation.isValidEmail(email)
