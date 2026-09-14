@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -97,11 +98,26 @@ fun MyProgressScreen(
         ) {
             item {
                 Text(
-                    text =  SmartTutorStrings.progress_by_material,
+                    text = SmartTutorStrings.progress_by_material,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
+            if (state.loading) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                return@LazyColumn
+            }
+
             if (state.pdfProgress.isEmpty()) {
                 item {
                     Text(
@@ -238,7 +254,8 @@ private fun PdfExerciseDetails(
 
             val totalUnitProgressItems = 1 + total
             val completedUnitProgressItems = (if (unit.isRead) 1 else 0) + answered
-            val unitProgressPercent = (completedUnitProgressItems * 100 / totalUnitProgressItems).coerceIn(0, 100)
+            val unitProgressPercent =
+                (completedUnitProgressItems * 100 / totalUnitProgressItems).coerceIn(0, 100)
 
             val gradePercent = if (unit.totalMaxPoints == 0.0) {
                 0
