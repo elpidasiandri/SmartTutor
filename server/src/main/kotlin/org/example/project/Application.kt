@@ -1,5 +1,6 @@
 package org.example.project
 
+import com.google.cloud.storage.StorageOptions
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.serialization.kotlinx.json.json
@@ -24,6 +25,7 @@ import org.example.project.routes.pdfRoutes
 import org.example.project.routes.progressRoutes
 import org.example.project.tutor.repo.IChatRepository
 import org.example.project.myProgress.repo.IProgressRepository
+import org.example.project.storage.PdfStorage
 import java.io.File
 import java.util.Properties
 
@@ -74,20 +76,37 @@ fun Application.module() {
         ?: props.getProperty("OPENAI_PROMPTING_API_KEY")
         ?: error("Missing OPENAI_PROMPTING_API_KEY")
 
+    val cloudStorage = StorageOptions.getDefaultInstance().service
+
+    val pdfBucketName = System.getenv("PDF_BUCKET")
+        ?: error("PDF_BUCKET environment variable is missing")
+
+    val pdfStorage = PdfStorage(
+        storage = cloudStorage,
+        bucketName = pdfBucketName
+    )
 
     val firestore = FirebaseAdminInit.firestore()
     val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore)
     val chatRepo: IChatRepository = FirestoreChatRepository(firestore)
     val llm = PromptLlmClient(apiKey = apiKey)
     val progressRepo: IProgressRepository = FirestoreProgressRepository(firestore)
-    val worker = PdfJobWorker(repo = pdfRepo, llm = llm)
+    val worker = PdfJobWorker(
+        repo = pdfRepo,
+        llm = llm,
+        pdfStorage = pdfStorage
+    )
     worker.start(this)
 
     routing {
         get("/health") { call.respondText("ok") }
 
         staticFiles("/uploads", File("uploads"))
-        pdfRoutes(repo = pdfRepo, llm = llm)
+        pdfRoutes(
+            repo = pdfRepo,
+            llm = llm,
+            pdfStorage = pdfStorage
+        )
         chatRoutes(chatRepo, llm, progressRepo)
         progressRoutes(progressRepo)
 

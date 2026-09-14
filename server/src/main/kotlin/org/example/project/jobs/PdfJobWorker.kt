@@ -16,10 +16,12 @@ import java.util.UUID
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import org.example.project.pdf.LanguageDetector
+import org.example.project.storage.PdfStorage
 
 class PdfJobWorker(
     private val repo: PdfJobRepository,
     private val llm: PromptLlmClient,
+    private val pdfStorage: PdfStorage,
 ) {
     private val workerId = "worker_" + UUID.randomUUID().toString().take(8)
 
@@ -46,11 +48,10 @@ class PdfJobWorker(
             repo.setProgress(job.documentId, 1)
             repo.heartbeat(job.documentId, workerId)
 
-            val pdf = File(job.storagePath)
-
-            require(pdf.exists()) {
-                "Uploaded PDF not found at ${pdf.absolutePath}"
-            }
+            val pdf = pdfStorage.downloadToTemp(
+                documentId = job.documentId,
+                objectPath = job.storagePath,
+            )
 
             val documentText = PDDocument.load(pdf).use { document ->
                 PDFTextStripper().getText(document)

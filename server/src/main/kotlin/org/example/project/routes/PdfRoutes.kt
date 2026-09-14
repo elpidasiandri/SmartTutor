@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.example.project.pdf.PromptLlmClient
 import org.example.project.repo.PdfJobRepository
+import org.example.project.storage.PdfStorage
 import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.UnitExercisesOnlyDto
 import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
@@ -21,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap
 private const val MAX_PDF_SIZE_BYTES = 100L * 1024L * 1024L
 fun Route.pdfRoutes(
     repo: PdfJobRepository,
-    llm: PromptLlmClient
+    llm: PromptLlmClient,
+    pdfStorage: PdfStorage
 ) {
     val exerciseLocks = ConcurrentHashMap<String, Mutex>()
 
@@ -47,13 +49,17 @@ fun Route.pdfRoutes(
 
                         is PartData.FileItem -> {
                             if (part.name == "file") {
-                                fileName = part.originalFileName ?: "upload.pdf"
-                                if (!fileName.lowercase().endsWith(".pdf")) {
-                                    badRequest = "Only .pdf allowed"
-                                    return@forEachPart
+
+                                val originalName = part.originalFileName?.substringAfterLast('/')?.substringAfterLast('\\')?.trim()?.takeIf { it.isNotBlank() } ?: "upload.pdf"
+
+                                fileName = originalName
+
+                                val dir = File("uploads", documentId).apply {
+                                    require(mkdirs() || exists()) {
+                                        "Could not create upload directory"
+                                    }
                                 }
 
-                                val dir = File("uploads/$documentId").apply { mkdirs() }
                                 val file = File(dir, "source.pdf")
 
                                 part.streamProvider().use { input ->
@@ -81,6 +87,13 @@ fun Route.pdfRoutes(
                                     file.delete()
                                     return@forEachPart
                                 }
+
+                                if (!file.exists() || file.length() == 0L) {
+                                    badRequest = "Uploaded PDF could not be saved"
+                                    file.delete()
+                                    return@forEachPart
+                                }
+
                                 savedFile = file
                             }
                         }
@@ -105,10 +118,24 @@ fun Route.pdfRoutes(
                 return@post
             }
 
+            val cloudStoragePath = try {
+                pdfStorage.upload(documentId = documentId, localFile = pdf)
+            } catch (t: Throwable) {
+                pdf.deleteRecursively()
+
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to (t.message ?: "Could not store uploaded PDF"))
+                )
+                return@post
+            }
+
+            pdf.parentFile?.deleteRecursively()
+
             repo.createAndEnqueue(
                 documentId = documentId,
                 fileName = fileName,
-                storagePath = pdf.absolutePath,
+                storagePath = cloudStoragePath,
                 responseLanguage = responseLanguage
             )
 
@@ -116,7 +143,7 @@ fun Route.pdfRoutes(
                 UploadPdfResponse(
                     documentId = documentId,
                     status = JobStatus.Queued.value,
-                    storagePath = pdf.absolutePath
+                    storagePath = cloudStoragePath
                 )
             )
         }
