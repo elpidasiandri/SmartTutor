@@ -2,12 +2,21 @@ package org.example.project.components.customToast
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,15 +35,18 @@ fun CustomToastComposable(
     message: String,
     modifier: Modifier = Modifier,
     position: Alignment = Alignment.BottomCenter,
-    duration: Long = 2500L,
+    duration: Long = 5000L,
     initializeMessage: (() -> Unit)? = {},
 ) {
     val isVisible = remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         delay(duration)
-        initializeMessage?.invoke()
-        isVisible.value = false
+
+        if (isVisible.value) {
+            initializeMessage?.invoke()
+            isVisible.value = false
+        }
     }
 
     if (isVisible.value) {
@@ -42,24 +54,46 @@ fun CustomToastComposable(
             contentAlignment = position,
             modifier = Modifier.fillMaxSize()
         ) {
-            Box(
+            Row(
                 modifier = modifier
                     .fillMaxWidth()
-                    .height(56.dp)
                     .background(
-                        if (isError) Color.Red else Color.Green,
-                        shape = RoundedCornerShape(8.dp)
+                        color = if (isError) {
+                            Color(0xFFFFF1F1)
+                        } else {
+                            Color(0xFFF3EEFA)
+                        },
+                        shape = RoundedCornerShape(12.dp)
                     )
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = 12.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = message,
-                    color = Color.White,
+                    color = Color(0xFF333333),
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
+                    modifier = Modifier.weight(1f)
                 )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                IconButton(
+                    onClick = {
+                        initializeMessage?.invoke()
+                        isVisible.value = false
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close"
+                    )
+                }
             }
         }
     }
 }
+
