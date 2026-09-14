@@ -43,6 +43,7 @@ fun main() {
         module = Application::module
     ).start(wait = true)
 }
+
 fun Application.module() {
 
     install(ContentNegotiation) {
@@ -76,10 +77,17 @@ fun Application.module() {
         ?: props.getProperty("OPENAI_PROMPTING_API_KEY")
         ?: error("Missing OPENAI_PROMPTING_API_KEY")
 
-    val cloudStorage = StorageOptions.getDefaultInstance().service
+    val cloudStorage = StorageOptions
+        .newBuilder()
+        .setCredentials(FirebaseAdminInit.credentials())
+        .setProjectId(FirebaseAdminInit.projectId())
+        .build()
+        .service
 
-    val pdfBucketName = System.getenv("PDF_BUCKET")
-        ?: error("PDF_BUCKET environment variable is missing")
+    val pdfBucketName =
+        System.getenv("PDF_BUCKET")
+            ?: props.getProperty("PDF_BUCKET")
+            ?: error("Missing PDF_BUCKET")
 
     val pdfStorage = PdfStorage(
         storage = cloudStorage,
