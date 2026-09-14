@@ -82,6 +82,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.strings.SmartTutorStrings.loading_data
 
 @Composable
 fun TutorScreen(
@@ -380,8 +381,44 @@ fun TutorChatUI(
                                 onMessageDismiss = onMessageDismiss
                             )
                         }
+                        if (isLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .zIndex(999f)
+                                    .background(Color.Black.copy(alpha = 0.4f))
+                                    .pointerInput(Unit) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                awaitPointerEvent()
+                                            }
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 24.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator()
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = loading_data,
+                                        color = Color.Blue,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
 
                         if (isLoading || askTutor || pdfProcessingProgress != null) {
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -400,12 +437,11 @@ fun TutorChatUI(
                                     CircularProgressIndicator()
                                     Spacer(modifier = Modifier.height(12.dp))
 
-
                                     Text(
                                         text = pdfProcessingProgress?.let {
                                             SmartTutorStrings.preparing_learning_material(it)
                                         } ?: waiting_for_response,
-                                        color = Color.Red,
+                                        color = Color.Blue,
                                         fontWeight = FontWeight.Bold
                                     )
 

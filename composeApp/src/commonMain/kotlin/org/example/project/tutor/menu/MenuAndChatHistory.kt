@@ -358,20 +358,34 @@ private fun SubjectHeaderRow(
             modifier = Modifier.weight(1f)
         )
 
-        MoreButton(onClick = onMoreClick, Modifier.height(16.dp).width(24.dp))
-
-        if (subject.learningUnits.isNotEmpty()) {
-            Icon(
-                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = "expand",
-                modifier = Modifier.noRippleClickable { onToggleExpand() }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            MoreButton(
+                onClick = onMoreClick,
+                modifier = Modifier.size(28.dp)
             )
+
+            if (subject.learningUnits.isNotEmpty()) {
+                Icon(
+                    imageVector = if (expanded) {
+                        Icons.Default.KeyboardArrowUp
+                    } else {
+                        Icons.Default.KeyboardArrowDown
+                    },
+                    contentDescription = "expand",
+                    modifier = Modifier.size(24.dp).noRippleClickable { onToggleExpand() }
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun MoreButton(onClick: () -> Unit, modifier: Modifier) {
+private fun MoreButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     IconButton(
         onClick = onClick,
         modifier = modifier

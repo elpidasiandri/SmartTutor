@@ -444,6 +444,11 @@ object SmartTutorStrings {
             "Waiting for a response....",
             "Αναμονή για απάντηση...."
         )
+    val loading_data: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Loading your data..."
+            AppLanguage.GREEK -> "Φόρτωση των δεδομένων σας..."
+        }
     val large_material_may_take_time: String
         get() = when (LanguageManager.language.value) {
             AppLanguage.ENGLISH ->
