@@ -122,7 +122,6 @@ fun Route.pdfRoutes(
                 pdfStorage.upload(documentId = documentId, localFile = pdf)
             } catch (t: Throwable) {
                 pdf.deleteRecursively()
-
                 call.respond(
                     HttpStatusCode.InternalServerError,
                     mapOf("error" to (t.message ?: "Could not store uploaded PDF"))
