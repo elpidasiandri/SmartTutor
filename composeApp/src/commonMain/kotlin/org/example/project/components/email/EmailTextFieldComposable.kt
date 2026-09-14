@@ -18,12 +18,13 @@ import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 fun EmailTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
+    labelHint :String = SmartTutorStrings.emailHint,
     isWebUi: Boolean,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(SmartTutorStrings.emailHint) },
+        label = { Text(labelHint) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
         colors = defaultTextFieldColors(),

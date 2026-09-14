@@ -55,6 +55,59 @@ object SmartTutorStrings {
             AppLanguage.GREEK ->
                 "Ελέγξτε το email σας. Σας έχουμε στείλει ένα email επιβεβαίωσης. Μπορεί να χρειαστούν μερικά λεπτά μέχρι να το λάβετε. Ελέγξτε επίσης τον φάκελο ανεπιθύμητης αλληλογραφίας (Spam)."
         }
+    val confirm_email: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Confirm Email"
+            AppLanguage.GREEK -> "Επιβεβαίωση email"
+        }
+
+    val email_valid_format: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Valid email format. Email must contain @ and a valid domain (e.g. name@example.com)"
+            AppLanguage.GREEK -> "Έγκυρη μορφή email. Το email πρέπει να περιέχει @ και έγκυρο domain (π.χ. name@example.com)"
+        }
+
+    val password_has_letter: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "At least one letter"
+            AppLanguage.GREEK -> "Τουλάχιστον ένα γράμμα"
+        }
+
+    val password_has_number: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "At least one number"
+            AppLanguage.GREEK -> "Τουλάχιστον ένας αριθμός"
+        }
+
+    val password_has_special: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "At least one special character (e.g. !, @, #)"
+            AppLanguage.GREEK -> "Τουλάχιστον ένας ειδικός χαρακτήρας (π.χ. !, @, #)"
+        }
+    val email_latin_only: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Email must contain Latin characters only"
+            AppLanguage.GREEK -> "Το email πρέπει να περιέχει μόνο λατινικούς χαρακτήρες"
+        }
+
+    val emails_match: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Email addresses match"
+            AppLanguage.GREEK -> "Οι διευθύνσεις email ταιριάζουν"
+        }
+
+
+    val password_min_length: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Password must contain at least 6 characters"
+            AppLanguage.GREEK -> "Ο κωδικός πρέπει να περιέχει τουλάχιστον 6 χαρακτήρες"
+        }
+
+    val passwords_match: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Passwords match"
+            AppLanguage.GREEK -> "Οι κωδικοί ταιριάζουν"
+        }
     val emailHint: String
         get() = "Email"
 
@@ -628,7 +681,14 @@ object SmartTutorStrings {
             "Progress by material",
             "Πρόοδος ανά υλικό"
         )
+    val progress_empty_view: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH ->
+                "No progress data available yet. Start studying a learning material and your progress will appear here."
 
+            AppLanguage.GREEK ->
+                "Δεν υπάρχουν ακόμη δεδομένα προόδου. Ξεκινήστε να μελετάτε ένα εκπαιδευτικό υλικό και η πρόοδός σας θα εμφανιστεί εδώ."
+        }
     fun progress_percent(value: Int): String =
         localized(
             "Progress: $value%",

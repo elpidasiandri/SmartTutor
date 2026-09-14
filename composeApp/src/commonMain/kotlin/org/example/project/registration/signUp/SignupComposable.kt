@@ -2,11 +2,19 @@ package org.example.project.registration.signUp
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -18,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
@@ -27,7 +36,6 @@ import org.example.project.dimens.Dimens.spacing16
 import org.example.project.dimens.Dimens.spacing8
 import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
-import org.example.project.strings.SmartTutorStrings.email_dismatch
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.validation.Validation
@@ -40,6 +48,12 @@ fun SignupComposable(
 ) {
     var email by remember { mutableStateOf("") }
     var email2 by remember { mutableStateOf("") }
+    val emailHasOnlyLatinCharacters =
+        email.isNotBlank() && Validation.containsOnlyLatinEmailCharacters(email)
+
+    val email2HasOnlyLatinCharacters =
+        email2.isNotBlank() && Validation.containsOnlyLatinEmailCharacters(email2)
+
 
     var username by remember { mutableStateOf("") }
     var password1 by remember { mutableStateOf("") }
@@ -63,33 +77,54 @@ fun SignupComposable(
     }
     var showVerificationInfo by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier.padding(spacing16),
+        modifier = Modifier.verticalScroll(rememberScrollState()).padding(spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing8),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
 
-        if (!isEmailValid && email.isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email)
+        if (email.isNotEmpty()) {
+            Column(
+                modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ValidationRule(
+                    text = SmartTutorStrings.email_latin_only,
+                    isValid = emailHasOnlyLatinCharacters
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.email_valid_format,
+                    isValid = isEmailValid
+                )
+            }
         }
         EmailTextFieldComposable(
             value = email2,
             onValueChange = { email2 = it },
+            labelHint = SmartTutorStrings.confirm_email,
             isWebUi = isWebUi
         )
+        if (email2.isNotEmpty()) {
+            Column(
+                modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ValidationRule(
+                    text = SmartTutorStrings.email_latin_only,
+                    isValid = email2HasOnlyLatinCharacters
+                )
 
-        if (!isEmail2Valid && email2.isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email)
-        }
+                ValidationRule(
+                    text = SmartTutorStrings.email_valid_format,
+                    isValid = isEmail2Valid
+                )
 
-        if (
-            email.isNotEmpty() &&
-            email2.isNotEmpty() &&
-            isEmailValid &&
-            isEmail2Valid &&
-            !areEmailsSame
-        ) {
-            ErrorTextComposable(email_dismatch)
+                ValidationRule(
+                    text = SmartTutorStrings.emails_match,
+                    isValid = areEmailsSame
+                )
+            }
         }
 
         OutlinedTextField(
@@ -112,8 +147,30 @@ fun SignupComposable(
             isWebUi = isWebUi
         )
 
-        if (password1.length > 5 && !isPassword1Valid) {
-            ErrorTextComposable(SmartTutorStrings.invalid_password)
+        if (password1.isNotEmpty()) {
+            Column(
+                modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth()
+            ) {
+                ValidationRule(
+                    text = SmartTutorStrings.password_min_length,
+                    isValid = password1.length >= 6
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.password_has_letter,
+                    isValid = password1.any { it.isLetter() }
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.password_has_number,
+                    isValid = password1.any { it.isDigit() }
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.password_has_special,
+                    isValid = password1.any { !it.isLetterOrDigit() }
+                )
+            }
         }
 
         PasswordTextFieldComposable(
@@ -123,16 +180,18 @@ fun SignupComposable(
             isWebUi = isWebUi
         )
 
-        if (password2.length > 5 && !isPassword2Valid) {
-            ErrorTextComposable(SmartTutorStrings.invalid_password)
-        }
-        if (password1.isNotEmpty() &&
-            password2.isNotEmpty() &&
-            isPassword1Valid &&
-            isPassword2Valid &&
-            !arePasswordsSame
-        ) {
-            ErrorTextComposable(SmartTutorStrings.password_dismatch)
+        if (password2.isNotEmpty()) {
+            Column(
+                modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+
+                ValidationRule(
+                    text = SmartTutorStrings.passwords_match,
+                    isValid = arePasswordsSame
+                )
+
+            }
         }
         ButtonComposable(
             text = SmartTutorStrings.signup,
@@ -156,4 +215,40 @@ fun SignupComposable(
         }
     }
 
+}
+
+@Composable
+private fun ValidationRule(
+    text: String,
+    isValid: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = if (isValid) {
+                Icons.Filled.CheckCircle
+            } else {
+                Icons.Filled.Cancel
+            },
+            contentDescription = null,
+            tint = if (isValid) {
+                Color(0xFF2E7D32)
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+            modifier = Modifier.size(16.dp)
+        )
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isValid) {
+                Color(0xFF2E7D32)
+            } else {
+                MaterialTheme.colorScheme.error
+            }
+        )
+    }
 }
