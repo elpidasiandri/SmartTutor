@@ -278,8 +278,7 @@ private fun PdfExerciseDetails(
                                 !isExpanded
                         }
                         .padding(vertical = 4.dp),
-                    verticalAlignment =
-                        Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
 
                     Text(
@@ -299,59 +298,61 @@ private fun PdfExerciseDetails(
                         contentDescription = null
                     )
                 }
+                if (isExpanded) {
+                    Spacer(Modifier.height(8.dp))
 
-                Spacer(Modifier.height(8.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
 
-                        Text(
-                            text = "$unit_progress_title: " + "$unitProgressPercent%",
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Text(
-                            text = "$you_answered " + "$answered " + "$you_answered_of " + "$total " + "$you_answered_of_answers"
-                        )
-
-                        Text(
-                            text = "$answers_left " + "$remaining " + "$answers_left_of_questions"
-                        )
-                        if (unit.totalMaxPoints > 0.0) {
                             Text(
-                                text = "$grade_info : " + "${unit.awardedPoints}/" + "${unit.totalMaxPoints} " + "($gradePercent%)",
-                                color = if (failed) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.primary
-                                },
+                                text = "$unit_progress_title: " + "$unitProgressPercent%",
                                 fontWeight = FontWeight.Bold
                             )
-                        }
 
+                            Text(
+                                text = "$you_answered " + "$answered " + "$you_answered_of " + "$total " + "$you_answered_of_answers"
+                            )
 
-                        when {
-                            failed -> {
+                            Text(
+                                text = "$answers_left " + "$remaining " + "$answers_left_of_questions"
+                            )
+                            if (unit.totalMaxPoints > 0.0) {
                                 Text(
-                                    text = progress_failed,
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontWeight = FontWeight.ExtraBold
+                                    text = "$grade_info : " + "${unit.awardedPoints}/" + "${unit.totalMaxPoints} " + "($gradePercent%)",
+                                    color = if (failed) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
 
-                            passed -> {
-                                Text(
-                                    text = progress_passed,
-                                    color = Color(0xFF2E7D32),
-                                    fontWeight = FontWeight.ExtraBold
-                                )
+
+                            when {
+                                failed -> {
+                                    Text(
+                                        text = progress_failed,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                }
+
+                                passed -> {
+                                    Text(
+                                        text = progress_passed,
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                }
                             }
+
                         }
                     }
                 }
