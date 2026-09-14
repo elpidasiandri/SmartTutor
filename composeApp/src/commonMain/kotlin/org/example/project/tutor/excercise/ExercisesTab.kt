@@ -578,8 +578,8 @@ private fun SmallToggleChip(
         shape = RoundedCornerShape(16.dp),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = AppColors.Purple.copy(alpha = 0.5f),
-            contentColor = AppColors.Purple,
+            containerColor = AppColors.Purple,
+            contentColor = AppColors.White,
         )
     ) {
         Text(

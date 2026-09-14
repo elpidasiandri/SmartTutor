@@ -150,7 +150,7 @@ private fun PdfProgressCard(
     }
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp).clickable { expanded = !expanded }) {
+        Column(modifier = Modifier.clickable { expanded = !expanded }.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically

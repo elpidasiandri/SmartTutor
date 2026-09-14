@@ -384,7 +384,7 @@ private fun SubjectHeaderRow(
 @Composable
 private fun MoreButton(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     IconButton(
         onClick = onClick,
@@ -485,7 +485,6 @@ private fun LearningUnitRow(
             .fillMaxWidth()
             .padding(start = spacing24, top = spacing8, end = spacing12)
             .background(GrayUltraLight, RoundedCornerShape(spacing12))
-            .padding(spacing12)
     ) {
         Row(
             modifier = Modifier
@@ -494,7 +493,8 @@ private fun LearningUnitRow(
                     if (unitCompleted) Color(0xFFEAF6EE) else GrayUltraLight,
                     RoundedCornerShape(spacing12)
                 )
-                .noRippleClickable { expanded = !expanded },
+                .noRippleClickable { expanded = !expanded }
+                .padding(vertical = spacing12, horizontal = spacing8),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
