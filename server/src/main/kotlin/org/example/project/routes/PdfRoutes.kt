@@ -121,14 +121,23 @@ fun Route.pdfRoutes(
             val cloudStoragePath = try {
                 pdfStorage.upload(documentId = documentId, localFile = pdf)
             } catch (t: Throwable) {
-                pdf.deleteRecursively()
+                t.printStackTrace()
+
+                println("PDF STORAGE UPLOAD FAILED")
+                println("Bucket: ${System.getenv("PDF_BUCKET")}")
+                println("Error: ${t.message}")
+
+                pdf.parentFile?.deleteRecursively()
+
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    mapOf("error" to (t.message ?: "Could not store uploaded PDF"))
+                    mapOf(
+                        "error" to (t.message ?: "Could not store uploaded PDF"),
+                        "type" to t.javaClass.name
+                    )
                 )
                 return@post
             }
-
             pdf.parentFile?.deleteRecursively()
 
             repo.createAndEnqueue(
