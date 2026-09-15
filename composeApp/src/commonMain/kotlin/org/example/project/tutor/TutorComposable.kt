@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -79,8 +78,10 @@ import kotlin.String
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.loading_data
 
@@ -131,7 +132,16 @@ fun TutorScreen(
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
     exercisesLoading: Boolean,
     pdfProcessingProgress: Int?,
+    showTutorialInitially: Boolean,
+    onTutorialCompleted: () -> Unit,
 ) {
+    var showTutorial by remember(showTutorialInitially) {
+        mutableStateOf(showTutorialInitially)
+    }
+    var tutorialStep by remember { mutableStateOf(TutorTutorialStep.NEW_CHAT) }
+    var newChatBounds by remember { mutableStateOf<Rect?>(null) }
+    var uploadPdfBounds by remember { mutableStateOf<Rect?>(null) }
+    var progressBounds by remember { mutableStateOf<Rect?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
@@ -140,6 +150,7 @@ fun TutorScreen(
             showCustomMessage = showCustomMessage,
             message = message,
             isError = isError,
+            exercisesLoading = exercisesLoading,
             userMessage = userMessage,
             widthDividerMenu = widthDividerMenu,
             onSettingsClick = { onSettingsClick() },
@@ -181,7 +192,6 @@ fun TutorScreen(
             },
             canGoNext = canGoNext,
             askTutor = askTutor,
-            exercisesLoading = exercisesLoading,
             onExerciseAnswered = onExerciseAnswered,
             onAskTutorForOpenExercise = onAskTutorForOpenExercise,
             exerciseTutorAnswers = exerciseTutorAnswers,
@@ -193,11 +203,54 @@ fun TutorScreen(
             onLearningClick = { title, subjectId ->
                 onLearningClick(title, subjectId)
             },
-            pdfProcessingProgress = pdfProcessingProgress,
             onExercisesMenuTabClick = { title, subjectId, index ->
                 onExercisesMenuTabClick(title, subjectId, index)
             },
+            pdfProcessingProgress = pdfProcessingProgress,
+            onNewChatPositioned = { bounds ->
+                newChatBounds = bounds
+            },
+            onUploadPdfPositioned = { bounds ->
+                uploadPdfBounds = bounds
+            },
+            onProgressPositioned = { bounds ->
+                progressBounds = bounds
+            },
         )
+
+        if (showTutorial) {
+
+            val targetBounds = when (tutorialStep) {
+                TutorTutorialStep.NEW_CHAT -> newChatBounds
+                TutorTutorialStep.UPLOAD_PDF -> uploadPdfBounds
+                TutorTutorialStep.MY_PROGRESS -> progressBounds
+            }
+
+            TutorTutorialOverlay(
+                step = tutorialStep,
+                targetBounds = targetBounds,
+                onNext = {
+                    when (tutorialStep) {
+                        TutorTutorialStep.NEW_CHAT -> {
+                            tutorialStep = TutorTutorialStep.UPLOAD_PDF
+                        }
+
+                        TutorTutorialStep.UPLOAD_PDF -> {
+                            tutorialStep = TutorTutorialStep.MY_PROGRESS
+                        }
+
+                        TutorTutorialStep.MY_PROGRESS -> {
+                            showTutorial = false
+                            onTutorialCompleted()
+                        }
+                    }
+                },
+                onSkip = {
+                    showTutorial = false
+                    onTutorialCompleted()
+                }
+            )
+        }
     }
 }
 
@@ -248,6 +301,9 @@ fun TutorChatUI(
     onLearningClick: (String, String) -> Unit,
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
     pdfProcessingProgress: Int?,
+    onNewChatPositioned: (Rect) -> Unit,
+    onProgressPositioned: (Rect) -> Unit,
+    onUploadPdfPositioned: (Rect) -> Unit,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
@@ -312,6 +368,8 @@ fun TutorChatUI(
                         selectedTab = selectedTab,
                         selectedExerciseIndex = selectedExerciseIndex,
                         activeChatId = chatData.chat.chatSessionId,
+                        onNewChatPositioned = onNewChatPositioned,
+                        onProgressPositioned = onProgressPositioned,
                     )
                 }
 
@@ -350,6 +408,7 @@ fun TutorChatUI(
                                 isLoadingMoreExercises = isLoadingMoreExercises,
                                 selectedExerciseIndex = selectedExerciseIndex,
                                 exercisesLoading = exercisesLoading,
+                                onUploadPdfPositioned = onUploadPdfPositioned,
                             )
 
                             if (isMobile) {
@@ -482,6 +541,8 @@ fun TutorChatUI(
                         .background(Color.White)
                 ) {
                     TutorDrawerContent(
+                        onProgressPositioned = onProgressPositioned,
+                        onNewChatPositioned = onNewChatPositioned,
                         drawerWidth = drawerWidth,
                         chatHistory = chatHistory,
                         onSettingsClick = {
@@ -577,6 +638,8 @@ private fun TutorDrawerContent(
     selectedTab: TutorTab,
     selectedExerciseIndex: Int,
     activeChatId: String,
+    onNewChatPositioned: (Rect) -> Unit = {},
+    onProgressPositioned: (Rect) -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -608,6 +671,8 @@ private fun TutorDrawerContent(
             selectedTab = selectedTab,
             selectedExerciseIndex = selectedExerciseIndex,
             activeChatId = activeChatId,
+            onNewChatPositioned = onNewChatPositioned,
+            onProgressPositioned = onProgressPositioned,
         )
     }
 }
@@ -660,6 +725,7 @@ private fun TutorChatContent(
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
     exercisesLoading: Boolean,
+    onUploadPdfPositioned: (Rect) -> Unit,
 ) {
     val currentExerciseAnswered =
         currentUnit.exercises
@@ -777,7 +843,8 @@ private fun TutorChatContent(
                 onUserMessageChangeLocal = onUserMessageChangeLocal,
                 onSendClick = onSendClick,
                 onUploadPdfClick = onUploadPdfClick,
-                isLoading = isLoading
+                isLoading = isLoading,
+                onUploadPdfPositioned = onUploadPdfPositioned
             )
         }
     }
@@ -855,6 +922,7 @@ private fun TutorInputSection(
     onSendClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
     isLoading: Boolean,
+    onUploadPdfPositioned: (Rect) -> Unit,
 ) {
     ChatInputField(
         fileUploaded = fileUploaded,
@@ -863,6 +931,7 @@ private fun TutorInputSection(
         onSendClick = onSendClick,
         onUploadPdfClick = onUploadPdfClick,
         isLoading = isLoading,
+        onUploadPdfPositioned = onUploadPdfPositioned,
     )
 }
 
@@ -917,6 +986,7 @@ fun ChatInputField(
     onSendClick: () -> Unit,
     onUploadPdfClick: () -> Unit,
     isLoading: Boolean,
+    onUploadPdfPositioned: (Rect) -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -979,7 +1049,12 @@ fun ChatInputField(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
-                        .height(56.dp),
+                        .height(56.dp)
+                        .onGloballyPositioned { coordinates ->
+                            onUploadPdfPositioned(
+                                coordinates.boundsInRoot()
+                            )
+                        },
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = AppColors.Purple,

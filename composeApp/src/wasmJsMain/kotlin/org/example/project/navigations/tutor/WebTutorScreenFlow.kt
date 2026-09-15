@@ -15,6 +15,8 @@ import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.registration.AuthUserHolder
 import org.example.project.tutor.TutorScreen
+import org.example.project.tutor.completeTutorial
+import org.example.project.tutor.isTutorialCompleted
 import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.pdfPicker.WebPdfDropHandler
@@ -211,6 +213,10 @@ fun WebTutorScreenFlow(navController: NavController) {
             )
         },
         exercisesLoading = state.exercisesLoading,
-        pdfProcessingProgress = state.pdfProcessingProgress
+        pdfProcessingProgress = state.pdfProcessingProgress,
+        showTutorialInitially = !isTutorialCompleted(user.uid),
+        onTutorialCompleted = {
+            completeTutorial(user.uid)
+        }
     )
 }

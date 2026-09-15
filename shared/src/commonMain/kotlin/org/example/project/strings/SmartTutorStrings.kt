@@ -792,5 +792,67 @@ object SmartTutorStrings {
             "Πρόοδος"
         )
 
+//tutorial
+val tutorial_progress_title: String
+    get() = when (LanguageManager.language.value) {
+        AppLanguage.GREEK ->
+            "Παρακολούθησε την πρόοδό σου"
 
+        AppLanguage.ENGLISH ->
+            "Track your progress"
+    }
+
+    val tutorial_progress_description: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK ->
+                "Από εδώ μπορείς να βλέπεις την πρόοδό σου, τις απαντήσεις σου και τη βαθμολογία σου ανά ενότητα."
+
+            AppLanguage.ENGLISH ->
+                "From here you can view your progress, your answers, and your score for each learning unit."
+        }
+val tutorial_skip: String
+    get() = when (LanguageManager.language.value) {
+        AppLanguage.GREEK -> "Παράλειψη"
+        AppLanguage.ENGLISH -> "Skip"
+    }
+
+    val tutorial_next: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "Επόμενο"
+            AppLanguage.ENGLISH -> "Next"
+        }
+
+    val tutorial_finish: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "Τέλος"
+            AppLanguage.ENGLISH -> "Finish"
+        }
+    val tutorial_upload_title: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "Ανέβασε το υλικό σου"
+            AppLanguage.ENGLISH -> "Upload your material"
+        }
+
+    val tutorial_upload_description: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK ->
+                "Από εδώ ανεβάζεις το PDF που θέλεις να μελετήσεις. Ο Tutor θα το επεξεργαστεί και θα δημιουργήσει το εκπαιδευτικό υλικό."
+
+            AppLanguage.ENGLISH ->
+                "Upload the PDF you want to study here. The Tutor will process it and create your learning material."
+        }
+    val tutorial_new_chat_title: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "Νέα συνομιλία"
+            AppLanguage.ENGLISH -> "New chat"
+        }
+
+    val tutorial_new_chat_description: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK ->
+                "Από εδώ μπορείς να ξεκινήσεις μια νέα συνομιλία και να μελετήσεις νέο υλικό."
+
+            AppLanguage.ENGLISH ->
+                "Start a new conversation from here whenever you want to study new material."
+        }
 }

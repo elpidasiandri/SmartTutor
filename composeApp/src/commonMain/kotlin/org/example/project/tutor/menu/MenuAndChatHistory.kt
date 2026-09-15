@@ -62,6 +62,9 @@ import org.example.project.tutor.models.domainModels.chatHistory.SubjectHistoryD
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.utils.UtilsComposable.noRippleClickable
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 
 @Composable
 fun MenuAndChatHistory(
@@ -80,7 +83,9 @@ fun MenuAndChatHistory(
     selectedTab: TutorTab,
     selectedExerciseIndex: Int,
     activeChatId: String,
-) {
+    onNewChatPositioned: (Rect) -> Unit = {},
+    onProgressPositioned: (Rect) -> Unit = {},
+    ) {
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -88,7 +93,10 @@ fun MenuAndChatHistory(
             .background(Color.White)
             .padding(spacing8)
     ) {
-        NewChatButton(onChatTitleClick = onChatTitleClick)
+        NewChatButton(
+            onChatTitleClick = onChatTitleClick,
+            onPositioned = onNewChatPositioned
+        )
 
         ChatHistoryHeader()
 
@@ -123,17 +131,25 @@ fun MenuAndChatHistory(
             onLogoutClick = onLogoutClick,
             navigateToMyProgress = {
                 navigateToMyProgress()
-            })
+            },
+            onProgressPositioned = onProgressPositioned
+        )
     }
 }
 
 @Composable
-private fun NewChatButton(onChatTitleClick: () -> Unit) {
+private fun NewChatButton(
+    onChatTitleClick: () -> Unit,
+    onPositioned: (Rect) -> Unit,
+) {
     TextButton(
-        onClick = {
-            onChatTitleClick()
-        },
+        onClick = { onChatTitleClick() },
         modifier = Modifier.padding(vertical = spacing12, horizontal = spacing8)
+            .onGloballyPositioned { coordinates ->
+                onPositioned(
+                    coordinates.boundsInRoot()
+                )
+            }
     ) {
         Text(
             text = new_chat,
@@ -221,29 +237,49 @@ private fun SettingsRow(onSettingsClick: () -> Unit) {
 private fun BottomRow(
     onLogoutClick: () -> Unit,
     navigateToMyProgress: () -> Unit,
+    onProgressPositioned: (Rect) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = spacing8, vertical = spacing12),
+            .padding(
+                horizontal = spacing8,
+                vertical = spacing12
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         Row(
-            modifier = Modifier.noRippleClickable {
-                navigateToMyProgress()
-            }
+            modifier = Modifier
+                .onGloballyPositioned { coordinates ->
+                    onProgressPositioned(
+                        coordinates.boundsInRoot()
+                    )
+                }
+                .noRippleClickable {
+                    navigateToMyProgress()
+                },
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                my_progress_title,
+                text = my_progress_title,
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
             )
-            Spacer(modifier = Modifier.width(spacing4))
-            Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Progress")
+
+            Spacer(
+                modifier = Modifier.width(spacing4)
+            )
+
+            Icon(
+                Icons.AutoMirrored.Filled.ShowChart,
+                contentDescription = "Progress"
+            )
         }
 
-
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(
+            modifier = Modifier.weight(1f)
+        )
 
         IconButton(
             onClick = { onLogoutClick() },
