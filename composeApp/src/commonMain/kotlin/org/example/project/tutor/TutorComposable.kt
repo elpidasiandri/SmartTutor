@@ -919,30 +919,50 @@ fun ChatInputField(
     isLoading: Boolean,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(spacing8),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(spacing8),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (fileUploaded) {
             TextField(
                 value = userMessage,
                 onValueChange = onMessageChange,
-                placeholder = { Text(if (isLoading) waiting_for_answer else type_your_message) },
+                placeholder = {
+                    Text(
+                        if (isLoading) waiting_for_answer
+                        else type_your_message
+                    )
+                },
                 modifier = Modifier.weight(1f)
             )
-        }
-        // Upload PDF button
-        if (!fileUploaded) {
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Button(
+                onClick = onSendClick,
+                enabled = userMessage.isNotBlank() && !isLoading
+            ) {
+                Text("Send")
+            }
+        } else {
             Column(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
                         .background(
                             color = AppColors.Purple.copy(alpha = 0.12f),
                             shape = RoundedCornerShape(24.dp)
                         )
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .padding(
+                            horizontal = 20.dp,
+                            vertical = 20.dp
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = SmartTutorStrings.pdf_upload_info,
@@ -951,50 +971,36 @@ fun ChatInputField(
                     )
                 }
 
-                Row(
-                    modifier = Modifier.padding(start = 32.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(
-                                AppColors.Purple.copy(alpha = 0.12f),
-                                CircleShape
-                            )
-                    )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(Modifier.width(5.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(AppColors.Purple.copy(alpha = 0.12f), CircleShape)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                IconButton(
+                Button(
                     onClick = onUploadPdfClick,
-                    enabled = !fileUploaded && !isLoading
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppColors.Purple,
+                        contentColor = Color.White
+                    )
                 ) {
                     Icon(
-                        Icons.Default.UploadFile,
-                        contentDescription = "Upload PDF"
+                        imageVector = Icons.Default.UploadFile,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = SmartTutorStrings.upload_pdf,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
-        }
-        // Send
-        IconButton(
-            onClick = onSendClick,
-            enabled = !isLoading && userMessage.isNotBlank()
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.Send,
-                contentDescription = "Send"
-            )
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.example.project.navigations.tutor
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -14,7 +15,9 @@ import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.registration.AuthUserHolder
 import org.example.project.tutor.TutorScreen
+import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
+import org.example.project.tutor.pdfPicker.WebPdfDropHandler
 import org.example.project.tutor.state.TutorEvents
 import org.example.project.tutor.state.TutorUiEvents
 import org.example.project.tutor.pdfPicker.WebPdfPicker
@@ -47,7 +50,47 @@ fun WebTutorScreenFlow(navController: NavController) {
     val pdfPicker = WebPdfPicker()
     var userMessage by remember { mutableStateOf("") }
 
+    fun handlePickedPdf(file: PickedFile) {
+        when (val result = validatePdf(file)) {
+            is PdfValidationResult.Error -> {
+                controller.onEvent(
+                    TutorUiEvents.ShowErrorMessage(result.message)
+                )
+            }
 
+            is PdfValidationResult.Success -> {
+                controller.onEvent(
+                    TutorUiEvents.UploadPdf(result.file)
+                )
+            }
+        }
+    }
+    DisposableEffect(Unit) {
+
+        val dropHandler = WebPdfDropHandler { browserFile ->
+
+            CoroutineScope(Dispatchers.Default).launch {
+
+                val pickedFile = pdfPicker.convertFile(browserFile)
+
+                if (pickedFile != null) {
+                    handlePickedPdf(pickedFile)
+                } else {
+                    controller.onEvent(
+                        TutorUiEvents.ShowErrorMessage(
+                            "Only PDF files are allowed"
+                        )
+                    )
+                }
+            }
+        }
+
+        dropHandler.start()
+
+        onDispose {
+            dropHandler.stop()
+        }
+    }
 
     if (user == null) {
         navController.navigate(WebScreen.Registration)
@@ -79,17 +122,8 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         onUploadPdfClick = {
             CoroutineScope(Dispatchers.Default).launch {
-                val file = pdfPicker.pickPdf()
-                file?.let { fileNotNull ->
-                    when (val result = validatePdf(fileNotNull)) {
-                        is PdfValidationResult.Error -> {
-                            controller.onEvent(TutorUiEvents.ShowErrorMessage(result.message))
-                        }
-
-                        is PdfValidationResult.Success -> {
-                            controller.onEvent(TutorUiEvents.UploadPdf(result.file))
-                        }
-                    }
+                pdfPicker.pickPdf()?.let { file ->
+                    handlePickedPdf(file)
                 }
             }
         },
@@ -120,7 +154,7 @@ fun WebTutorScreenFlow(navController: NavController) {
         },
         canGoNext = state.canGoNext,
         askTutor = state.askTutor,
-        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question, maxPoints,  ->
+        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question, maxPoints ->
             controller.onEvent(
                 TutorUiEvents.ExerciseAnswered(
                     exerciseIndex = index,
@@ -134,7 +168,7 @@ fun WebTutorScreenFlow(navController: NavController) {
                 )
             )
         },
-        onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution,maxPoint ->
+        onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution, maxPoint ->
             controller.onEvent(
                 TutorUiEvents.AskTutorForOpenExercise(
                     exerciseIndex = exerciseIndex,

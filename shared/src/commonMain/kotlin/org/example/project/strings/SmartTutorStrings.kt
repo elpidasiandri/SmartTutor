@@ -520,7 +520,11 @@ object SmartTutorStrings {
             "Hint",
             "Βοήθεια"
         )
-
+    val upload_pdf: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.ENGLISH -> "Upload PDF"
+            AppLanguage.GREEK -> "Ανέβασμα PDF"
+        }
     val explanation_tab: String
         get() = localized(
             "Explanation",

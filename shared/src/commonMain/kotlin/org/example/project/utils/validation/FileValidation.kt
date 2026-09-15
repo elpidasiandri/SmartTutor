@@ -2,15 +2,14 @@ package org.example.project.utils.validation
 
 import org.example.project.tutor.models.domainModels.file.PickedFile
 
-private const val MAX_PDF_SIZE = 50L * 1024 * 1024 // 50MB
-
+private const val MAX_PDF_SIZE = 100L * 1024 * 1024 //100mb
 fun validatePdf(file: PickedFile): PdfValidationResult {
     return when {
         file.mimeType != "application/pdf" ->
             PdfValidationResult.Error("Only PDF files are allowed")
 
         file.sizeBytes > MAX_PDF_SIZE ->
-            PdfValidationResult.Error("The PDF file is over than 50MB")
+            PdfValidationResult.Error("The PDF file is over than 100MB")
 
         else -> PdfValidationResult.Success(file)
     }
