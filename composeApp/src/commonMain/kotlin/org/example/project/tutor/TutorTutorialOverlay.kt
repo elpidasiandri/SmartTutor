@@ -2,7 +2,9 @@ package org.example.project.tutor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +44,7 @@ fun TutorTutorialOverlay(
     if (targetBounds == null) {
         return
     }
+
     val title = when (step) {
         TutorTutorialStep.NEW_CHAT ->
             SmartTutorStrings.tutorial_new_chat_title
@@ -63,18 +66,92 @@ fun TutorTutorialOverlay(
         TutorTutorialStep.MY_PROGRESS ->
             SmartTutorStrings.tutorial_progress_description
     }
-    Box(
+
+    BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
     ) {
+        val screenWidth = maxWidth
+        val screenHeight = maxHeight
 
-        // Σκοτεινό background.
+        val cardWidth = if (screenWidth < 600.dp) {
+            screenWidth - 32.dp
+        } else {
+            320.dp
+        }
+
+        /*
+         * Υπολογίζουμε responsive θέση.
+         *
+         * Σε μικρές οθόνες:
+         * η κάρτα μπαίνει κεντραρισμένη οριζόντια και
+         * κοντά στο κέντρο της οθόνης.
+         *
+         * Σε desktop:
+         * χρησιμοποιούμε το πραγματικό target αλλά
+         * περιορίζουμε την κάρτα μέσα στα όρια της οθόνης.
+         */
+        val isSmallScreen = screenWidth < 700.dp
+
+        val desiredX = when {
+            isSmallScreen -> 16.dp
+
+            step == TutorTutorialStep.NEW_CHAT ->
+                (targetBounds.right + 24f).dp
+
+            step == TutorTutorialStep.UPLOAD_PDF ->
+                (targetBounds.left + 40f).dp
+
+            step == TutorTutorialStep.MY_PROGRESS ->
+                (targetBounds.right + 24f).dp
+
+            else -> 16.dp
+        }
+
+        val desiredY = when {
+            isSmallScreen ->
+                (screenHeight / 2) - 120.dp
+
+            step == TutorTutorialStep.NEW_CHAT ->
+                targetBounds.top.dp
+
+            step == TutorTutorialStep.UPLOAD_PDF ->
+                (targetBounds.top - 230f).dp
+
+            step == TutorTutorialStep.MY_PROGRESS ->
+                (targetBounds.top - 160f).dp
+
+            else -> 16.dp
+        }
+
+        // Δεν αφήνουμε ποτέ την κάρτα να φύγει δεξιά.
+        val safeX = desiredX.coerceIn(
+            minimumValue = 16.dp,
+            maximumValue = (screenWidth - cardWidth - 16.dp)
+                .coerceAtLeast(16.dp)
+        )
+
+        // Ούτε πάνω/κάτω από το viewport.
+        // 250dp ~= ασφαλές εκτιμώμενο ύψος tooltip.
+        val safeY = desiredY.coerceIn(
+            minimumValue = 16.dp,
+            maximumValue = (screenHeight - 250.dp)
+                .coerceAtLeast(16.dp)
+        )
+
+        // Γκρι background.
+        // Click οπουδήποτε έξω = ακύρωση tutorial.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f))
+                .background(
+                    Color.Black.copy(alpha = 0.45f)
+                )
+                .clickable {
+                    onSkip()
+                }
         )
 
-        // Highlight στην πραγματική θέση του New Chat.
+        // Highlight του πραγματικού component.
         Box(
             modifier = Modifier
                 .offset(
@@ -90,33 +167,13 @@ fun TutorTutorialOverlay(
                 )
         )
 
-        // Tooltip δίπλα στο πραγματικό target.
         Card(
             modifier = Modifier
                 .offset(
-                    x = when (step) {
-                        TutorTutorialStep.NEW_CHAT ->
-                            (targetBounds.right + 24f).dp
-
-                        TutorTutorialStep.UPLOAD_PDF ->
-                            (targetBounds.left + 40f).dp
-
-
-                        TutorTutorialStep.MY_PROGRESS ->
-                            (targetBounds.right + 24f).dp
-                    },
-                    y = when (step) {
-                        TutorTutorialStep.NEW_CHAT ->
-                            targetBounds.top.dp
-
-                        TutorTutorialStep.UPLOAD_PDF ->
-                            (targetBounds.top - 230f).dp
-
-                        TutorTutorialStep.MY_PROGRESS ->
-                            (targetBounds.top - 160f).dp
-                    }
+                    x = safeX,
+                    y = safeY
                 )
-                .width(320.dp),
+                .width(cardWidth),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White
@@ -125,36 +182,48 @@ fun TutorTutorialOverlay(
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
-
                 Text(
                     text = title,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
 
                 Text(
                     text = description,
                     fontSize = 14.sp
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
 
                 if (step == TutorTutorialStep.MY_PROGRESS) {
-
-                    Button(onClick = onNext) {
-                        Text(SmartTutorStrings.tutorial_finish)
+                    Button(
+                        onClick = onNext
+                    ) {
+                        Text(
+                            SmartTutorStrings.tutorial_finish
+                        )
                     }
-
                 } else {
-
-                    Button(onClick = onNext) {
-                        Text(SmartTutorStrings.tutorial_next)
+                    Button(
+                        onClick = onNext
+                    ) {
+                        Text(
+                            SmartTutorStrings.tutorial_next
+                        )
                     }
 
-                    TextButton(onClick = onSkip) {
-                        Text(SmartTutorStrings.tutorial_skip)
+                    TextButton(
+                        onClick = onSkip
+                    ) {
+                        Text(
+                            SmartTutorStrings.tutorial_skip
+                        )
                     }
                 }
             }
