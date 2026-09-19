@@ -133,7 +133,6 @@ fun ChangePasswordSettingsScreen(
             } else if (confirmPassword.length >= 6 && !passwordsMatch) {
                 ErrorTextComposable(password_dismatch)
             }
-            ChangePasswordToast(showCustomMessage, errorMessage, isError, onMessageDismiss)
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -147,6 +146,8 @@ fun ChangePasswordSettingsScreen(
                 Text(update_password)
             }
         }
+
+        ChangePasswordToast(showCustomMessage, errorMessage, isError, onMessageDismiss)
     }
 }
 

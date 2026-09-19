@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import org.example.project.components.customToast.CustomToastComposable
 import org.example.project.dimens.Dimens.spacing16
@@ -36,26 +37,12 @@ fun RegistrationComposable(
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
-    if (showErrorMessage && errorMessage.isNotEmpty()) {
-        Box(modifier = Modifier.padding(spacing24)) {
-            CustomToastComposable(
-                isError = isError,
-                message = errorMessage,
-                initializeMessage = { showErrorMessage = true }
-            )
-        }
 
-        LaunchedEffect(errorMessage) {
-            delay(3000L)
-            onMessageDismiss()
-        }
-    }
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
-            modifier = Modifier
-                .padding(spacing16),
+            modifier = Modifier.padding(spacing16),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -165,6 +152,25 @@ fun RegistrationComposable(
             }
 
         }
+
+        if (showErrorMessage && errorMessage.isNotEmpty()) {
+            CustomToastComposable(
+                isError = isError,
+                message = errorMessage,
+                modifier = Modifier.padding(spacing24).zIndex(10000f),
+                initializeMessage = {
+                    showErrorMessage = false
+                    onMessageDismiss()
+                }
+            )
+
+            LaunchedEffect(errorMessage) {
+                delay(3000L)
+                showErrorMessage = false
+                onMessageDismiss()
+            }
+        }
+
     }
 
 

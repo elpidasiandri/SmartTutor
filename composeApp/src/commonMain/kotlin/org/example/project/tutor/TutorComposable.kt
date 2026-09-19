@@ -142,7 +142,9 @@ fun TutorScreen(
     var newChatBounds by remember { mutableStateOf<Rect?>(null) }
     var uploadPdfBounds by remember { mutableStateOf<Rect?>(null) }
     var progressBounds by remember { mutableStateOf<Rect?>(null) }
-
+    var isMobileMenuOpen by remember {
+        mutableStateOf(showTutorialInitially)
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
             chatData = chatData,
@@ -216,6 +218,10 @@ fun TutorScreen(
             onProgressPositioned = { bounds ->
                 progressBounds = bounds
             },
+            isMobileMenuOpen = isMobileMenuOpen,
+            onMobileMenuOpenChange = {
+                isMobileMenuOpen = it
+            },
         )
 
         if (showTutorial) {
@@ -231,21 +237,26 @@ fun TutorScreen(
                 targetBounds = targetBounds,
                 onNext = {
                     when (tutorialStep) {
+
                         TutorTutorialStep.NEW_CHAT -> {
+                            isMobileMenuOpen = false
                             tutorialStep = TutorTutorialStep.UPLOAD_PDF
                         }
 
                         TutorTutorialStep.UPLOAD_PDF -> {
+                            isMobileMenuOpen = true
                             tutorialStep = TutorTutorialStep.MY_PROGRESS
                         }
 
                         TutorTutorialStep.MY_PROGRESS -> {
+                            isMobileMenuOpen = false
                             showTutorial = false
                             onTutorialCompleted()
                         }
                     }
                 },
                 onSkip = {
+                    isMobileMenuOpen = false
                     showTutorial = false
                     onTutorialCompleted()
                 }
@@ -304,13 +315,14 @@ fun TutorChatUI(
     onNewChatPositioned: (Rect) -> Unit,
     onProgressPositioned: (Rect) -> Unit,
     onUploadPdfPositioned: (Rect) -> Unit,
+    isMobileMenuOpen: Boolean,
+    onMobileMenuOpenChange: (Boolean) -> Unit,
 ) {
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
 
     val chatMessages = remember { mutableStateListOf<ChatUiMessage>() }
     var userMessageState by remember(userMessage) { mutableStateOf(userMessage) }
-    var isMobileMenuOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(
         chatData.chat.chatSessionId,
@@ -423,7 +435,7 @@ fun TutorChatUI(
                                         )
                                 ) {
                                     IconButton(
-                                        onClick = { isMobileMenuOpen = true }
+                                        onClick = { onMobileMenuOpenChange(true) }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Menu,
@@ -530,7 +542,7 @@ fun TutorChatUI(
                         .fillMaxSize()
                         .zIndex(100f)
                         .background(Color.Black.copy(alpha = 0.35f))
-                        .clickable { isMobileMenuOpen = false }
+                        .clickable { onMobileMenuOpenChange(false) }
                 )
 
                 Box(
@@ -546,36 +558,36 @@ fun TutorChatUI(
                         drawerWidth = drawerWidth,
                         chatHistory = chatHistory,
                         onSettingsClick = {
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             onSettingsClick()
                         },
                         onLogoutClick = {
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             onLogoutClick()
                         },
                         onLearningUnitClick = { title, subjectId ->
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             selectLearningUnit(title, subjectId)
                         },
                         onNewChatClick = {
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             startNewChat()
                         },
                         onDeleteSubject = deleteSubject,
                         onExistingChatClick = { chatId ->
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             onExistingChatClick(chatId)
                         },
                         navigateToMyProgress = {
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             navigateToMyProgress()
                         },
                         onLearningClick = { title, subjectId ->
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             onLearningClick(title, subjectId)
                         },
                         onExercisesClick = { title, subjectId, index ->
-                            isMobileMenuOpen = false
+                            onMobileMenuOpenChange(false)
                             onExercisesMenuTabClick(title, subjectId, index)
                         },
                         answeredExerciseKeys = answeredExerciseKeys,
