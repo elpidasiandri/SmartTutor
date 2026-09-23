@@ -387,6 +387,10 @@ fun TutorChatUI(
 
                 TutorScaffold(
                     chatData = chatData,
+                    isMobile = isMobile,
+                    onMenuClick = {
+                        onMobileMenuOpenChange(true)
+                    },
                     content = { padding ->
                         Box(modifier = Modifier.fillMaxSize()) {
                             TutorChatContent(
@@ -423,27 +427,6 @@ fun TutorChatUI(
                                 onUploadPdfPositioned = onUploadPdfPositioned,
                             )
 
-                            if (isMobile) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .padding(top = 90.dp, start = 8.dp)
-                                        .zIndex(9999f)
-                                        .background(
-                                            Color.White,
-                                            RoundedCornerShape(50)
-                                        )
-                                ) {
-                                    IconButton(
-                                        onClick = { onMobileMenuOpenChange(true) }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Menu,
-                                            contentDescription = "Open menu"
-                                        )
-                                    }
-                                }
-                            }
 
                             TutorToastHost(
                                 showErrorMessage = showErrorMessage,
@@ -692,6 +675,8 @@ private fun TutorDrawerContent(
 @Composable
 private fun TutorScaffold(
     chatData: ChatSessionStartDomain,
+    isMobile: Boolean,
+    onMenuClick: () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
@@ -699,6 +684,8 @@ private fun TutorScaffold(
             TopBarTabs(
                 material = chatData.material,
                 learningUnit = chatData.learningUnit,
+                isMobile = isMobile,
+                onMenuClick = onMenuClick,
             )
         },
         content = content
@@ -951,15 +938,38 @@ private fun TutorInputSection(
 fun TopBarTabs(
     material: MaterialDomain,
     learningUnit: LearningUnitDomain,
+    isMobile: Boolean,
+    onMenuClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(GrayLightBoard)
-            .padding(top = spacing16, start = spacing8), horizontalArrangement = Arrangement.Start
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(GrayLightBoard)
+            .padding(
+                top = spacing16,
+                start = spacing8,
+                end = spacing8
+            ),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+
+        if (isMobile) {
+            IconButton(
+                onClick = onMenuClick
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Open menu"
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+
         ChatUiHeader(
-            material,
-            learningUnit,
-            Modifier.align(Alignment.CenterVertically).weight(1f).padding(end = spacing8)
+            material = material,
+            learningUnit = learningUnit,
+            modifier = Modifier.weight(1f)
         )
     }
 }
