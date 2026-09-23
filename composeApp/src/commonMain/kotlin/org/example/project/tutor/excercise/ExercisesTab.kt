@@ -183,15 +183,20 @@ private fun ExerciseCard(
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1f)
             )
-            Spacer(Modifier.height(4.dp))
 
             Text(
-                modifier = Modifier.padding(end = 8.dp),
                 text = "$excersize_level : ${difficultyLabel(exercise.difficulty)}",
                 fontSize = 12.sp,
                 color = AppColors.GrayDark
             )
+        }
 
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
             HintExplainSolutionRow(
                 showHint = showHint,
                 showExplanation = showExplanation,

@@ -32,6 +32,8 @@ import org.example.project.utils.validation.Validation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
@@ -59,6 +61,7 @@ fun LoginComposable(
 
     Column(
         modifier = containerModifier
+            .verticalScroll(rememberScrollState())
             .padding(spacing16),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
