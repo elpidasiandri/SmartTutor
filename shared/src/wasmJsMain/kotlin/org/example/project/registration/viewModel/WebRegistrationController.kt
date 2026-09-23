@@ -41,7 +41,7 @@ class WebRegistrationController(
                 sendEmailToResetPassword(event.email)
             }
 
-            is RegistrationEvents.SignUp -> signUp(event.email, event.password, event.username)
+            is RegistrationEvents.SignUp -> signUp(event.email, event.password, event.username,event.onSuccess)
             else -> {}
         }
 
@@ -111,7 +111,7 @@ class WebRegistrationController(
         }
     }
 
-    private fun signUp(email: String, password: String, username: String) {
+    private fun signUp(email: String, password: String, username: String, onSuccess: () -> Unit) {
         scope.launch {
             registrationUseCases.signUp(
                 email = email,
@@ -120,13 +120,7 @@ class WebRegistrationController(
             ) { success, uid ->
 
                 if (success) {
-                    _state.update {
-                        it.copy(
-                            showCustomMessage = true,
-                            message = "We have sent you a confirmation email. Please confirm the email and then log in.",
-                            isError = false
-                        )
-                    }
+                    onSuccess()
                 } else {
 
                     if (uid?.contains("email-already-in-use") == true) {

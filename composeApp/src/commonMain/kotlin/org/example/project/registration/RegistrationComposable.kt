@@ -26,7 +26,7 @@ fun RegistrationComposable(
     message: String,
     isError: Boolean,
     onLogin: (email: String, password: String) -> Unit,
-    onSignUp: (email: String, password: String, username: String) -> Unit,
+    onSignUp: (email: String, password: String, username: String, onSuccess: () -> Unit) -> Unit,
     resetPassword: (email: String) -> Unit,
     onMessageDismiss: () -> Unit,
     isWebUi: Boolean,
@@ -96,8 +96,8 @@ fun RegistrationComposable(
 
                     1 -> SignupComposable(
                         isWebUi = isWebUi,
-                        signUp = { email, password, username ->
-                            onSignUp(email, password, username)
+                        signUp = { email, password, username,onSuccess ->
+                            onSignUp(email, password, username,onSuccess)
                         },
                         currentLanguage = selectedLanguage
                     )

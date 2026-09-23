@@ -41,8 +41,8 @@ fun RegistrationScreenFlow(navController: NavController) {
         onLogin = { email, password ->
             controller.onEvent(RegistrationEvents.Login(email, password))
         },
-        onSignUp = { email, pass, username ->
-            controller.onEvent(RegistrationEvents.SignUp(email, pass, username))
+        onSignUp = { email, pass, username,onSuccess ->
+            controller.onEvent(RegistrationEvents.SignUp(email, pass, username,onSuccess))
         },
         onMessageDismiss = {
             controller.onEvent(RegistrationEvents.InitializeStateAfterShowingMessage)

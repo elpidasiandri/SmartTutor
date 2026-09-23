@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.example.project.components.button.ButtonComposable
 import org.example.project.components.email.EmailTextFieldComposable
-import org.example.project.components.errorText.ErrorTextComposable
 import org.example.project.components.password.PasswordTextFieldComposable
 import org.example.project.dimens.Dimens.spacing12
 import org.example.project.dimens.Dimens.spacing16
@@ -30,7 +29,15 @@ import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.passwordHint
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.utils.validation.Validation
-
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 @Composable
 fun LoginComposable(
     login: (String, String) -> Unit,
@@ -41,9 +48,13 @@ fun LoginComposable(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    val emailHasOnlyLatinCharacters =
+        email.isNotBlank() && Validation.containsOnlyLatinEmailCharacters(email)
+
     val isEmailValid = Validation.isValidEmail(email)
     val isPasswordValid = Validation.isValidPassword(password)
-    val isFormValid = isEmailValid && isPasswordValid
+
+    val isFormValid = emailHasOnlyLatinCharacters && isEmailValid && isPasswordValid
     val containerModifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth()
 
     Column(
@@ -56,8 +67,25 @@ fun LoginComposable(
             onValueChange = { email = it },
             isWebUi = isWebUi
         )
-        if (!isEmailValid && email.trim().isNotEmpty()) {
-            ErrorTextComposable(SmartTutorStrings.invalid_email)
+        if (email.isNotEmpty()) {
+            Column(
+                modifier = if (isWebUi) {
+                    Modifier.width(webSpacing)
+                } else {
+                    Modifier.fillMaxWidth()
+                },
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ValidationRule(
+                    text = SmartTutorStrings.email_latin_only,
+                    isValid = emailHasOnlyLatinCharacters
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.email_valid_format,
+                    isValid = isEmailValid
+                )
+            }
         }
 
         Spacer(Modifier.height(spacing12))
@@ -68,7 +96,36 @@ fun LoginComposable(
             label = passwordHint,
             isWebUi = isWebUi
         )
+        if (password.isNotEmpty()) {
+            Column(
+                modifier = if (isWebUi) {
+                    Modifier.width(webSpacing)
+                } else {
+                    Modifier.fillMaxWidth()
+                },
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ValidationRule(
+                    text = SmartTutorStrings.password_min_length,
+                    isValid = password.length >= 6
+                )
 
+                ValidationRule(
+                    text = SmartTutorStrings.password_has_letter,
+                    isValid = password.any { it.isLetter() }
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.password_has_number,
+                    isValid = password.any { it.isDigit() }
+                )
+
+                ValidationRule(
+                    text = SmartTutorStrings.password_has_special,
+                    isValid = password.any { !it.isLetterOrDigit() }
+                )
+            }
+        }
         Spacer(Modifier.height(spacing24))
 
         ButtonComposable(
@@ -94,5 +151,41 @@ fun LoginComposable(
                 color = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+@Composable
+private fun ValidationRule(
+    text: String,
+    isValid: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = if (isValid) {
+                Icons.Filled.CheckCircle
+            } else {
+                Icons.Filled.Cancel
+            },
+            contentDescription = null,
+            tint = if (isValid) {
+                Color(0xFF2E7D32)
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+            modifier = Modifier.size(16.dp)
+        )
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isValid) {
+                Color(0xFF2E7D32)
+            } else {
+                MaterialTheme.colorScheme.error
+            }
+        )
     }
 }

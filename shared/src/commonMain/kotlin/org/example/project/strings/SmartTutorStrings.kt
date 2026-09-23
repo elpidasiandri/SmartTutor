@@ -44,17 +44,30 @@ object SmartTutorStrings {
             "Confirm Password",
             "Επιβεβαίωση κωδικού"
         )
+    val account_created: String
+        get() = localized(
+            "Account created successfully!",
+            "Ο λογαριασμός δημιουργήθηκε επιτυχώς!"
+        )
+    val verification_email_sent: String
+        get() = localized(
+            "We sent a verification link to:",
+            "Στείλαμε σύνδεσμο επιβεβαίωσης στο:"
+        )
+    val verify_before_login: String
+        get() = localized(
+            "Please verify your email before signing in.",
+            "Επιβεβαίωσε το email σου πριν συνδεθείς."
+        )
+    val check_spam_folder : String
+        get() = localized(
+            "Can't find the email? Check your Spam or Junk folder.",
+            "Δεν βρίσκεις το email; Έλεγξε τον φάκελο Ανεπιθύμητα (Spam/Junk)."
+        )
 
     val signup: String
         get() = localized("Sign Up", "Εγγραφή")
-    val verification_email_sent_info: String
-        get() = when (LanguageManager.language.value) {
-            AppLanguage.ENGLISH ->
-                "Check your email. We’ve sent you a verification email. It may take a few minutes to arrive. Please also check your Spam folder."
 
-            AppLanguage.GREEK ->
-                "Ελέγξτε το email σας. Σας έχουμε στείλει ένα email επιβεβαίωσης. Μπορεί να χρειαστούν μερικά λεπτά μέχρι να το λάβετε. Ελέγξτε επίσης τον φάκελο ανεπιθύμητης αλληλογραφίας (Spam)."
-        }
     val confirm_email: String
         get() = when (LanguageManager.language.value) {
             AppLanguage.ENGLISH -> "Confirm Email"
@@ -698,6 +711,7 @@ object SmartTutorStrings {
             AppLanguage.GREEK ->
                 "Δεν υπάρχουν ακόμη δεδομένα προόδου. Ξεκινήστε να μελετάτε ένα εκπαιδευτικό υλικό και η πρόοδός σας θα εμφανιστεί εδώ."
         }
+
     fun progress_percent(value: Int): String =
         localized(
             "Progress: $value%",
@@ -792,15 +806,15 @@ object SmartTutorStrings {
             "Πρόοδος"
         )
 
-//tutorial
-val tutorial_progress_title: String
-    get() = when (LanguageManager.language.value) {
-        AppLanguage.GREEK ->
-            "Παρακολούθησε την πρόοδό σου"
+    //tutorial
+    val tutorial_progress_title: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK ->
+                "Παρακολούθησε την πρόοδό σου"
 
-        AppLanguage.ENGLISH ->
-            "Track your progress"
-    }
+            AppLanguage.ENGLISH ->
+                "Track your progress"
+        }
 
     val tutorial_progress_description: String
         get() = when (LanguageManager.language.value) {
@@ -810,11 +824,11 @@ val tutorial_progress_title: String
             AppLanguage.ENGLISH ->
                 "From here you can view your progress, your answers, and your score for each learning unit."
         }
-val tutorial_skip: String
-    get() = when (LanguageManager.language.value) {
-        AppLanguage.GREEK -> "Παράλειψη"
-        AppLanguage.ENGLISH -> "Skip"
-    }
+    val tutorial_skip: String
+        get() = when (LanguageManager.language.value) {
+            AppLanguage.GREEK -> "Παράλειψη"
+            AppLanguage.ENGLISH -> "Skip"
+        }
 
     val tutorial_next: String
         get() = when (LanguageManager.language.value) {

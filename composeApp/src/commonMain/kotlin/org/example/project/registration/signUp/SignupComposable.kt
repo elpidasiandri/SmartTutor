@@ -3,9 +3,7 @@ package org.example.project.registration.signUp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,7 +42,7 @@ import org.example.project.utils.validation.Validation
 
 @Composable
 fun SignupComposable(
-    signUp: (String, String, String) -> Unit,
+    signUp: (String, String, String, onSuccess: () -> Unit) -> Unit,
     isWebUi: Boolean = false,
     currentLanguage: AppLanguage,
 ) {
@@ -72,11 +70,17 @@ fun SignupComposable(
         email.trim() == email2.trim() && email.trim().isNotEmpty() && email2.trim().isNotEmpty()
     val isFormValid by derivedStateOf {
         isEmailValid &&
-                isPassword1Valid && isPassword2Valid &&
-                arePasswordsSame && isUsernameValid &&
-                areEmailsSame && isUsernameValid
+                isEmail2Valid &&
+                emailHasOnlyLatinCharacters &&
+                email2HasOnlyLatinCharacters &&
+                areEmailsSame &&
+                isUsernameValid &&
+                isPassword1Valid &&
+                isPassword2Valid &&
+                arePasswordsSame
     }
     var showVerificationInfo by remember { mutableStateOf(false) }
+    var verificationEmail by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()).padding(spacing16),
@@ -112,16 +116,6 @@ fun SignupComposable(
                 modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                ValidationRule(
-                    text = SmartTutorStrings.email_latin_only,
-                    isValid = email2HasOnlyLatinCharacters
-                )
-
-                ValidationRule(
-                    text = SmartTutorStrings.email_valid_format,
-                    isValid = isEmail2Valid
-                )
-
                 ValidationRule(
                     text = SmartTutorStrings.emails_match,
                     isValid = areEmailsSame
@@ -199,21 +193,65 @@ fun SignupComposable(
             text = SmartTutorStrings.signup,
             enabled = isFormValid,
             onClick = {
-                signUp(email.trim(), password1, username)
-                showVerificationInfo = true
+                val submittedEmail = email.trim()
+
+
+                signUp(
+                    submittedEmail,
+                    password1,
+                    username
+                ) {
+                    verificationEmail = submittedEmail
+                    showVerificationInfo = true
+                }
+                email = ""
+                email2 = ""
+                username = ""
+                password1 = ""
+                password2 = ""
             },
             modifier = if (isWebUi) Modifier.width(webSpacing)
                 .padding(vertical = spacing8)
                 .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier
         )
         if (showVerificationInfo) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF2E7D32),
+                    modifier = Modifier.size(40.dp)
+                )
 
-            Text(
-                text = SmartTutorStrings.verification_email_sent_info,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+                Text(
+                    text = SmartTutorStrings.account_created,
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Text(
+                    text = SmartTutorStrings.verification_email_sent,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Text(
+                    text = verificationEmail,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = SmartTutorStrings.verify_before_login,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Text(
+                    text = SmartTutorStrings.check_spam_folder,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 

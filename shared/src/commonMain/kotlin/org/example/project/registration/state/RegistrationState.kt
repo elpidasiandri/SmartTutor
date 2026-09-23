@@ -22,7 +22,10 @@ sealed class RegistrationEvents {
     data object None : RegistrationEvents()
     data object ClearUiEvent : RegistrationEvents()
     data object InitializeStateAfterShowingMessage : RegistrationEvents()
-    data class SignUp(val email: String, val password: String, val username: String) :
+    data class SignUp(
+        val email: String, val password: String, val username: String,
+        val onSuccess: () -> Unit,
+    ) :
         RegistrationEvents()
 
     data class Login(val email: String, val password: String) : RegistrationEvents()

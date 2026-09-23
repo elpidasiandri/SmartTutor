@@ -49,12 +49,13 @@ class RegistrationActivity : ComponentActivity() {
                 onLogin = { email, password ->
                     registrationViewModel.onEvent(RegistrationEvents.Login(email, password))
                 },
-                onSignUp = { email, password, username ->
+                onSignUp = { email, password, username,onSuccess ->
                     registrationViewModel.onEvent(
                         RegistrationEvents.SignUp(
                             email,
                             password,
-                            username
+                            username,
+                            onSuccess
                         )
                     )
                 },
