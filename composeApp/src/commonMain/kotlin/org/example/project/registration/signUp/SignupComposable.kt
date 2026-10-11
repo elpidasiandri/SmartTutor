@@ -47,7 +47,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusProperties
-
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.isShiftPressed
 @Composable
 fun SignupComposable(
     signUp: (String, String, String, onSuccess: () -> Unit) -> Unit,
@@ -112,6 +117,7 @@ fun SignupComposable(
             isWebUi = isWebUi,
             imeAction = ImeAction.Next,
             modifier = Modifier
+                .handleTabFocus(next = confirmEmailFocus)
                 .focusRequester(emailFocus)
                 .focusProperties {
                     next = confirmEmailFocus
@@ -151,6 +157,10 @@ fun SignupComposable(
             isWebUi = isWebUi,
             imeAction = ImeAction.Next,
             modifier = Modifier
+                .handleTabFocus(
+                    next = usernameFocus,
+                    previous = emailFocus
+                )
                 .focusRequester(confirmEmailFocus)
                 .focusProperties {
                     previous = emailFocus
@@ -185,6 +195,10 @@ fun SignupComposable(
                 }
             ),
             modifier = Modifier
+                .handleTabFocus(
+                    next = passwordFocus,
+                    previous = confirmEmailFocus
+                )
                 .focusRequester(usernameFocus)
                 .focusProperties {
                     previous = confirmEmailFocus
@@ -207,6 +221,10 @@ fun SignupComposable(
             isWebUi = isWebUi,
             imeAction = ImeAction.Next,
             modifier = Modifier
+                .handleTabFocus(
+                    next = confirmPasswordFocus,
+                    previous = usernameFocus
+                )
                 .focusRequester(passwordFocus)
                 .focusProperties {
                     previous = usernameFocus
@@ -247,6 +265,10 @@ fun SignupComposable(
             isWebUi = isWebUi,
             imeAction = ImeAction.Done,
             modifier = Modifier
+                .handleTabFocus(
+                    next = signupFocus,
+                    previous = passwordFocus
+                )
                 .focusRequester(confirmPasswordFocus)
                 .focusProperties {
                     previous = passwordFocus
@@ -381,5 +403,26 @@ private fun ValidationRule(
                 MaterialTheme.colorScheme.error
             }
         )
+    }
+}
+
+
+private fun Modifier.handleTabFocus(
+    next: FocusRequester,
+    previous: FocusRequester? = null,
+): Modifier = this.onPreviewKeyEvent { event ->
+    if (
+        event.type == KeyEventType.KeyDown &&
+        event.key == Key.Tab
+    ) {
+        if (event.isShiftPressed) {
+            previous?.requestFocus()
+            previous != null
+        } else {
+            next.requestFocus()
+            true
+        }
+    } else {
+        false
     }
 }
