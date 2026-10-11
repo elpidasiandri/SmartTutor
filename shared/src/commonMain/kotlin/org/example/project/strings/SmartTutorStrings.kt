@@ -822,6 +822,24 @@ object SmartTutorStrings {
             "Δημιουργούνται νέες ασκήσεις με βάση τις απαντήσεις σου και τις δυσκολίες που έχεις αντιμετωπίσει, ώστε να εξασκηθείς στα σημεία που χρειάζεσαι βελτίωση."
         )
 
+    val exercise_previous_attempts: String
+        get() = localized(
+            "Previous attempts",
+            "Προηγούμενες προσπάθειες"
+        )
+
+    val exercise_not_answered_yet: String
+        get() = localized(
+            "You haven't answered this exercise in the current attempt yet.",
+            "Δεν έχεις απαντήσει ακόμη σε αυτή την άσκηση στην τρέχουσα προσπάθεια."
+        )
+
+    fun exercise_attempt_label(attemptNumber: Int): String =
+        localized(
+            "Attempt $attemptNumber",
+            "Προσπάθεια $attemptNumber"
+        )
+
     val exercise_correct_feedback: String
         get() = localized(
             "Correct answer!",

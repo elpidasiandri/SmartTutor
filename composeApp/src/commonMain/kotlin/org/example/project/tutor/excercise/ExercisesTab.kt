@@ -167,13 +167,21 @@ private fun ExerciseCard(
     var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
 
-
     val latestAttempt = exercise.latestAttempt
     val exerciseAttemptsCount = exercise.attemptsCount
+
     val canAnswerNow = exerciseAttemptsCount < currentAttemptRound
     val isTemporarilyLocked = !canAnswerNow
 
-    val answered = latestAttempt != null
+    val hasAnsweredCurrentAttempt =
+        latestAttempt?.attemptNumber == currentAttemptRound
+
+    val previousAttempts = exercise.attempts
+        .filter { it.attemptNumber < currentAttemptRound }
+        .sortedBy { it.attemptNumber }
+
+    val answered = hasAnsweredCurrentAttempt
+
 
     val type = exercise.type
     var showCorrectAnswer by rememberSaveable(index) { mutableStateOf(false) }
@@ -236,7 +244,7 @@ private fun ExerciseCard(
         )
         Spacer(Modifier.height(4.dp))
 
-        if (answered && latestAttempt != null) {
+        if (hasAnsweredCurrentAttempt && latestAttempt != null) {
 
             Spacer(Modifier.height(spacing8))
 
@@ -269,6 +277,14 @@ private fun ExerciseCard(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                Text(
+                    text = SmartTutorStrings.exercise_attempt_label(
+                        currentAttemptRound
+                    ),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = feedbackColor
+                )
                 Text(
                     text = when {
                         isCorrect ->
