@@ -13,7 +13,7 @@ import org.example.project.registration.AuthUserHolder
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.useCases.GetChatByIdUseCase
-
+import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
 class MyProgressController(
     private val analyticsTracker: IAnalyticsTracker,
     private val platform: TutorPlatform,
@@ -22,7 +22,7 @@ class MyProgressController(
     private val getExerciseStatsUseCase: GetExerciseStatsUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
     private val userId: String,
-
+    private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
     ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -35,6 +35,7 @@ class MyProgressController(
         getChatProgressListUseCase = getChatProgressListUseCase,
         getExerciseStateUseCase = getExerciseStatsUseCase,
         getChatByIdUseCase = getChatByIdUseCase,
+        getAllHistoryChatUseCase = getAllHistoryChatUseCase,
     )
     val state: StateFlow<MyProgressState> = common.state
 

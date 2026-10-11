@@ -58,6 +58,7 @@ val myProgressModule = module {
             getExerciseStatsUseCase = get(),
             getChatByIdUseCase = get(),
             userId = userId,
+            getAllHistoryChatUseCase = get(),
         )
     }
 

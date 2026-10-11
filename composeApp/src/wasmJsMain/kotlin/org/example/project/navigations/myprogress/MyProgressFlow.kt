@@ -13,7 +13,7 @@ import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.registration.AuthUserHolder
 import org.koin.compose.getKoin
-
+import org.koin.core.parameter.parametersOf
 @Composable
 fun MyProgressFlow(navController: NavController) {
 
@@ -29,9 +29,10 @@ fun MyProgressFlow(navController: NavController) {
     val koin = getKoin()
 
     val controller = remember(userId) {
-        koin.get<MyProgressController>()
+        koin.get<MyProgressController> {
+            parametersOf(userId)
+        }
     }
-
     val state by controller.state.collectAsState()
 
     MyProgressScreen(

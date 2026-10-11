@@ -90,6 +90,12 @@ fun ExercisesTab(
     val isLastExercise = safeIndex == exercises.lastIndex
     val scrollState = rememberScrollState()
 
+    val minAttempts = exercises.minOfOrNull { it.attemptsCount } ?: 0
+    val maxAttempts = exercises.maxOfOrNull { it.attemptsCount } ?: 0
+
+    val hasCompletedFullAttempt =
+        minAttempts > 0 && minAttempts == maxAttempts
+
     Column(
         modifier = modifier.padding(horizontal = spacing8).verticalScroll(
             state = scrollState
@@ -115,7 +121,7 @@ fun ExercisesTab(
 
     }
 
-    if (isLastExercise) {
+    if (isLastExercise && hasCompletedFullAttempt) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

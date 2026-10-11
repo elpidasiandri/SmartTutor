@@ -18,7 +18,9 @@ import org.example.project.myProgress.useCases.GetProgressOverviewUseCase
 import org.example.project.tutor.commonViewModel.TutorPlatform
 import org.example.project.tutor.repo.analytics.IAnalyticsTracker
 import org.example.project.tutor.useCases.GetChatByIdUseCase
-
+import org.example.project.tutor.useCases.GetAllHistoryChatUseCase
+import org.example.project.myProgress.models.ChatProgressDomain
+import org.example.project.myProgress.models.UnitReadProgressDomain
 class MyProgressCommonViewModel(
     private val scope: CoroutineScope,
     private val analyticsTracker: IAnalyticsTracker,
@@ -28,6 +30,7 @@ class MyProgressCommonViewModel(
     private val getChatProgressListUseCase: GetChatProgressListUseCase,
     private val getExerciseStateUseCase: GetExerciseStatsUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
+    private val getAllHistoryChatUseCase: GetAllHistoryChatUseCase,
 ) {
     private val _state = MutableStateFlow(MyProgressState())
     val state: StateFlow<MyProgressState> = _state
@@ -100,10 +103,30 @@ class MyProgressCommonViewModel(
 
                 val overview = getProgressOverviewUseCase(userId)
 
-                val chatProgressList = getChatProgressListUseCase(userId)
 
-                val pdfProgressList = chatProgressList.map { chat ->
-                    val fullChat = getChatByIdUseCase(chatId = chat.chatId, userId = userId)
+                val chatProgressList = getChatProgressListUseCase(userId)
+                val userChats = getAllHistoryChatUseCase(userId)
+
+                val progressChatIds = chatProgressList
+                    .map { it.chatId }
+                    .toSet()
+
+                val missingChatProgress = userChats
+                    .filter { it.chatId !in progressChatIds }
+                    .map { chat ->
+                        ChatProgressDomain(
+                            chatId = chat.chatId,
+                            userId = userId,
+                            documentId = chat.documentId,
+                            title = chat.title,
+                        )
+                    }
+
+                val allChatProgress = chatProgressList + missingChatProgress
+
+                val pdfProgressList = allChatProgress.map { chat ->
+
+                val fullChat = getChatByIdUseCase(chatId = chat.chatId, userId = userId)
                     val sourceUnits =
                         fullChat.result?.learningUnits ?: fullChat.partialResult?.learningUnits
                         ?: emptyList()
@@ -111,9 +134,27 @@ class MyProgressCommonViewModel(
                         getExerciseStateUseCase(userId = userId, chatId = chat.chatId)
                     val statsByUnitIndex = exerciseStats.associateBy { it.unitIndex }
 
-                    val unitStats = chat.units.map { chatUnit ->
 
-                        val sourceUnit = sourceUnits.getOrNull(chatUnit.unitIndex)
+                    val fallbackUnits = sourceUnits.mapIndexed { index, unit ->
+                        UnitReadProgressDomain(
+                            unitIndex = index,
+                            unitTitle = unit.title.orEmpty(),
+                            totalExercises = unit.exercises.size,
+                            totalMaxPoints = unit.exercises.sumOf {
+                                it.maxPoints ?: 0.0
+                            }
+                        )
+                    }
+
+                    val unitsToDisplay = (
+                            chat.units + fallbackUnits
+                            ).distinctBy { it.unitIndex }
+                        .sortedBy { it.unitIndex }
+
+                    val unitStats = unitsToDisplay.map { chatUnit ->
+
+
+                    val sourceUnit = sourceUnits.getOrNull(chatUnit.unitIndex)
                         val exerciseState = statsByUnitIndex[chatUnit.unitIndex]
                         val questions = exerciseState?.questions?.map { it.toDomain() }.orEmpty()
                         val answeredUniqueExercises =
