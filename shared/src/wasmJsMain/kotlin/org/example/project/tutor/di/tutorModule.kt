@@ -38,8 +38,8 @@ import org.example.project.tutor.viewModel.TutorController
 import org.koin.dsl.module
 
 val tutorModule = module {
-    factory<HttpClient> { createWebHttpClient() }
-    factory { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
+    single <HttpClient> { createWebHttpClient() }
+    single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
     factory<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
     factory<ITutorRepo> {
         WebTutorRepoImpl(

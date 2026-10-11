@@ -1,17 +1,37 @@
+
 package org.example.project.navigations.myprogress
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import org.example.project.myProgress.MyProgressController
 import org.example.project.myProgress.MyProgressScreen
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
-import org.koin.compose.koinInject
+import org.example.project.registration.AuthUserHolder
+import org.koin.compose.getKoin
 
 @Composable
-fun MyProgressFlow (navController: NavController) {
-    val controller = koinInject<MyProgressController>()
+fun MyProgressFlow(navController: NavController) {
+
+    val userId = AuthUserHolder.currentUser?.uid
+
+    if (userId.isNullOrBlank()) {
+        LaunchedEffect(Unit) {
+            navController.navigate(WebScreen.Registration)
+        }
+        return
+    }
+
+    val koin = getKoin()
+
+    val controller = remember(userId) {
+        koin.get<MyProgressController>()
+    }
+
     val state by controller.state.collectAsState()
 
     MyProgressScreen(
