@@ -65,6 +65,7 @@ import org.example.project.utils.UtilsComposable.noRippleClickable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import org.example.project.tutor.LocalIsExperimentUser
 
 @Composable
 fun MenuAndChatHistory(
@@ -85,7 +86,8 @@ fun MenuAndChatHistory(
     activeChatId: String,
     onNewChatPositioned: (Rect) -> Unit = {},
     onProgressPositioned: (Rect) -> Unit = {},
-    ) {
+) {
+    val isExperimentUser = LocalIsExperimentUser.current
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -93,11 +95,12 @@ fun MenuAndChatHistory(
             .background(Color.White)
             .padding(spacing8)
     ) {
-        NewChatButton(
-            onChatTitleClick = onChatTitleClick,
-            onPositioned = onNewChatPositioned
-        )
-
+        if (!isExperimentUser) {
+            NewChatButton(
+                onChatTitleClick = onChatTitleClick,
+                onPositioned = onNewChatPositioned
+            )
+        }
         ChatHistoryHeader()
 
         ChatHistoryList(
@@ -308,6 +311,7 @@ fun SubjectHistoryItem(
     selectedExerciseIndex: Int,
     activeChatId: String,
 ) {
+    val isExperimentUser = LocalIsExperimentUser.current
     var expanded by remember { mutableStateOf(true) }
     var menuOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -319,30 +323,31 @@ fun SubjectHistoryItem(
             onRowClick = { expanded = !expanded },
             onToggleExpand = { expanded = !expanded },
             onMoreClick = { menuOpen = true },
+            showMoreButton = !isExperimentUser,
             onExistingChatClick = { chatId ->
                 onExistingChatClick(chatId)
             },
         )
+        if (!isExperimentUser) {
+            SubjectOverflowMenu(
+                menuOpen = menuOpen,
+                onDismiss = { menuOpen = false },
+                onDeleteClick = {
+                    menuOpen = false
+                    showDeleteDialog = true
+                }
+            )
 
-        SubjectOverflowMenu(
-            menuOpen = menuOpen,
-            onDismiss = { menuOpen = false },
-            onDeleteClick = {
-                menuOpen = false
-                showDeleteDialog = true
-            }
-        )
-
-        DeleteSubjectDialog(
-            visible = showDeleteDialog,
-            subjectTitle = subject.title,
-            onConfirm = {
-                showDeleteDialog = false
-                onDeleteSubject(subject.subjectId)
-            },
-            onDismiss = { showDeleteDialog = false }
-        )
-
+            DeleteSubjectDialog(
+                visible = showDeleteDialog,
+                subjectTitle = subject.title,
+                onConfirm = {
+                    showDeleteDialog = false
+                    onDeleteSubject(subject.subjectId)
+                },
+                onDismiss = { showDeleteDialog = false }
+            )
+        }
         if (expanded) {
             subject.learningUnits.forEachIndexed { index, lu ->
                 LearningUnitRow(
@@ -374,6 +379,7 @@ private fun SubjectHeaderRow(
     onRowClick: () -> Unit,
     onToggleExpand: () -> Unit,
     onMoreClick: () -> Unit,
+    showMoreButton: Boolean,
     onExistingChatClick: (String) -> Unit,
 
     ) {
@@ -397,10 +403,14 @@ private fun SubjectHeaderRow(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            MoreButton(
-                onClick = onMoreClick,
-                modifier = Modifier.size(28.dp)
-            )
+
+            if (showMoreButton) {
+                MoreButton(
+                    onClick = onMoreClick,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
 
             if (subject.learningUnits.isNotEmpty()) {
                 Icon(
