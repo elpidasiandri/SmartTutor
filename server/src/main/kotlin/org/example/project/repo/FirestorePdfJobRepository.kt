@@ -228,14 +228,7 @@ class FirestorePdfJobRepository(
     }
 
     override fun getStatus(documentId: String): PdfJobStatusResponse? {
-        val doc = col.document(documentId).get().get()
-
-        if (!doc.exists()) return null
-
-        if (
-            documentId ==
-            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
-        ) {
+        if (documentId == ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID) {
             val result = experimentContentStorage.loadExperimentContent()
 
             return PdfJobStatusResponse(
@@ -248,6 +241,8 @@ class FirestorePdfJobRepository(
             )
         }
 
+        val doc = col.document(documentId).get().get()
+        if (!doc.exists()) return null
         val status = doc.getString("status") ?: "unknown"
         val progress = (doc.getLong("progress") ?: 0L).toInt()
         val error = doc.getString("error")
