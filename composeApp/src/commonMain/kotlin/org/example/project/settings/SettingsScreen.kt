@@ -39,10 +39,11 @@ import org.example.project.utils.UtilsComposable.noRippleClickable
 
 @Composable
 fun SettingsScreen(
-    deleteAccountVisible:Boolean = true,
+    deleteAccountVisible: Boolean = true,
     onChangePasswordClick: () -> Unit,
     onDeleteAccountClick: () -> Unit,
     onBack: () -> Unit,
+    showLanguageSelector: Boolean = true,
 ) {
     val selectedLanguage by LanguageManager.language.collectAsState()
     Column(
@@ -81,28 +82,29 @@ fun SettingsScreen(
         Spacer(
             Modifier.height(spacing24)
         )
+        if (showLanguageSelector) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing16)
+            ) {
+                Text(
+                    text = "Language / Γλώσσα",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing16)
-        ) {
-            Text(
-                text = "Language / Γλώσσα",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
+                LanguageSelector(
+                    selectedLanguage = selectedLanguage,
+                    onLanguageSelected = { language ->
+                        LanguageManager.setLanguage(language)
+                    }
+                )
+            }
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-            LanguageSelector(
-                selectedLanguage = selectedLanguage,
-                onLanguageSelected = { language ->
-                    LanguageManager.setLanguage(language)
-                }
-            )
         }
-
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-        if (deleteAccountVisible){
+        if (deleteAccountVisible) {
             Spacer(modifier = Modifier.weight(1f))
             Row(
                 modifier = Modifier

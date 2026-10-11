@@ -161,7 +161,7 @@ class PromptLlmClient(
         """.trimIndent()
 
         val request = buildResponsesRequest(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-terra",
             system = system,
             user = user,
             schemaOnly = openExerciseEvaluationSchemaJson(),
@@ -408,7 +408,7 @@ class PromptLlmClient(
     """.trimIndent()
 
         val req = buildResponsesRequest(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-terra",
             system = system,
             user = user,
             schemaOnly = schema,
@@ -561,7 +561,7 @@ class PromptLlmClient(
 
 
         val req = buildResponsesRequest(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-terra",
             system = system,
             user = user,
             schemaOnly = schema,
@@ -961,7 +961,7 @@ class PromptLlmClient(
         """.trimIndent()
 
         val req = buildResponsesRequest(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-terra",
             system = system,
             user = user,
             schemaOnly = schemaOnly,
@@ -1259,7 +1259,7 @@ class PromptLlmClient(
 
         suspend fun generateAndDecode(tag: String, systemPrompt: String): UnitsWithCarryDto {
             val request = buildResponsesRequestWithPdfFile(
-                model = "gpt-4o-mini",
+                model = "gpt-5.6-terra",
                 fileId = fileId,
                 system = systemPrompt,
                 user = user,
@@ -2270,7 +2270,7 @@ class PromptLlmClient(
     """.trimIndent()
 
         val req = buildTextResponsesRequest(
-            model = "gpt-4o-mini",
+            model = "gpt-5.6-terra",
             system = system,
             user = user,
             maxOutputTokens = 500

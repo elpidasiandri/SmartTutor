@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import org.example.project.experiment.ExperimentConfig
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
+import org.example.project.registration.AuthUserHolder
 import org.example.project.settings.SettingsEvents
 import org.example.project.settings.SettingsScreen
 import org.example.project.settings.SettingsUiEvents
@@ -44,7 +46,11 @@ fun SettingsScreenFlow(navController: NavController) {
             else -> {}
         }
     }
+    val user = AuthUserHolder.currentUser
 
+    val isExperimentUser =
+        user?.emailVerified == true &&
+                ExperimentConfig.shouldUseExperimentDocument(user.email)
     SettingsScreen(
         deleteAccountVisible = false,
         onBack = { controller.onEvent(SettingsEvents.LeaveSettingsFlow) },
@@ -53,6 +59,7 @@ fun SettingsScreenFlow(navController: NavController) {
         },
         onDeleteAccountClick = {
 //            controller.onEvent(SettingsEvents.NavigateToDeleteAccount)
-        }
+        },
+        showLanguageSelector = !isExperimentUser,
     )
 }

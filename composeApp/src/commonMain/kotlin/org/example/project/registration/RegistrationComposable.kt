@@ -19,6 +19,7 @@ import org.example.project.registration.signUp.SignupComposable
 import org.example.project.strings.AppLanguage
 import org.example.project.strings.LanguageManager
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.experiment.ExperimentConfig
 
 @Composable
 fun RegistrationComposable(
@@ -37,7 +38,11 @@ fun RegistrationComposable(
     val tabs = listOf(RegistrationScreens.Login, RegistrationScreens.SignUp)
     var showErrorMessage by remember(showCustomMessage) { mutableStateOf(showCustomMessage) }
     var errorMessage by remember(message) { mutableStateOf(message) }
-
+    LaunchedEffect(ExperimentConfig.IS_EXPERIMENT_ACTIVE) {
+        if (ExperimentConfig.IS_EXPERIMENT_ACTIVE) {
+            LanguageManager.setLanguage(AppLanguage.GREEK)
+        }
+    }
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -96,58 +101,59 @@ fun RegistrationComposable(
 
                     1 -> SignupComposable(
                         isWebUi = isWebUi,
-                        signUp = { email, password, username,onSuccess ->
-                            onSignUp(email, password, username,onSuccess)
+                        signUp = { email, password, username, onSuccess ->
+                            onSignUp(email, password, username, onSuccess)
                         },
                         currentLanguage = selectedLanguage
                     )
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                TextButton(
-                    onClick = {
-                        showLanguageMenu = true
-                    }
+            if (!ExperimentConfig.IS_EXPERIMENT_ACTIVE) {
+                Box(
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(text = SmartTutorStrings.change_language)
-                }
-
-                DropdownMenu(
-                    expanded = showLanguageMenu,
-                    onDismissRequest = {
-                        showLanguageMenu = false
-                    }
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text("English")
-                        },
+                    TextButton(
                         onClick = {
-                            LanguageManager.setLanguage(AppLanguage.ENGLISH)
+                            showLanguageMenu = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = null
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(text = SmartTutorStrings.change_language)
+                    }
+
+                    DropdownMenu(
+                        expanded = showLanguageMenu,
+                        onDismissRequest = {
                             showLanguageMenu = false
                         }
-                    )
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text("English")
+                            },
+                            onClick = {
+                                LanguageManager.setLanguage(AppLanguage.ENGLISH)
+                                showLanguageMenu = false
+                            }
+                        )
 
-                    DropdownMenuItem(
-                        text = {
-                            Text("Ελληνικά")
-                        },
-                        onClick = {
-                            LanguageManager.setLanguage(AppLanguage.GREEK)
-                            showLanguageMenu = false
-                        }
-                    )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Ελληνικά")
+                            },
+                            onClick = {
+                                LanguageManager.setLanguage(AppLanguage.GREEK)
+                                showLanguageMenu = false
+                            }
+                        )
+                    }
                 }
             }
 

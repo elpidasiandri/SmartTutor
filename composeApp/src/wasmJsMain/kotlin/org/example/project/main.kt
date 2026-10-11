@@ -1,7 +1,7 @@
 @file:Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
 
 package org.example.project
-
+import org.example.project.experiment.ExperimentConfig
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -44,7 +44,11 @@ object WebApp : KoinComponent {
         onAuthStateChanged(auth) { user ->
 
             AuthUserHolder.currentUser = user
+            val isExperimentUser =
+                user?.emailVerified == true &&
+                        ExperimentConfig.shouldUseExperimentDocument(user.email)
 
+            LanguageManager.setExperimentMode(isExperimentUser)
             if (user != null && user.emailVerified) {
                 navController.navigate(WebScreen.Tutor)
             } else {

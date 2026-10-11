@@ -19,7 +19,19 @@ import org.example.project.tutor.networkModel.chatHistory.AskTutorResponse
 import org.example.project.tutor.networkModel.chatHistory.ChatMessageDto
 import org.example.project.tutor.networkModel.chatHistory.ChatSender
 import java.util.UUID
+private const val EXPERIMENT_DOCUMENT_ID =
+    "duth_java_experiment"
 
+private fun languageForChat(
+    documentId: String?,
+    requestedLanguage: String?
+): String {
+    return if (documentId == EXPERIMENT_DOCUMENT_ID) {
+        "Greek"
+    } else {
+        resolveTutorLanguage(requestedLanguage)
+    }
+}
 fun Route.chatRoutes(
     chatRepo: IChatRepository,
     llm: PromptLlmClient,
@@ -214,7 +226,10 @@ fun Route.chatRoutes(
                     HttpStatusCode.NotFound,
                     mapOf("error" to "Chat not found")
                 )
-
+            val responseLanguage = languageForChat(
+                chat.documentId,
+                call.request.queryParameters["responseLanguage"]
+            )
             val prototype = chat.result ?: chat.partialResult
             ?: return@post call.respond(
                 HttpStatusCode.BadRequest,
@@ -280,7 +295,8 @@ fun Route.chatRoutes(
                     )
                 }
 
-                val responseLanguage = resolveTutorLanguage(
+                val responseLanguage = languageForChat(
+                    chat.documentId,
                     req.responseLanguage
                 )
 
@@ -396,7 +412,10 @@ fun Route.chatRoutes(
                 }
 
             val aiAnswer = llm.answerQuestionForUnit(
-                language = resolveTutorLanguage(req.responseLanguage),
+                language = languageForChat(
+                    chat.documentId,
+                    req.responseLanguage
+                ),
                 fileName = chat.title,
                 unitTitle = unit.title.orEmpty(),
                 tab = req.tab,

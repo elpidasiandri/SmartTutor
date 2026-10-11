@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+
 object LanguageManager {
 
     private val _language =
@@ -14,21 +15,32 @@ object LanguageManager {
 
     private var storage: LanguageStorage? = null
 
-    fun initialize(
-        languageStorage: LanguageStorage
-    ) {
+    private var isGreekLocked = false
+
+    fun initialize(languageStorage: LanguageStorage) {
         storage = languageStorage
 
-        val savedLanguage = languageStorage.loadLanguage()
-
-        if (savedLanguage != null) {
-            _language.value = savedLanguage
+        if (!isGreekLocked) {
+            _language.value =
+                languageStorage.loadLanguage()
+                    ?: AppLanguage.ENGLISH
         }
     }
 
-    fun setLanguage(
-        language: AppLanguage
-    ) {
+    fun setExperimentMode(enabled: Boolean) {
+        isGreekLocked = enabled
+
+        _language.value = if (enabled) {
+            AppLanguage.GREEK
+        } else {
+            storage?.loadLanguage()
+                ?: AppLanguage.ENGLISH
+        }
+    }
+
+    fun setLanguage(language: AppLanguage) {
+        if (isGreekLocked) return
+
         _language.value = language
         storage?.saveLanguage(language)
     }
