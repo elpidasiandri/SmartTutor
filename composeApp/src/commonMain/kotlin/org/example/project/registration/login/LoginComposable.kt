@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.ImeAction
 @Composable
 fun LoginComposable(
     login: (String, String) -> Unit,
@@ -68,7 +69,8 @@ fun LoginComposable(
         EmailTextFieldComposable(
             value = email,
             onValueChange = { email = it },
-            isWebUi = isWebUi
+            isWebUi = isWebUi,
+            imeAction = ImeAction.Next,
         )
         if (email.isNotEmpty()) {
             Column(
@@ -97,8 +99,16 @@ fun LoginComposable(
             value = password,
             onValueChange = { password = it },
             label = passwordHint,
-            isWebUi = isWebUi
-        )
+            isWebUi = isWebUi,
+
+            imeAction = ImeAction.Done,
+            onDone = {
+                if (isFormValid) {
+                    login(email, password)
+                }
+            },
+
+            )
         if (password.isNotEmpty()) {
             Column(
                 modifier = if (isWebUi) {

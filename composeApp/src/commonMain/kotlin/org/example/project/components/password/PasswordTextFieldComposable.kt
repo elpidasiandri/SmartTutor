@@ -23,16 +23,22 @@ import org.example.project.dimens.Dimens
 import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
-
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 @Composable
 fun PasswordTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
     isWebUi: Boolean,
+    imeAction: ImeAction = ImeAction.Next,
+    onDone: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
-
+    val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -47,9 +53,27 @@ fun PasswordTextFieldComposable(
                 )
             }
         },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = if (isWebUi) Modifier.padding(vertical = Dimens.spacing4)
-            .width(webSpacing) else SmartTutorStyles.textFieldModifier,
+
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = imeAction
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = {
+                focusManager.moveFocus(FocusDirection.Next)
+            },
+            onDone = {
+                onDone()
+            }
+        ),
+
+        modifier = modifier.then(
+            if (isWebUi) {
+                Modifier.padding(vertical = Dimens.spacing4).width(webSpacing)
+            } else {
+                SmartTutorStyles.textFieldModifier
+            }
+        ),
         colors = defaultTextFieldColors()
     )
 }

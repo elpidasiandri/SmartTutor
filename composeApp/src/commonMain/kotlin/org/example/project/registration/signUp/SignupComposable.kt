@@ -39,6 +39,14 @@ import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.validation.Validation
 import org.example.project.experiment.ExperimentConfig
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
 
 @Composable
 fun SignupComposable(
@@ -46,6 +54,7 @@ fun SignupComposable(
     isWebUi: Boolean = false,
     currentLanguage: AppLanguage,
 ) {
+    val focusManager = LocalFocusManager.current
     var email by remember { mutableStateOf("") }
     var email2 by remember { mutableStateOf("") }
     val emailHasOnlyLatinCharacters =
@@ -85,12 +94,29 @@ fun SignupComposable(
     var showVerificationInfo by remember { mutableStateOf(false) }
     var verificationEmail by remember { mutableStateOf("") }
 
+    val emailFocus = remember { FocusRequester() }
+    val confirmEmailFocus = remember { FocusRequester() }
+    val usernameFocus = remember { FocusRequester() }
+    val passwordFocus = remember { FocusRequester() }
+    val confirmPasswordFocus = remember { FocusRequester() }
+    val signupFocus = remember { FocusRequester() }
+
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()).padding(spacing16),
         verticalArrangement = Arrangement.spacedBy(spacing8),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
+        EmailTextFieldComposable(
+            value = email,
+            onValueChange = { email = it },
+            isWebUi = isWebUi,
+            imeAction = ImeAction.Next,
+            modifier = Modifier
+                .focusRequester(emailFocus)
+                .focusProperties {
+                    next = confirmEmailFocus
+                },
+        )
 
         if (
             ExperimentConfig.IS_EXPERIMENT_ACTIVE &&
@@ -122,7 +148,14 @@ fun SignupComposable(
             value = email2,
             onValueChange = { email2 = it },
             labelHint = SmartTutorStrings.confirm_email,
-            isWebUi = isWebUi
+            isWebUi = isWebUi,
+            imeAction = ImeAction.Next,
+            modifier = Modifier
+                .focusRequester(confirmEmailFocus)
+                .focusProperties {
+                    previous = emailFocus
+                    next = usernameFocus
+                },
         )
         if (email2.isNotEmpty()) {
             Column(
@@ -141,9 +174,27 @@ fun SignupComposable(
             onValueChange = { username = it },
             label = { Text(SmartTutorStrings.username) },
             singleLine = true,
-            modifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth(),
-            colors = defaultTextFieldColors()
-        )
+            colors = defaultTextFieldColors(),
+
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    focusManager.moveFocus(FocusDirection.Next)
+                }
+            ),
+            modifier = Modifier
+                .focusRequester(usernameFocus)
+                .focusProperties {
+                    previous = confirmEmailFocus
+                    next = passwordFocus
+                }
+                .then(
+                    if (isWebUi) Modifier.width(webSpacing)
+                    else Modifier.fillMaxWidth()
+                ),
+            )
 
         if (!isUsernameValid && username.isNotEmpty()) {
             ErrorTextComposable(SmartTutorStrings.username_not_empty)
@@ -153,7 +204,14 @@ fun SignupComposable(
             value = password1,
             onValueChange = { password1 = it },
             label = SmartTutorStrings.passwordHint,
-            isWebUi = isWebUi
+            isWebUi = isWebUi,
+            imeAction = ImeAction.Next,
+            modifier = Modifier
+                .focusRequester(passwordFocus)
+                .focusProperties {
+                    previous = usernameFocus
+                    next = confirmPasswordFocus
+                },
         )
 
         if (password1.isNotEmpty()) {
@@ -186,7 +244,14 @@ fun SignupComposable(
             value = password2,
             onValueChange = { password2 = it },
             label = SmartTutorStrings.confirm_password,
-            isWebUi = isWebUi
+            isWebUi = isWebUi,
+            imeAction = ImeAction.Done,
+            modifier = Modifier
+                .focusRequester(confirmPasswordFocus)
+                .focusProperties {
+                    previous = passwordFocus
+                    next = signupFocus
+                },
         )
 
         if (password2.isNotEmpty()) {
@@ -223,9 +288,22 @@ fun SignupComposable(
                 password1 = ""
                 password2 = ""
             },
-            modifier = if (isWebUi) Modifier.width(webSpacing)
-                .padding(vertical = spacing8)
-                .align(Alignment.CenterHorizontally) else SmartTutorStyles.buttonModifier
+
+            modifier = Modifier
+                .focusRequester(signupFocus)
+                .focusProperties {
+                    previous = confirmPasswordFocus
+                }
+                .then(
+                    if (isWebUi) {
+                        Modifier.width(webSpacing)
+                            .padding(vertical = spacing8)
+                            .align(Alignment.CenterHorizontally)
+                    } else {
+                        SmartTutorStyles.buttonModifier
+                    }
+                )
+
         )
         if (showVerificationInfo) {
             Column(

@@ -13,25 +13,47 @@ import org.example.project.dimens.Dimens.webSpacing
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
-
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 @Composable
 fun EmailTextFieldComposable(
     value: String,
     onValueChange: (String) -> Unit,
     labelHint :String = SmartTutorStrings.emailHint,
     isWebUi: Boolean,
+    imeAction: ImeAction = ImeAction.Next,
+    onDone: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(labelHint) },
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Email,
+            imeAction = imeAction
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = {
+                focusManager.moveFocus(FocusDirection.Next)
+            },
+            onDone = {
+                onDone()
+            }
+        ),
+
         colors = defaultTextFieldColors(),
-        modifier = if (isWebUi) {
-            Modifier.padding(vertical = Dimens.spacing4).width(webSpacing)
-        } else {
-            SmartTutorStyles.textFieldModifier
-        }
+        modifier = modifier.then(
+            if (isWebUi) {
+                Modifier.padding(vertical = Dimens.spacing4).width(webSpacing)
+            } else {
+                SmartTutorStyles.textFieldModifier
+            }
+        )
     )
 }
