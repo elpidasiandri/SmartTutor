@@ -1969,6 +1969,13 @@ class TutorCommonViewModel(
                 )
             }
         }
+
+        finally {
+            _state.update {
+                it.copy(isInitializing = false)
+            }
+        }
+
     }
 
     private fun loadExistingChat(chatId: String) {

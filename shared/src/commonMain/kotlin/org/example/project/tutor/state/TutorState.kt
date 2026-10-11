@@ -21,6 +21,7 @@ data class TutorState(
     val canGoNext: Boolean = true,
     val askTutor: Boolean = false,
     val error: String? = null,
+    val isInitializing: Boolean = true,
     val session: ChatSessionStartDomain = ChatSessionStartDomain(),
     val currentUnit: LearningUnitContentDomain = LearningUnitContentDomain(),
     val chatHistory: ChatHistoryDomain = ChatHistoryDomain(),

@@ -1,6 +1,10 @@
 package org.example.project.navigations.tutor
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -8,9 +12,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.example.project.components.loading.LoadingScreen
 import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.registration.AuthUserHolder
@@ -56,6 +65,10 @@ fun WebTutorScreenFlow(navController: NavController) {
     val state by controller.state.collectAsState()
     val pdfPicker = WebPdfPicker()
     var userMessage by remember { mutableStateOf("") }
+
+    val isExperimentUser =
+        user.emailVerified &&
+                ExperimentConfig.shouldUseExperimentDocument(user.email)
 
     fun handlePickedPdf(file: PickedFile) {
         when (val result = validatePdf(file)) {
@@ -113,115 +126,140 @@ fun WebTutorScreenFlow(navController: NavController) {
             else -> {}
         }
     }
-    TutorScreen(
-        chatData = state.session,
-        chatHistory = state.chatHistory,
-        showCustomMessage = state.showCustomMessage,
-        message = state.message,
-        isError = state.isError,
-        userMessage = userMessage,
-        onSettingsClick = {
-            navController.navigate(WebScreen.Settings)
-        },
-        onLogoutClick = { controller.onEvent(TutorUiEvents.Logout) },
-        onMessageDismiss = {
-            controller.onEvent(TutorUiEvents.InitializeStateAfterShowingMessage)
-        },
-        onUploadPdfClick = {
-            CoroutineScope(Dispatchers.Default).launch {
-                pdfPicker.pickPdf()?.let { file ->
-                    handlePickedPdf(file)
-                }
-            }
-        },
-        selectLearningUnit = { title, subjectId ->
-            controller.onEvent(TutorUiEvents.SelectLearningUnit(title, subjectId))
-        },
-        onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
-        onExercisesClick = { },
-        startNewChat = {
-            controller.onEvent(TutorUiEvents.NewChat)
-        },
-        deleteSubject = { subjectId ->
-            controller.onEvent(TutorUiEvents.DeleteChat(subjectId))
-        },
-        selectedTab = state.selectedTab,
-        onChangeTab = { controller.onEvent(TutorUiEvents.ChangeTab(it)) },
-        tabInfoMessage = state.tabInfoMessage,
-        currentUnit = state.currentUnit,
-        onSendMessage = { message ->
-            controller.onEvent(TutorUiEvents.SendMessage(message))
-        },
 
-        openExistingChat = { chatId ->
-            controller.onEvent(TutorUiEvents.OpenExistingChat(chatId))
-        },
-        navigateToMyProgress = {
-            navController.navigate(WebScreen.MyProgress)
-        },
-        canGoNext = state.canGoNext,
-        askTutor = state.askTutor,
-        onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question, maxPoints ->
-            controller.onEvent(
-                TutorUiEvents.ExerciseAnswered(
-                    exerciseIndex = index,
-                    exerciseType = type,
-                    selectedAnswer = selected,
-                    correctAnswer = correct,
-                    isCorrect = isCorrect,
-                    timeToAnswerMs = timeMs,
-                    question = question,
-                    maxPoints = maxPoints,
-                )
-            )
-        },
-        onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution, maxPoint ->
-            controller.onEvent(
-                TutorUiEvents.AskTutorForOpenExercise(
-                    exerciseIndex = exerciseIndex,
-                    question = question,
-                    userAnswer = userAnswer,
-                    suggestedSolution = suggestedSolution,
-                    maxPoints = maxPoint
-                )
-            )
-        },
-        exerciseTutorAnswers = state.exerciseTutorAnswers,
-        answeredExerciseKeys = state.answeredExerciseKeys,
-        currentIndex = state.currentIndex,
-        onMoreExercisesClick = {
-            controller.onEvent(
-                TutorUiEvents.LoadMoreExercises
-            )
-        },
-        isLoadingMoreExercises = state.askTutor,
-        selectedExerciseIndex = state.selectedExerciseIndex,
-        onLearningClick = { title, subjectId ->
-            controller.onEvent(
-                TutorUiEvents.OpenUnitSection(
-                    exerciseIndex = null,
-                    title = title,
-                    subjectId = subjectId,
-                    tab = TutorTab.Learning,
-                )
-            )
+    if (state.isInitializing) {
+        LoadingScreen(
+            backgroundColor = Color.White
+        )
+        return
+    }
 
-        },
-        onExercisesMenuTabClick = { title, subjectId, exerciseIndex ->
-            controller.onEvent(
-                TutorUiEvents.OpenUnitSection(
-                    exerciseIndex = exerciseIndex,
-                    title = title,
-                    subjectId = subjectId,
-                    tab = TutorTab.Exercises,
-                )
+    if (isExperimentUser && state.activeChatId.isBlank()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Δεν ήταν δυνατή η φόρτωση του εκπαιδευτικού υλικού."
             )
-        },
-        exercisesLoading = state.exercisesLoading,
-        pdfProcessingProgress = state.pdfProcessingProgress,
-        showTutorialInitially = !isTutorialCompleted(user.uid),
-        onTutorialCompleted = {
-            completeTutorial(user.uid)
         }
-    )
+        return
+    }
+
+    val LocalIsExperimentUser = staticCompositionLocalOf { false }
+    CompositionLocalProvider(
+        LocalIsExperimentUser provides isExperimentUser
+    ) {
+        TutorScreen(
+            chatData = state.session,
+            chatHistory = state.chatHistory,
+            showCustomMessage = state.showCustomMessage,
+            message = state.message,
+            isError = state.isError,
+            userMessage = userMessage,
+            onSettingsClick = {
+                navController.navigate(WebScreen.Settings)
+            },
+            onLogoutClick = { controller.onEvent(TutorUiEvents.Logout) },
+            onMessageDismiss = {
+                controller.onEvent(TutorUiEvents.InitializeStateAfterShowingMessage)
+            },
+            onUploadPdfClick = {
+                CoroutineScope(Dispatchers.Default).launch {
+                    pdfPicker.pickPdf()?.let { file ->
+                        handlePickedPdf(file)
+                    }
+                }
+            },
+            selectLearningUnit = { title, subjectId ->
+                controller.onEvent(TutorUiEvents.SelectLearningUnit(title, subjectId))
+            },
+            onNextUnitClick = { controller.onEvent(TutorUiEvents.NextUnit) },
+            onExercisesClick = { },
+            startNewChat = {
+                controller.onEvent(TutorUiEvents.NewChat)
+            },
+            deleteSubject = { subjectId ->
+                controller.onEvent(TutorUiEvents.DeleteChat(subjectId))
+            },
+            selectedTab = state.selectedTab,
+            onChangeTab = { controller.onEvent(TutorUiEvents.ChangeTab(it)) },
+            tabInfoMessage = state.tabInfoMessage,
+            currentUnit = state.currentUnit,
+            onSendMessage = { message ->
+                controller.onEvent(TutorUiEvents.SendMessage(message))
+            },
+
+            openExistingChat = { chatId ->
+                controller.onEvent(TutorUiEvents.OpenExistingChat(chatId))
+            },
+            navigateToMyProgress = {
+                navController.navigate(WebScreen.MyProgress)
+            },
+            canGoNext = state.canGoNext,
+            askTutor = state.askTutor,
+            onExerciseAnswered = { index, type, selected, correct, isCorrect, timeMs, question, maxPoints ->
+                controller.onEvent(
+                    TutorUiEvents.ExerciseAnswered(
+                        exerciseIndex = index,
+                        exerciseType = type,
+                        selectedAnswer = selected,
+                        correctAnswer = correct,
+                        isCorrect = isCorrect,
+                        timeToAnswerMs = timeMs,
+                        question = question,
+                        maxPoints = maxPoints,
+                    )
+                )
+            },
+            onAskTutorForOpenExercise = { exerciseIndex, question, userAnswer, suggestedSolution, maxPoint ->
+                controller.onEvent(
+                    TutorUiEvents.AskTutorForOpenExercise(
+                        exerciseIndex = exerciseIndex,
+                        question = question,
+                        userAnswer = userAnswer,
+                        suggestedSolution = suggestedSolution,
+                        maxPoints = maxPoint
+                    )
+                )
+            },
+            exerciseTutorAnswers = state.exerciseTutorAnswers,
+            answeredExerciseKeys = state.answeredExerciseKeys,
+            currentIndex = state.currentIndex,
+            onMoreExercisesClick = {
+                controller.onEvent(
+                    TutorUiEvents.LoadMoreExercises
+                )
+            },
+            isLoadingMoreExercises = state.askTutor,
+            selectedExerciseIndex = state.selectedExerciseIndex,
+            onLearningClick = { title, subjectId ->
+                controller.onEvent(
+                    TutorUiEvents.OpenUnitSection(
+                        exerciseIndex = null,
+                        title = title,
+                        subjectId = subjectId,
+                        tab = TutorTab.Learning,
+                    )
+                )
+
+            },
+            onExercisesMenuTabClick = { title, subjectId, exerciseIndex ->
+                controller.onEvent(
+                    TutorUiEvents.OpenUnitSection(
+                        exerciseIndex = exerciseIndex,
+                        title = title,
+                        subjectId = subjectId,
+                        tab = TutorTab.Exercises,
+                    )
+                )
+            },
+            exercisesLoading = state.exercisesLoading,
+            pdfProcessingProgress = state.pdfProcessingProgress,
+            showTutorialInitially = !isTutorialCompleted(user.uid),
+            onTutorialCompleted = {
+                completeTutorial(user.uid)
+            }
+        )
+    }
 }
