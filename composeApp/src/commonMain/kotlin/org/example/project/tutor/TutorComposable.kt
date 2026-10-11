@@ -85,6 +85,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.loading_data
 import androidx.compose.runtime.staticCompositionLocalOf
+
 val LocalIsExperimentUser = staticCompositionLocalOf { false }
 
 @Composable
@@ -990,7 +991,7 @@ fun ChatInputField(
             ) {
                 Text("Send")
             }
-        } else {
+        } else if (!LocalIsExperimentUser.current) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
