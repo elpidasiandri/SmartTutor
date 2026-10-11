@@ -84,6 +84,8 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.loading_data
+import androidx.compose.runtime.staticCompositionLocalOf
+val LocalIsExperimentUser = staticCompositionLocalOf { false }
 
 @Composable
 fun TutorScreen(
@@ -132,19 +134,12 @@ fun TutorScreen(
     onExercisesMenuTabClick: (String, String, Int) -> Unit,
     exercisesLoading: Boolean,
     pdfProcessingProgress: Int?,
-    showTutorialInitially: Boolean,
-    onTutorialCompleted: () -> Unit,
 ) {
-    var showTutorial by remember(showTutorialInitially) {
-        mutableStateOf(showTutorialInitially)
-    }
-    var tutorialStep by remember { mutableStateOf(TutorTutorialStep.NEW_CHAT) }
-    var newChatBounds by remember { mutableStateOf<Rect?>(null) }
-    var uploadPdfBounds by remember { mutableStateOf<Rect?>(null) }
-    var progressBounds by remember { mutableStateOf<Rect?>(null) }
+
     var isMobileMenuOpen by remember {
-        mutableStateOf(showTutorialInitially)
+        mutableStateOf(false)
     }
+
     Box(modifier = Modifier.fillMaxSize()) {
         TutorChatUI(
             chatData = chatData,
@@ -210,58 +205,16 @@ fun TutorScreen(
             },
             pdfProcessingProgress = pdfProcessingProgress,
             onNewChatPositioned = { bounds ->
-                newChatBounds = bounds
             },
             onUploadPdfPositioned = { bounds ->
-                uploadPdfBounds = bounds
             },
             onProgressPositioned = { bounds ->
-                progressBounds = bounds
             },
             isMobileMenuOpen = isMobileMenuOpen,
             onMobileMenuOpenChange = {
                 isMobileMenuOpen = it
             },
         )
-
-        if (showTutorial) {
-
-            val targetBounds = when (tutorialStep) {
-                TutorTutorialStep.NEW_CHAT -> newChatBounds
-                TutorTutorialStep.UPLOAD_PDF -> uploadPdfBounds
-                TutorTutorialStep.MY_PROGRESS -> progressBounds
-            }
-
-            TutorTutorialOverlay(
-                step = tutorialStep,
-                targetBounds = targetBounds,
-                onNext = {
-                    when (tutorialStep) {
-
-                        TutorTutorialStep.NEW_CHAT -> {
-                            isMobileMenuOpen = false
-                            tutorialStep = TutorTutorialStep.UPLOAD_PDF
-                        }
-
-                        TutorTutorialStep.UPLOAD_PDF -> {
-                            isMobileMenuOpen = true
-                            tutorialStep = TutorTutorialStep.MY_PROGRESS
-                        }
-
-                        TutorTutorialStep.MY_PROGRESS -> {
-                            isMobileMenuOpen = false
-                            showTutorial = false
-                            onTutorialCompleted()
-                        }
-                    }
-                },
-                onSkip = {
-                    isMobileMenuOpen = false
-                    showTutorial = false
-                    onTutorialCompleted()
-                }
-            )
-        }
     }
 }
 

@@ -24,8 +24,6 @@ import org.example.project.navController.NavController
 import org.example.project.navController.WebScreen
 import org.example.project.registration.AuthUserHolder
 import org.example.project.tutor.TutorScreen
-import org.example.project.tutor.completeTutorial
-import org.example.project.tutor.isTutorialCompleted
 import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 import org.example.project.tutor.pdfPicker.WebPdfDropHandler
@@ -38,6 +36,7 @@ import org.example.project.utils.validation.validatePdf
 import org.koin.compose.getKoin
 import org.koin.core.parameter.parametersOf
 import org.example.project.experiment.ExperimentConfig
+import org.example.project.tutor.LocalIsExperimentUser
 @Composable
 fun WebTutorScreenFlow(navController: NavController) {
     val user = AuthUserHolder.currentUser
@@ -146,7 +145,6 @@ fun WebTutorScreenFlow(navController: NavController) {
         return
     }
 
-    val LocalIsExperimentUser = staticCompositionLocalOf { false }
     CompositionLocalProvider(
         LocalIsExperimentUser provides isExperimentUser
     ) {
@@ -256,10 +254,6 @@ fun WebTutorScreenFlow(navController: NavController) {
             },
             exercisesLoading = state.exercisesLoading,
             pdfProcessingProgress = state.pdfProcessingProgress,
-            showTutorialInitially = !isTutorialCompleted(user.uid),
-            onTutorialCompleted = {
-                completeTutorial(user.uid)
-            }
         )
     }
 }
