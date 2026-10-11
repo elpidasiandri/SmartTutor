@@ -11,17 +11,17 @@ import org.example.project.registration.viewModel.WebRegistrationController
 import org.koin.dsl.module
 
 val registrationModule = module {
-    single<IAuthRepository> { WebAuthRepositoryImpl(get<FirebaseContext>().app) }
-    single { RegistrationUseCase(get(), get(), get()) }
-    single { WebRegistrationController(get()) }
-    single {
+    factory<IAuthRepository> { WebAuthRepositoryImpl(get<FirebaseContext>().app) }
+    factory { RegistrationUseCase(get(), get(), get()) }
+    factory { WebRegistrationController(get()) }
+    factory {
         SignUpUseCase(get())
     }
-    single {
+    factory {
         LoginUseCase(get())
     }
 
-    single {
+    factory {
         SendEmailToResetPasswordUseCase(get())
     }
 }

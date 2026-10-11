@@ -38,10 +38,10 @@ import org.example.project.tutor.viewModel.TutorController
 import org.koin.dsl.module
 
 val tutorModule = module {
-    single<HttpClient> { createWebHttpClient() }
-    single { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
-    single<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
-    single<ITutorRepo> {
+    factory<HttpClient> { createWebHttpClient() }
+    factory { AppConfig(baseUrl = "https://smarttutor-production-5d4d.up.railway.app") }
+    factory<ILoadResourceRepo> { LocalLearningUnitsRepositoryImpl() }
+    factory<ITutorRepo> {
         WebTutorRepoImpl(
             firebase = get<FirebaseContext>().app,
             httpClient = get(),
@@ -70,8 +70,8 @@ val tutorModule = module {
     factory { MarkUnitAsReadUseCase(get()) }
     factory { LoadInitialExercisesUseCase(get()) }
 
-    single<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
-    single<TutorPlatform> {
+    factory<IAnalyticsTracker> { WebAnalyticsTrackerImpl() }
+    factory<TutorPlatform> {
         object : TutorPlatform {
             override fun speak(text: String) {
 
@@ -90,10 +90,10 @@ val tutorModule = module {
             }
         }
     }
-    single { GetIdTokenSuspendUseCase(get()) }
+    factory { GetIdTokenSuspendUseCase(get()) }
     factory { GetExerciseStatsUseCase(get()) }
 
-    single {
+    factory {
         TutorController(
             get(),
             get(),
