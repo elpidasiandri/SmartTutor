@@ -122,17 +122,44 @@ class MyProgressCommonViewModel(
                         )
                     }
 
-                val allChatProgress = chatProgressList + missingChatProgress
+
+                val activeChatIds = userChats
+                    .map { it.chatId }
+                    .toSet()
+
+                val allChatProgress = (
+                        chatProgressList.filter { chat ->
+                            chat.chatId in activeChatIds
+                        } + missingChatProgress
+                        )
+
 
                 val pdfProgressList = allChatProgress.map { chat ->
 
-                val fullChat = getChatByIdUseCase(chatId = chat.chatId, userId = userId)
+                    val exerciseStats = getExerciseStateUseCase(
+                        userId = userId,
+                        chatId = chat.chatId
+                    )
+
+                    val fullChat = runCatching {
+                        getChatByIdUseCase(
+                            chatId = chat.chatId,
+                            userId = userId
+                        )
+                    }.onFailure { error ->
+                        println(
+                            "MY_PROGRESS: Failed to load chat " +
+                                    "${chat.chatId}: ${error.message}"
+                        )
+                    }.getOrNull()
+
                     val sourceUnits =
-                        fullChat.result?.learningUnits ?: fullChat.partialResult?.learningUnits
-                        ?: emptyList()
-                    val exerciseStats =
-                        getExerciseStateUseCase(userId = userId, chatId = chat.chatId)
-                    val statsByUnitIndex = exerciseStats.associateBy { it.unitIndex }
+                        fullChat?.result?.learningUnits
+                            ?: fullChat?.partialResult?.learningUnits
+                            ?: emptyList()
+
+                    val statsByUnitIndex =
+                        exerciseStats.associateBy { it.unitIndex }
 
 
                     val fallbackUnits = sourceUnits.mapIndexed { index, unit ->
@@ -146,8 +173,19 @@ class MyProgressCommonViewModel(
                         )
                     }
 
+
+                    val unitsFromAnswers = exerciseStats.map { stats ->
+                        UnitReadProgressDomain(
+                            unitIndex = stats.unitIndex,
+                            unitTitle = stats.unitTitle,
+                            isRead = stats.questions.isNotEmpty(),
+                            totalExercises = stats.questions.size,
+                            totalMaxPoints = 0.0
+                        )
+                    }
+
                     val unitsToDisplay = (
-                            chat.units + fallbackUnits
+                            chat.units + fallbackUnits + unitsFromAnswers
                             ).distinctBy { it.unitIndex }
                         .sortedBy { it.unitIndex }
 
