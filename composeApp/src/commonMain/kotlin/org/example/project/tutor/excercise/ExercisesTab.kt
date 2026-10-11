@@ -64,7 +64,7 @@ import org.example.project.strings.SmartTutorStrings.tutor_answer
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import kotlin.time.TimeSource
-
+import org.example.project.strings.SmartTutorStrings
 @Composable
 fun ExercisesTab(
     modifier: Modifier = Modifier,
@@ -114,18 +114,33 @@ fun ExercisesTab(
         )
 
     }
+
     if (isLastExercise) {
-        Button(
-            onClick = onMoreExercisesClick,
-            enabled = !isLoadingMoreExercises,
-            modifier = Modifier.fillMaxWidth().padding(bottom = spacing24)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = spacing24),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                if (isLoadingMoreExercises) exercises_more_loading
-                else exercises_more_button
+                text = SmartTutorStrings.exercises_more_description,
+                fontSize = 13.sp,
+                color = AppColors.GrayDark
             )
+
+            Button(
+                onClick = onMoreExercisesClick,
+                enabled = !isLoadingMoreExercises,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (isLoadingMoreExercises) exercises_more_loading
+                    else exercises_more_button
+                )
+            }
         }
     }
+
 }
 
 @Composable
@@ -197,15 +212,21 @@ private fun ExerciseCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
+
             HintExplainSolutionRow(
                 showHint = showHint,
                 showExplanation = showExplanation,
                 showSolution = showSolution,
                 onToggleHint = { showHint = !showHint },
-                onToggleExplanation = { showExplanation = !showExplanation },
+                onToggleExplanation = {
+                    if (answered) {
+                        showExplanation = !showExplanation
+                    }
+                },
                 onToggleSolution = { showSolution = !showSolution },
-                type = type
+                type = type,
             )
+
         }
 
         Text(
@@ -216,14 +237,71 @@ private fun ExerciseCard(
         Spacer(Modifier.height(4.dp))
 
         if (answered && latestAttempt != null) {
-            Spacer(Modifier.height(spacing4))
 
-            Text(
-                text = "$grade_: ${latestAttempt.awardedPoints}/${exercise.maxPoints} $exersize_has_grades",
-                fontSize = 12.sp,
-                color = AppColors.Purple
-            )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(spacing8))
+
+            val isCorrect = latestAttempt.isCorrect
+            val isPartial =
+                latestAttempt.gradingStatus.equals(
+                    "partial",
+                    ignoreCase = true
+                )
+
+            val feedbackColor = when {
+                isCorrect -> Color(0xFF2E7D32)
+                isPartial -> Color(0xFF8A6500)
+                else -> Color(0xFFC62828)
+            }
+
+            val feedbackBackground = when {
+                isCorrect -> Color(0xFFE6F4EA)
+                isPartial -> Color(0xFFFFF8E1)
+                else -> Color(0xFFFFE8E8)
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        feedbackBackground,
+                        RoundedCornerShape(12.dp)
+                    )
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = when {
+                        isCorrect ->
+                            SmartTutorStrings.exercise_correct_feedback
+                        isPartial ->
+                            SmartTutorStrings.exercise_partial_feedback
+                        else ->
+                            SmartTutorStrings.exercise_incorrect_feedback
+                    },
+                    fontWeight = FontWeight.Bold,
+                    color = feedbackColor
+                )
+
+                Text(
+                    text = SmartTutorStrings.exercise_points_earned(
+                        latestAttempt.awardedPoints,
+                        exercise.maxPoints
+                    ),
+                    fontSize = 13.sp
+                )
+
+                if (
+                    exercise.type != ExerciseType.OPEN &&
+                    exercise.explanation.isNotBlank()
+                ) {
+                    ExerciseRichItem(
+                        text = exercise.explanation
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(spacing8))
+
 
             Text(
                 text = "$sum_grade ${exercise.attemptsCount} ",

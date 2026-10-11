@@ -816,6 +816,42 @@ object SmartTutorStrings {
             "Πρόοδος"
         )
 
+    val exercises_more_description: String
+        get() = localized(
+            "New exercises are generated based on your answers and any difficulties you have encountered, helping you practice the areas where you need improvement.",
+            "Δημιουργούνται νέες ασκήσεις με βάση τις απαντήσεις σου και τις δυσκολίες που έχεις αντιμετωπίσει, ώστε να εξασκηθείς στα σημεία που χρειάζεσαι βελτίωση."
+        )
+
+    val exercise_correct_feedback: String
+        get() = localized(
+            "Correct answer!",
+            "Σωστή απάντηση!"
+        )
+    val exercise_partial_feedback: String
+        get() = localized(
+            "Partially correct answer",
+            "Μερικώς σωστή απάντηση"
+        )
+    val exercise_incorrect_feedback: String
+        get() = localized(
+            "Incorrect answer",
+            "Λανθασμένη απάντηση"
+        )
+
+    fun exercise_points_earned(
+        awardedPoints: Double,
+        maxPoints: Double
+    ): String = localized(
+        "You earned $awardedPoints / $maxPoints points.",
+        "Κέρδισες $awardedPoints / $maxPoints μονάδες."
+    )
+
+    val exercise_explanation_after_answer: String
+        get() = localized(
+            "Explanation will be available after you answer.",
+            "Η εξήγηση θα είναι διαθέσιμη αφού απαντήσεις."
+        )
+
 
     val pdf_allowed: String
         get() = when (LanguageManager.language.value) {
