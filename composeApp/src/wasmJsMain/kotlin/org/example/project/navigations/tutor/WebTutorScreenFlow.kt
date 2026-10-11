@@ -28,7 +28,7 @@ import org.example.project.utils.validation.PdfValidationResult
 import org.example.project.utils.validation.validatePdf
 import org.koin.compose.getKoin
 import org.koin.core.parameter.parametersOf
-
+import org.example.project.experiment.ExperimentConfig
 @Composable
 fun WebTutorScreenFlow(navController: NavController) {
     val user = AuthUserHolder.currentUser
@@ -45,9 +45,14 @@ fun WebTutorScreenFlow(navController: NavController) {
             parametersOf(user.uid)
         }
     }
-    LaunchedEffect(user.uid) {
-        controller.start()
+
+    LaunchedEffect(user.uid, user.email, user.emailVerified) {
+        controller.start(
+            isExperimentUser = user.emailVerified &&
+                    ExperimentConfig.shouldUseExperimentDocument(user.email)
+        )
     }
+
     val state by controller.state.collectAsState()
     val pdfPicker = WebPdfPicker()
     var userMessage by remember { mutableStateOf("") }

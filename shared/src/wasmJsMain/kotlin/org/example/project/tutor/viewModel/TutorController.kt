@@ -76,7 +76,9 @@ class TutorController(
     fun startVoiceInput(onResult: (String) -> Unit) = common.startVoiceInput(onResult)
     fun stopVoiceInput() = common.stopVoiceInput()
 
-    fun start() {
-        common.initializeData()
+
+    fun start(isExperimentUser: Boolean = false) {
+        common.initializeData(isExperimentUser)
     }
+
 }

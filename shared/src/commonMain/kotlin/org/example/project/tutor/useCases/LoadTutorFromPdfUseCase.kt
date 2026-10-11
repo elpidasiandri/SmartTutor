@@ -7,7 +7,8 @@ import org.example.project.tutor.mappers.learningUnits.toDomain
 import org.example.project.tutor.models.domainModels.file.UploadFile
 import org.example.project.tutor.networkModel.chatHistory.CreateChatFromDocumentRequest
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
-
+import org.example.project.experiment.ExperimentConfig
+import org.example.project.tutor.models.domainModels.tutorChat.TutorTab
 data class TutorLoadResult(
     val documentId: String,
     val fileName: String,
@@ -20,6 +21,19 @@ class LoadTutorFromPdfUseCase(
     private val pdfUpload: PdfUploadServiceUseCase,
     private val getToken: GetIdTokenSuspendUseCase,
 ) {
+
+    suspend fun ensureExperimentChat(userId: String) {
+        val token = getToken()
+
+        pdfUpload.createChatFromDocument(
+            request = CreateChatFromDocumentRequest(
+                userId = userId,
+                documentId = ExperimentConfig.EXPERIMENT_DOCUMENT_ID,
+                mode = TutorTab.Learning.name
+            ),
+            token = token
+        )
+    }
     suspend fun loadTemplateForPickedPdf(
         picked: PickedFile,
         userId: String,

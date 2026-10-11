@@ -1773,7 +1773,9 @@ class TutorCommonViewModel(
         }
     }
 
-    fun initializeData() = scope.launch {
+    fun initializeData(
+        isExperimentUser: Boolean = false
+    ) = scope.launch {
         val uid = userId()
 
         if (_state.value.session.material.fileUploaded) {
@@ -1797,7 +1799,13 @@ class TutorCommonViewModel(
                 )
             }
 
+
+            if (isExperimentUser) {
+                loadTutorFromPdfUseCase.ensureExperimentChat(uid)
+            }
+
             val chats = getAllHistoryChatUseCase(uid)
+
 
             track(
                 name = TUTOR_SCREEN_OPENED,
