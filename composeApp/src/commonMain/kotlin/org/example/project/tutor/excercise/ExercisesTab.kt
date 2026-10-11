@@ -313,15 +313,23 @@ private fun ExerciseCard(
                 val trueLabel = exercise.options.getOrNull(0) ?: "True"
                 val falseLabel = exercise.options.getOrNull(1) ?: "False"
 
+
                 val correctAnswer = exercise.solution.trim()
 
-                val trueCorrect =
-                    correctAnswer.contains(trueLabel, ignoreCase = true) ||
-                            correctAnswer.contains("true", ignoreCase = true)
+                val normalizedCorrectAnswer = (
+                        exercise.answerIndex
+                            ?.let { exercise.options.getOrNull(it) }
+                            ?: correctAnswer
+                        ).trim().lowercase().removeSuffix(".").trim()
 
-                val falseCorrect =
-                    correctAnswer.contains(falseLabel, ignoreCase = true) ||
-                            correctAnswer.contains("false", ignoreCase = true)
+                val trueCorrect = normalizedCorrectAnswer in setOf(
+                    "true", "σωστό", "σωστο"
+                )
+
+                val falseCorrect = normalizedCorrectAnswer in setOf(
+                    "false", "λάθος", "λαθος"
+                )
+
 
                 OptionRow(
                     label = "",
