@@ -163,8 +163,15 @@ private fun ExerciseCard(
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
     var showSolution by remember { mutableStateOf(false) }
-    var selectedIndex by rememberSaveable(index) { mutableStateOf<Int?>(null) }
-    var tfSelected by rememberSaveable(index) { mutableStateOf<Boolean?>(null) }
+
+    var selectedIndex by rememberSaveable(index, currentAttemptRound) {
+        mutableStateOf<Int?>(null)
+    }
+
+    var tfSelected by rememberSaveable(index, currentAttemptRound) {
+        mutableStateOf<Boolean?>(null)
+    }
+
     var openAnswer by rememberSaveable(index) { mutableStateOf("") }
 
     val latestAttempt = exercise.latestAttempt
@@ -184,7 +191,9 @@ private fun ExerciseCard(
 
 
     val type = exercise.type
-    var showCorrectAnswer by rememberSaveable(index) { mutableStateOf(false) }
+    var showCorrectAnswer by rememberSaveable(index, currentAttemptRound) {
+        mutableStateOf(false)
+    }
     val startedAt = remember(exercise.question) {
         TimeSource.Monotonic.markNow()
     }
@@ -318,44 +327,46 @@ private fun ExerciseCard(
 
             Spacer(Modifier.height(spacing8))
 
+        }
 
-            Text(
-                text = "$sum_grade ${exercise.attemptsCount} ",
-                fontSize = 12.sp,
-                color = AppColors.GrayDark
-            )
-            if (exercise.attemptsCount > 1) {
-                Spacer(Modifier.height(4.dp))
+        if (previousAttempts.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        1.dp,
+                        Color(0xFFE0E0E0),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
-                    text = "$sum_grade_are ${exercise.attemptsCount} ",
-                    fontSize = 12.sp,
-                    color = AppColors.GrayDark
+                    text = SmartTutorStrings.exercise_previous_attempts,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp
                 )
-                exercise.attempts
-                    .sortedBy { it.attemptNumber }
-                    .forEach { attempt ->
-                        Spacer(Modifier.height(2.dp))
 
-                        Text(
-                            text = "$current_attemp ${attempt.attemptNumber}: ${attempt.awardedPoints}/${exercise.maxPoints}",
-                            fontSize = 12.sp,
-                            color = AppColors.GrayDark
-                        )
-
-
-                    }
-
-                if (isTemporarilyLocked) {
+                previousAttempts.forEach { attempt ->
                     Text(
-                        text = attemp_info_retry,
+                        text = "${SmartTutorStrings.exercise_attempt_label(attempt.attemptNumber)}: " +
+                                "${attempt.awardedPoints}/${exercise.maxPoints} " +
+                                exersize_has_grades,
                         fontSize = 12.sp,
                         color = AppColors.GrayDark
                     )
                 }
-
             }
-
         }
+
+        if (!hasAnsweredCurrentAttempt && previousAttempts.isNotEmpty()) {
+            Text(
+                text = SmartTutorStrings.exercise_not_answered_yet,
+                fontSize = 12.sp,
+                color = AppColors.GrayDark
+            )
+        }
+
         Spacer(Modifier.height(spacing8))
 
         ExerciseRichItem(text = exercise.question)
@@ -564,7 +575,7 @@ private fun ExerciseCard(
             ExerciseLockedInfo()
         }
 
-        if (showCorrectAnswer ) {
+        if (showCorrectAnswer && hasAnsweredCurrentAttempt) {
             CorrectAnswerBox(
                 answer = correctAnswerText(exercise)
             )
@@ -581,8 +592,11 @@ private fun ExerciseCard(
             Spacer(Modifier.height(spacing8))
             ExpandSection(title = hint_tab, text = exercise.hint)
         }
-
-        if (showExplanation && exercise.explanation.isNotBlank()) {
+        if (
+            hasAnsweredCurrentAttempt &&
+                    showExplanation &&
+                    exercise.explanation.isNotBlank()
+        ) {
             Spacer(Modifier.height(spacing8))
             ExpandSection(title = explanation_tab, text = exercise.explanation)
         }
