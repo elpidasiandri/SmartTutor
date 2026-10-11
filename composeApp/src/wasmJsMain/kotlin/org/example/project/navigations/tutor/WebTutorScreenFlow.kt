@@ -45,7 +45,6 @@ import org.example.project.experiment.ExperimentConfig
 import org.example.project.strings.SmartTutorStrings.drop_pdf
 import org.example.project.strings.SmartTutorStrings.pdf_allowed
 import org.example.project.strings.SmartTutorStrings.release_upload_pdf
-import org.example.project.strings.release_upload_pdf
 import org.example.project.tutor.LocalIsExperimentUser
 
 @Composable
