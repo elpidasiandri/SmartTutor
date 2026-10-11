@@ -21,13 +21,15 @@ class MyProgressController(
     private val getChatProgressListUseCase: GetChatProgressListUseCase,
     private val getExerciseStatsUseCase: GetExerciseStatsUseCase,
     private val getChatByIdUseCase: GetChatByIdUseCase,
-) {
+    private val userId: String,
+
+    ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     val common = MyProgressCommonViewModel(
         scope = scope,
         analyticsTracker = analyticsTracker,
-        userId = AuthUserHolder.currentUser?.uid ?: "",
+        userId = userId ,
         platform = platform,
         getProgressOverviewUseCase = getProgressOverviewUseCase,
         getChatProgressListUseCase = getChatProgressListUseCase,

@@ -48,15 +48,18 @@ val myProgressModule = module {
         }
     }
 
-    factory {
+
+    factory { (userId: String) ->
         MyProgressController(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
+            analyticsTracker = get(),
+            platform = get(),
+            getProgressOverviewUseCase = get(),
+            getChatProgressListUseCase = get(),
+            getExerciseStatsUseCase = get(),
+            getChatByIdUseCase = get(),
+            userId = userId,
         )
     }
+
 
 }
