@@ -17,6 +17,7 @@ import org.example.project.registration.firestore.doc
 import org.example.project.registration.firestore.getFirestore
 import org.example.project.registration.firestore.setDoc
 import kotlinx.datetime.Clock
+import org.example.project.experiment.ExperimentConfig
 import org.example.project.extensions.JsVoid
 import org.example.project.extensions.awaitSafe
 import org.example.project.registration.firebase.createUserData
@@ -36,9 +37,16 @@ class WebAuthRepositoryImpl(
         username: String,
         onResult: (Boolean, String?) -> Unit,
     ) {
+        val normalizedEmail = email.trim().lowercase()
+        if (!ExperimentConfig.isSignupAllowed(normalizedEmail)) {
+            onResult(false, "DUTH_EMAIL_REQUIRED")
+            return
+        }
         CoroutineScope(Dispatchers.Default).launch {
+
             try {
-                val credential = createUserWithEmailAndPassword(auth, email, password).await()
+
+                val credential = createUserWithEmailAndPassword(auth, normalizedEmail, password).await()
                 val uid = credential.user.uid
 
                 try {
@@ -50,7 +58,7 @@ class WebAuthRepositoryImpl(
 
                 val userData = createUserData(
                     uid,
-                    email,
+                    normalizedEmail,
                     username,
                     Clock.System.now().toString()
                 )

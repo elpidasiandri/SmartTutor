@@ -18,7 +18,7 @@ import org.example.project.tutor.networkModel.uploadPdf.UploadPdfResponse
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-
+import org.example.project.storage.ExperimentContentStorage
 private const val MAX_PDF_SIZE_BYTES = 100L * 1024L * 1024L
 fun Route.pdfRoutes(
     repo: PdfJobRepository,
@@ -169,6 +169,7 @@ fun Route.pdfRoutes(
             call.respond(status)
         }
         post("/{documentId}/units/{unitNumber}/exercises") {
+
             val documentId = call.parameters["documentId"]
                 ?: return@post call.respond(
                     HttpStatusCode.BadRequest,
@@ -208,6 +209,18 @@ fun Route.pdfRoutes(
              * exercises were already generated earlier.
              */
             if (initialUnit.exercises.isNotEmpty()) {
+                call.respond(
+                    UnitExercisesOnlyDto(
+                        exercises = initialUnit.exercises
+                    )
+                )
+                return@post
+            }
+
+            if (
+                documentId ==
+                ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+            ) {
                 call.respond(
                     UnitExercisesOnlyDto(
                         exercises = initialUnit.exercises

@@ -11,7 +11,7 @@ class SignUpUseCase(val repo: IAuthRepository) {
     ) = repo.signup(
         email = email,
         password = password,
-        username = password,
+        username = username,
         onResult = onResult
     )
 }

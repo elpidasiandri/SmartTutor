@@ -15,6 +15,8 @@ import org.example.project.strings.SmartTutorStrings
 import org.example.project.strings.SmartTutorStrings.error_message_reset_password
 import org.example.project.strings.SmartTutorStrings.success_message_reset_password
 import org.example.project.utils.EmptyValues
+import org.example.project.experiment.ExperimentConfig
+import org.example.project.strings.SmartTutorStrings.user_already_Exist
 
 class WebRegistrationController(
     private val registrationUseCases: RegistrationUseCase,
@@ -111,20 +113,33 @@ class WebRegistrationController(
         }
     }
 
-    private fun signUp(email: String, password: String, username: String, onSuccess: () -> Unit) {
+
+    private fun signUp(
+        email: String,
+        password: String,
+        username: String,
+        onSuccess: () -> Unit,
+    ) {
+        val normalizedEmail = email.trim().lowercase()
+
+        if (!ExperimentConfig.isSignupAllowed(normalizedEmail)) {
+            stateForErrorMessage(
+                "Για την διαδικασία του πειράματος, μόνο με @cs.duth.gr email μπορείτε να συνδεθείτε."
+            )
+            return
+        }
+
         scope.launch {
             registrationUseCases.signUp(
-                email = email,
+                email = normalizedEmail,
                 password = password,
-                username = username
+                username = username,
             ) { success, uid ->
-
                 if (success) {
                     onSuccess()
                 } else {
-
                     if (uid?.contains("email-already-in-use") == true) {
-                        stateForErrorMessage("This user is already exist.")
+                        stateForErrorMessage(user_already_Exist)
                     } else {
                         stateForErrorMessage()
                     }

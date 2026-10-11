@@ -210,6 +210,12 @@ object SmartTutorStrings {
             "Ο κωδικός επιβεβαίωσης δεν είναι έγκυρος"
         )
 
+    val user_already_Exist: String
+        get() = localized(
+            "This user already exists.",
+            "Αυτός ο χρήστης υπάρχει ήδη."
+        )
+
     val generic_error: String
         get() = localized(
             "Something went wrong. Please try again.",

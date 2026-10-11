@@ -28,7 +28,7 @@ import org.example.project.myProgress.repo.IProgressRepository
 import org.example.project.storage.PdfStorage
 import java.io.File
 import java.util.Properties
-
+import org.example.project.storage.ExperimentContentStorage
 private const val SERVER_PORT = 8081
 
 fun main() {
@@ -93,10 +93,17 @@ fun Application.module() {
         storage = cloudStorage,
         bucketName = pdfBucketName
     )
-
+    val experimentContentStorage = ExperimentContentStorage(
+        storage = cloudStorage,
+        bucketName = pdfBucketName
+    )
     val firestore = FirebaseAdminInit.firestore()
-    val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore)
-    val chatRepo: IChatRepository = FirestoreChatRepository(firestore)
+    val pdfRepo: PdfJobRepository = FirestorePdfJobRepository(firestore,  experimentContentStorage = experimentContentStorage)
+    val chatRepo: IChatRepository =
+        FirestoreChatRepository(
+            db = firestore,
+            experimentContentStorage = experimentContentStorage
+        )
     val llm = PromptLlmClient(apiKey = apiKey)
     val progressRepo: IProgressRepository = FirestoreProgressRepository(firestore)
     val worker = PdfJobWorker(

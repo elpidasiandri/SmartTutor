@@ -8,8 +8,11 @@ import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.networkModel.uploadPdf.PdfJobStatusResponse
-
-class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
+import org.example.project.storage.ExperimentContentStorage
+class FirestorePdfJobRepository(
+    private val db: Firestore,
+    private val experimentContentStorage: ExperimentContentStorage,
+) : PdfJobRepository {
 
     private val col = db.collection("pdf_jobs")
 
@@ -226,7 +229,24 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
 
     override fun getStatus(documentId: String): PdfJobStatusResponse? {
         val doc = col.document(documentId).get().get()
+
         if (!doc.exists()) return null
+
+        if (
+            documentId ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+        ) {
+            val result = experimentContentStorage.loadExperimentContent()
+
+            return PdfJobStatusResponse(
+                documentId = documentId,
+                status = JobStatus.Done.value,
+                progress = 100,
+                error = null,
+                partialResult = null,
+                result = result
+            )
+        }
 
         val status = doc.getString("status") ?: "unknown"
         val progress = (doc.getLong("progress") ?: 0L).toInt()
@@ -265,9 +285,14 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
     override fun getCompletedResult(
         documentId: String
     ): LearningUnitsPrototypeDto? {
-        val doc = col.document(documentId)
-            .get()
-            .get()
+        val doc = col.document(documentId).get().get()
+
+        if (
+            documentId ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+        ) {
+            return experimentContentStorage.loadExperimentContent()
+        }
 
         if (!doc.exists()) {
             return null
@@ -291,7 +316,12 @@ class FirestorePdfJobRepository(private val db: Firestore) : PdfJobRepository {
         exercises: List<ExerciseDto>
     ): LearningUnitDto? {
         val docRef = col.document(documentId)
-
+        if (
+            documentId ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+        ) {
+            return null
+        }
         return db.runTransaction { tx ->
             val snapshot = tx.get(docRef).get()
 

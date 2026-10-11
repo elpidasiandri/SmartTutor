@@ -145,6 +145,7 @@ fun Route.chatRoutes(
 
                 application.log.info("GENERATED=${extraExercises.size}")
 
+
                 val saved = chatRepo.appendExercisesToUnit(
                     userId = userId,
                     chatId = chatId,
@@ -152,9 +153,27 @@ fun Route.chatRoutes(
                     exercises = extraExercises
                 )
 
+                if (!saved) {
+                    application.log.error(
+                        "Failed to save additional exercises for chatId=$chatId"
+                    )
+
+                    return@post call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf(
+                            "error" to "Failed to save additional exercises"
+                        )
+                    )
+                }
+
                 application.log.info("SAVED=$saved")
 
-                call.respond(AddMoreExercisesResponse(exercises = extraExercises))
+                call.respond(
+                    AddMoreExercisesResponse(
+                        exercises = extraExercises
+                    )
+                )
+
 
             } catch (t: Throwable) {
                 application.log.error("Add more exercises failed", t)

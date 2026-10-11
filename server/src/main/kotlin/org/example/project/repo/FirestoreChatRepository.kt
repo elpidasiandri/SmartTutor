@@ -11,8 +11,13 @@ import org.example.project.tutor.networkModel.uploadPdf.JobStatus
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
 import org.example.project.tutor.repo.IChatRepository
 import java.util.UUID
-
-class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
+import com.google.cloud.firestore.FieldValue
+import org.example.project.storage.ExperimentContentStorage
+import kotlinx.serialization.builtins.ListSerializer
+class FirestoreChatRepository(
+    private val db: Firestore,
+    private val experimentContentStorage: ExperimentContentStorage,
+) : IChatRepository {
 
     private val usersCol = db.collection("users")
     private val pdfJobsCol = db.collection("pdf_jobs")
@@ -36,6 +41,31 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
         return db.runTransaction { tx ->
             val snap = tx.get(chatRef).get()
             if (!snap.exists()) return@runTransaction false
+
+            if (
+                snap.getString("documentId") ==
+                ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+            ) {
+                val totalUnits = snap.getLong("totalUnits")
+                    ?.toInt()
+                    ?: return@runTransaction false
+
+                if (unitIndex !in 0 until totalUnits) {
+                    return@runTransaction false
+                }
+
+                tx.update(
+                    chatRef,
+                    mapOf(
+                        "readUnitIndices" to
+                                FieldValue.arrayUnion(unitIndex.toLong()),
+                        "updatedAtEpochMillis" to
+                                System.currentTimeMillis()
+                    )
+                )
+
+                return@runTransaction true
+            }
 
             fun updatePrototypeJson(field: String): String? {
                 val raw = snap.getString(field).orEmpty()
@@ -96,6 +126,44 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
         val existingDoc = existingSnap.documents.firstOrNull()
         if (existingDoc != null && existingDoc.exists()) {
             return existingDoc.toUserChatDto()
+        }
+
+        if (
+            documentId ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+        ) {
+            val result = experimentContentStorage.loadExperimentContent()
+
+            val now = System.currentTimeMillis()
+            val chatId = "chat_" +
+                    UUID.randomUUID().toString().replace("-", "")
+
+            val chat = UserChatDto(
+                chatId = chatId,
+                userId = userId,
+                documentId = documentId,
+                title = "Java - Κεφάλαια 10-13",
+                language = result.language ?: "el",
+                status = JobStatus.Done.value,
+                mode = mode,
+                partialResult = null,
+                result = result,
+                createdAtEpochMillis = now,
+                updatedAtEpochMillis = now
+            )
+
+            // Αποθηκεύουμε μόνο metadata στο προσωπικό chat.
+            val chatData = userChatToMap(chat).toMutableMap()
+
+            chatData.remove("resultJson")
+            chatData.remove("partialResultJson")
+
+            chatData["totalUnits"] = result.learningUnits.size
+            chatData["readUnitIndices"] = emptyList<Long>()
+
+            chatsCol.document(chatId).set(chatData).get()
+
+            return chat
         }
 
         val pdfDoc = pdfJobsCol.document(documentId).get().get()
@@ -197,6 +265,61 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             .collection("chats")
             .document(chatId)
 
+        val chatSnapshot = chatRef.get().get()
+
+        if (!chatSnapshot.exists()) return false
+
+        if (
+            chatSnapshot.getString("documentId") ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+        ) {
+            val totalUnits = chatSnapshot.getLong("totalUnits")
+                ?.toInt()
+                ?: return false
+
+            if (unitIndex !in 0 until totalUnits) return false
+            if (exercises.isEmpty()) return false
+
+            val exercisesJson = json.encodeToString(
+                ListSerializer(ExerciseDto.serializer()),
+                exercises
+            )
+
+            val batchRef = chatRef
+                .collection("extraExerciseBatches")
+                .document()
+
+            return db.runTransaction { tx ->
+                val currentChat = tx.get(chatRef).get()
+
+                if (
+                    !currentChat.exists() ||
+                    currentChat.getString("documentId") !=
+                    ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+                ) {
+                    return@runTransaction false
+                }
+
+                val now = System.currentTimeMillis()
+
+                tx.set(
+                    batchRef,
+                    mapOf(
+                        "unitIndex" to unitIndex,
+                        "exercisesJson" to exercisesJson,
+                        "createdAtEpochMillis" to now
+                    )
+                )
+
+                tx.update(
+                    chatRef,
+                    mapOf("updatedAtEpochMillis" to now)
+                )
+
+                true
+            }.get()
+        }
+
         return db.runTransaction { tx ->
 
             val snap = tx.get(chatRef).get()
@@ -242,6 +365,7 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
                     updatedPrototype
                 )
             }
+
             val updates = mutableMapOf<String, Any>(
                 "updatedAtEpochMillis" to System.currentTimeMillis()
             )
@@ -286,17 +410,17 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
     }
 
     override fun deleteChat(userId: String, chatId: String) {
-        val chatRef = usersCol
-            .document(userId)
-            .collection("chats")
-            .document(chatId)
+        val chatRef = usersCol.document(userId).collection("chats").document(chatId)
 
-        val messagesSnap = chatRef
-            .collection("messages")
-            .get()
-            .get()
+        val messagesSnap = chatRef.collection("messages").get().get()
 
         messagesSnap.documents.forEach { doc ->
+            doc.reference.delete().get()
+        }
+
+        val extraExercisesSnap = chatRef.collection("extraExerciseBatches").get().get()
+
+        extraExercisesSnap.documents.forEach { doc ->
             doc.reference.delete().get()
         }
 
@@ -366,6 +490,47 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
         )
     }
 
+    private fun DocumentSnapshot.mergeExperimentExercises(
+        prototype: LearningUnitsPrototypeDto
+    ): LearningUnitsPrototypeDto {
+
+        val batches = reference
+            .collection("extraExerciseBatches")
+            .orderBy("createdAtEpochMillis")
+            .get()
+            .get()
+
+        val extrasByUnit = mutableMapOf<Int, MutableList<ExerciseDto>>()
+
+        batches.documents.forEach { batch ->
+            val unitIndex = requireNotNull(
+                batch.getLong("unitIndex")
+            ).toInt()
+
+            val rawJson = requireNotNull(
+                batch.getString("exercisesJson")
+            )
+
+            val exercises = json.decodeFromString(
+                ListSerializer(ExerciseDto.serializer()),
+                rawJson
+            )
+
+            extrasByUnit
+                .getOrPut(unitIndex) { mutableListOf() }
+                .addAll(exercises)
+        }
+
+        return prototype.copy(
+            learningUnits = prototype.learningUnits.mapIndexed { index, unit ->
+                unit.copy(
+                    exercises = unit.exercises +
+                            extrasByUnit[index].orEmpty()
+                )
+            }
+        )
+    }
+
     private fun DocumentSnapshot.toUserChatDto(): UserChatDto {
         val partialJson = getString("partialResultJson")
         val resultJson = getString("resultJson")
@@ -376,11 +541,48 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             }.getOrNull()
         } else null
 
-        val result = if (!resultJson.isNullOrBlank()) {
+
+        val result = if (
+            getString("documentId") ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID
+        ) {
+            val readIndices = (get("readUnitIndices") as? List<*>)
+                ?.mapNotNull { (it as? Number)?.toInt() }
+                ?.toSet()
+                .orEmpty()
+
+            val sharedContent =
+                experimentContentStorage.loadExperimentContent()
+
+            sharedContent.copy(
+                learningUnits = sharedContent.learningUnits.mapIndexed {
+                        index, unit ->
+                    if (index in readIndices) {
+                        unit.copy(isRead = true)
+                    } else {
+                        unit
+                    }
+                }
+            )
+        } else if (!resultJson.isNullOrBlank()) {
             runCatching {
-                json.decodeFromString(LearningUnitsPrototypeDto.serializer(), resultJson)
+                json.decodeFromString(
+                    LearningUnitsPrototypeDto.serializer(),
+                    resultJson
+                )
             }.getOrNull()
         } else null
+
+        val finalResult = if (
+            getString("documentId") ==
+            ExperimentContentStorage.EXPERIMENT_DOCUMENT_ID &&
+            result != null
+        ) {
+            mergeExperimentExercises(result)
+        } else {
+            result
+        }
+
 
         return UserChatDto(
             chatId = getString("chatId") ?: id,
@@ -391,7 +593,7 @@ class FirestoreChatRepository(private val db: Firestore) : IChatRepository {
             status = getString("status") ?: JobStatus.Done.value,
             mode = getString("mode") ?: "LEARNING",
             partialResult = partial,
-            result = result,
+            result = finalResult,
             createdAtEpochMillis = getLong("createdAtEpochMillis") ?: 0L,
             updatedAtEpochMillis = getLong("updatedAtEpochMillis") ?: 0L
         )

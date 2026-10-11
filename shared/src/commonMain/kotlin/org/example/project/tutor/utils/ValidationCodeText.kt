@@ -12,55 +12,50 @@ sealed class RichBlock {
     data class Code(val code: String, val language: String?) : RichBlock()
 }
 
+
 fun splitIntoCodeAndTextBlocks(input: String): List<RichBlock> {
-    val normalizedInput = input
-        .replace("\\n", "\n")
-        .replace("```java ", "```java\n")
-        .replace("```kotlin ", "```kotlin\n")
-        .replace("```python ", "```python\n")
-        .replace("```javascript ", "```javascript\n")
+    val normalizedInput = input.replace("\r\n", "\n").replace('\r', '\n')
 
-    val regex = Regex(
-        "```\\s*([A-Za-z0-9_+-]*)?\\s*\\n?([\\s\\S]*?)\\s*```",
-        RegexOption.MULTILINE
-    )
+    val regex = Regex("""(?m)^```([A-Za-z0-9_+-]*)[ \t]*\n([\s\S]*?)^```[ \t]*$""")
 
-    val out = mutableListOf<RichBlock>()
-    var last = 0
+    val blocks = mutableListOf<RichBlock>()
+    var lastIndex = 0
 
-    regex.findAll(normalizedInput).forEach { m ->
-        val start = m.range.first
-        val end = m.range.last + 1
+    regex.findAll(normalizedInput).forEach { match ->
+        val textBefore = normalizedInput.substring(
+            lastIndex,
+            match.range.first
+        )
 
-        val before = normalizedInput.substring(last, start)
-        if (before.isNotBlank()) {
-            out += RichBlock.Text(before.trimEnd())
+        if (textBefore.isNotBlank()) {
+            blocks += RichBlock.Text(textBefore.trimEnd())
         }
 
-        val lang = m.groupValues
-            .getOrNull(1)
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
+        val language = match.groupValues[1]
+            .takeIf { it.isNotBlank() }
 
-        val code = m.groupValues[2].trim()
+        val code = match.groupValues[2]
+            .trimEnd('\n')
 
         if (code.isNotBlank()) {
-            out += RichBlock.Code(
+            blocks += RichBlock.Code(
                 code = code,
-                language = lang
+                language = language
             )
         }
 
-        last = end
+        lastIndex = match.range.last + 1
     }
 
-    val tail = normalizedInput.substring(last)
-    if (tail.isNotBlank()) {
-        out += RichBlock.Text(tail.trim())
+    val remainingText = normalizedInput.substring(lastIndex)
+
+    if (remainingText.isNotBlank()) {
+        blocks += RichBlock.Text(remainingText.trim())
     }
 
-    return out
+    return blocks
 }
+
 
 fun buildStyledLearningText(raw: String): AnnotatedString {
     val lines = raw.split("\n")

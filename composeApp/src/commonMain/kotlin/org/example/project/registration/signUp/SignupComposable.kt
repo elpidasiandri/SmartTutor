@@ -38,7 +38,7 @@ import org.example.project.strings.SmartTutorStrings
 import org.example.project.theme.SmartTutorStyles
 import org.example.project.theme.SmartTutorStyles.defaultTextFieldColors
 import org.example.project.utils.validation.Validation
-
+import org.example.project.experiment.ExperimentConfig
 
 @Composable
 fun SignupComposable(
@@ -59,6 +59,8 @@ fun SignupComposable(
     var password2 by remember { mutableStateOf("") }
 
     val isEmailValid = Validation.isValidEmail(email)
+    val isDuthEmailAllowed =
+        ExperimentConfig.isSignupAllowed(email)
     val isEmail2Valid = Validation.isValidEmail(email2)
 
     val isUsernameValid = username.isNotBlank()
@@ -70,6 +72,7 @@ fun SignupComposable(
         email.trim() == email2.trim() && email.trim().isNotEmpty() && email2.trim().isNotEmpty()
     val isFormValid by derivedStateOf {
         isEmailValid &&
+                isDuthEmailAllowed &&
                 isEmail2Valid &&
                 emailHasOnlyLatinCharacters &&
                 email2HasOnlyLatinCharacters &&
@@ -88,6 +91,16 @@ fun SignupComposable(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         EmailTextFieldComposable(value = email, onValueChange = { email = it }, isWebUi = isWebUi)
+
+        if (
+            ExperimentConfig.IS_EXPERIMENT_ACTIVE &&
+            email.isNotBlank() &&
+            !isDuthEmailAllowed
+        ) {
+            ErrorTextComposable(
+                "Επιτρέπονται μόνο email με κατάληξη @cs.duth.gr."
+            )
+        }
 
         if (email.isNotEmpty()) {
             Column(
