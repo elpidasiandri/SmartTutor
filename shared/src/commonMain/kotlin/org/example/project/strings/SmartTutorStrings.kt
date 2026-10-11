@@ -215,7 +215,10 @@ object SmartTutorStrings {
             "This user already exists.",
             "Αυτός ο χρήστης υπάρχει ήδη."
         )
-
+    val error_connection: String
+        get() = localized(
+            "Unable to load the user.",
+            "Δεν ήταν δυνατή η φόρτωση του χρήστη.")
     val generic_error: String
         get() = localized(
             "Something went wrong. Please try again.",

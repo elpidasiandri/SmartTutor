@@ -15,6 +15,7 @@ import org.example.project.myProgress.useCases.UpsertChatProgressUseCase
 import org.example.project.settings.logout.useCase.LearningUnitsUseCase
 import org.example.project.settings.logout.useCase.LogoutUseCase
 import org.example.project.strings.SmartTutorStrings
+import org.example.project.strings.SmartTutorStrings.error_connection
 import org.example.project.strings.SmartTutorStrings.generic_error
 import org.example.project.tutor.models.domainModels.file.PickedFile
 import org.example.project.tutor.models.domainModels.learningUnits.LearningUnitContentDomain
@@ -1773,21 +1774,31 @@ class TutorCommonViewModel(
         }
     }
 
+
     fun initializeData(
         isExperimentUser: Boolean = false
     ) = scope.launch {
         val uid = userId()
 
         if (_state.value.session.material.fileUploaded) {
+            _state.update {
+                it.copy(isInitializing = false)
+            }
             return@launch
         }
 
         if (uid.isBlank()) {
-            platform.log(
-                "TutorStore",
-                "UserId not ready yet",
-                null
-            )
+            platform.log("TutorStore", "UserId not ready yet", null)
+
+            _state.update {
+                it.copy(
+                    loading = false,
+                    isInitializing = false,
+                    showCustomMessage = true,
+                    isError = true,
+                    message = error_connection
+                )
+            }
             return@launch
         }
 
