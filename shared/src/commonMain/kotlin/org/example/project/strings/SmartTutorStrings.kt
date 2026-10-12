@@ -870,6 +870,12 @@ object SmartTutorStrings {
             "Η εξήγηση θα είναι διαθέσιμη αφού απαντήσεις."
         )
 
+    val exercise_explanation_unavailable: String
+        get() = localized(
+            "No additional explanation is available for this exercise.",
+            "Δεν υπάρχει διαθέσιμη επιπλέον εξήγηση για αυτή την άσκηση."
+        )
+
 
     val pdf_allowed: String
         get() = when (LanguageManager.language.value) {

@@ -103,7 +103,12 @@ fun ExercisesTab(
                 exercises.all {
                     it.nextRequiredRound == currentAttemptRound
                 }
-
+    val feedbackRound =
+        if (hasCompletedFullAttempt) {
+            currentAttemptRound - 1
+        } else {
+            currentAttemptRound
+        }
 
     Column(
         modifier = modifier.padding(horizontal = spacing8).verticalScroll(
@@ -127,6 +132,7 @@ fun ExercisesTab(
             currentUnitIndex = currentUnitIndex,
             currentAttemptRound = currentAttemptRound,
             isEvaluating = isLoadingMoreExercises,
+            feedbackRound = feedbackRound,
         )
 
     }
@@ -176,6 +182,7 @@ private fun ExerciseCard(
     currentUnitIndex: Int,
     currentAttemptRound: Int,
     isEvaluating: Boolean,
+    feedbackRound: Int
 ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
@@ -189,30 +196,27 @@ private fun ExerciseCard(
         mutableStateOf<Boolean?>(null)
     }
 
+
     var openAnswer by rememberSaveable(
         currentUnitIndex,
         index,
-        exercise.question
+        exercise.question,
+        currentAttemptRound
     ) {
-        mutableStateOf(
-            exercise.latestAttempt?.selectedAnswer.orEmpty()
-        )
+        mutableStateOf("")
     }
 
     val latestAttempt = exercise.latestAttempt
-    LaunchedEffect(latestAttempt?.attemptNumber) {
-        if (openAnswer.isBlank() && latestAttempt != null) {
-            openAnswer = latestAttempt.selectedAnswer
-        }
-    }
+
 
     val canAnswerNow = exercise.nextRequiredRound == currentAttemptRound
     val isTemporarilyLocked = !canAnswerNow
-    val hasAnsweredCurrentAttempt = exercise.hasAnsweredInRound(currentAttemptRound)
+    val hasAnsweredCurrentAttempt =
+        exercise.hasAnsweredInRound(feedbackRound)
 
     val previousAttempts = exercise.attempts.filter { attempt ->
         val round = exercise.introducedInRound + attempt.attemptNumber - 1
-        round < currentAttemptRound
+        round < feedbackRound
     }
         .sortedBy { it.attemptNumber }
 
@@ -296,7 +300,7 @@ private fun ExerciseCard(
             ) {
                 Text(
                     text = SmartTutorStrings.exercise_attempt_label(
-                        currentAttemptRound
+                        feedbackRound
                     ),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -387,21 +391,43 @@ private fun ExerciseCard(
 
         Spacer(Modifier.height(spacing8))
 
+
         HintExplainSolutionRow(
             showHint = showHint,
             showExplanation = showExplanation,
             showSolution = showSolution,
             onToggleHint = { showHint = !showHint },
             onToggleExplanation = {
-                if (hasAnsweredCurrentAttempt) {
-                    showExplanation = !showExplanation
-                }
+                showExplanation = !showExplanation
             },
             onToggleSolution = {
                 showSolution = !showSolution
             },
             type = type,
         )
+
+        if (showExplanation) {
+            val explanationText = when {
+                !hasAnsweredCurrentAttempt ->
+                    SmartTutorStrings.exercise_explanation_after_answer
+
+                exercise.explanation.isNotBlank() ->
+                    exercise.explanation
+
+                exercise.solution.isNotBlank() ->
+                    exercise.solution
+
+                else ->
+                    SmartTutorStrings.exercise_explanation_unavailable
+            }
+
+            Spacer(Modifier.height(spacing8))
+
+            ExpandSection(
+                title = explanation_tab,
+                text = explanationText
+            )
+        }
 
         if (showHint && exercise.hint.isNotBlank()) {
             Spacer(Modifier.height(spacing8))
@@ -540,24 +566,25 @@ private fun ExerciseCard(
             }
 
             ExerciseType.OPEN -> {
-                OutlinedTextField(
-                    value = openAnswer,
-                    onValueChange = { openAnswer = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 240.dp),
-                    placeholder = {
-                        Text(excercise_write_your_answer)
-                    },
-                    singleLine = false,
-                    minLines = 10,
-                    maxLines = 40,
-                    textStyle = TextStyle(
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    readOnly = !canAnswerNow || isEvaluating,
-                )
-
+                if (canAnswerNow) {
+                    OutlinedTextField(
+                        value = openAnswer,
+                        onValueChange = { openAnswer = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 240.dp),
+                        placeholder = {
+                            Text(excercise_write_your_answer)
+                        },
+                        singleLine = false,
+                        minLines = 10,
+                        maxLines = 40,
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        readOnly = !canAnswerNow || isEvaluating,
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
@@ -577,6 +604,34 @@ private fun ExerciseCard(
                             !isEvaluating
                 ) {
                     Text(ask_tutor_about_my_answer)
+                }
+
+                if (
+                    latestAttempt != null &&
+                    latestAttempt.selectedAnswer.isNotBlank()
+                ) {
+                    Spacer(Modifier.height(12.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Color(0xFFF4F0FA),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = SmartTutorStrings.last_answer,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Text(
+                            text = latestAttempt.selectedAnswer,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
 
                 if (!tutorAnswer.isNullOrBlank()) {
@@ -653,18 +708,6 @@ private fun ExerciseCard(
                 fontSize = 12.sp,
                 color = Color.Red
             )
-        }
-        if (showHint && exercise.hint.isNotBlank()) {
-            Spacer(Modifier.height(spacing8))
-            ExpandSection(title = hint_tab, text = exercise.hint)
-        }
-        if (
-            hasAnsweredCurrentAttempt &&
-            showExplanation &&
-            exercise.explanation.isNotBlank()
-        ) {
-            Spacer(Modifier.height(spacing8))
-            ExpandSection(title = explanation_tab, text = exercise.explanation)
         }
 
         if (showSolution && exercise.solution.isNotBlank() && exercise.type == ExerciseType.OPEN) {
