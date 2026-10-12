@@ -127,8 +127,10 @@ fun MenuAndChatHistory(
         )
 
         Spacer(modifier = Modifier.height(spacing12))
+        if (!isExperimentUser) {
+            SettingsRow(onSettingsClick = onSettingsClick)
 
-        SettingsRow(onSettingsClick = onSettingsClick)
+        }
 
         BottomRow(
             onLogoutClick = onLogoutClick,

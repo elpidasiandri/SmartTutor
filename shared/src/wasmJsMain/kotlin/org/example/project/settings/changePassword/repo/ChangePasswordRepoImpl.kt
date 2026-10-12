@@ -40,20 +40,19 @@ class ChangePasswordRepoImpl(private val app: FirebaseApp) : IChangePasswordRepo
                 try {
                     reauthenticateWithCredential(user, credential).await()
                 } catch (e: Throwable) {
-                    val message = if (e.message?.contains("auth/wrong-password") == true) {
-                        "Old password is incorrect"
-                    } else if (e.message?.contains("auth/too-many-requests") == true) {
-                        "Too many attempts. Please try again later."
-                    } else {
-                        e.message
+                    val message = when {
+                        e.message?.contains("auth/wrong-password") == true ||
+                                e.message?.contains("auth/invalid-credential") == true ->
+                            "Old password is incorrect"
+
+                        e.message?.contains("auth/too-many-requests") == true ->
+                            "Too many attempts. Please try again later."
+
+                        else ->
+                            e.message ?: "Reauthentication failed"
                     }
-                    if (message?.contains("auth/wrong-password") == true || message?.contains("auth/too-many-requests") == true
-                        || message?.contains("auth/invalid-credential") == true
-                    ){
-                        onResult(false, message)
-                    }else{
-                        onResult(true, message)
-                    }
+
+                    onResult(false, message)
                     return@launch
                 }
 

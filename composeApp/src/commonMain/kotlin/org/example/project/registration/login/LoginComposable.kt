@@ -55,7 +55,7 @@ fun LoginComposable(
         email.isNotBlank() && Validation.containsOnlyLatinEmailCharacters(email)
 
     val isEmailValid = Validation.isValidEmail(email)
-    val isPasswordValid = Validation.isValidPassword(password)
+    val isPasswordValid = password.isNotBlank()
 
     val isFormValid = emailHasOnlyLatinCharacters && isEmailValid && isPasswordValid
     val containerModifier = if (isWebUi) Modifier.width(webSpacing) else Modifier.fillMaxWidth()
@@ -109,36 +109,6 @@ fun LoginComposable(
             },
 
             )
-        if (password.isNotEmpty()) {
-            Column(
-                modifier = if (isWebUi) {
-                    Modifier.width(webSpacing)
-                } else {
-                    Modifier.fillMaxWidth()
-                },
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                ValidationRule(
-                    text = SmartTutorStrings.password_min_length,
-                    isValid = password.length >= 6
-                )
-
-                ValidationRule(
-                    text = SmartTutorStrings.password_has_letter,
-                    isValid = password.any { it.isLetter() }
-                )
-
-                ValidationRule(
-                    text = SmartTutorStrings.password_has_number,
-                    isValid = password.any { it.isDigit() }
-                )
-
-                ValidationRule(
-                    text = SmartTutorStrings.password_has_special,
-                    isValid = password.any { !it.isLetterOrDigit() }
-                )
-            }
-        }
         Spacer(Modifier.height(spacing24))
 
         ButtonComposable(

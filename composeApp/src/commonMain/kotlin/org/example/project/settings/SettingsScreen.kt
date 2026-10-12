@@ -64,21 +64,20 @@ fun SettingsScreen(
             )
         }
 
-        Spacer(Modifier.height(spacing24))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .noRippleClickable { onChangePasswordClick() }
-                .padding(vertical = spacing16, horizontal = spacing16),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Lock, contentDescription = null)
-            Spacer(Modifier.width(spacing12))
-            Text(change_password_title, fontSize = 18.sp)
-        }
-
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+//
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .noRippleClickable { onChangePasswordClick() }
+//                .padding(vertical = spacing16, horizontal = spacing16),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Icon(Icons.Default.Lock, contentDescription = null)
+//            Spacer(Modifier.width(spacing12))
+//            Text(change_password_title, fontSize = 18.sp)
+//        }
+//
+//        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
         Spacer(
             Modifier.height(spacing24)
         )
