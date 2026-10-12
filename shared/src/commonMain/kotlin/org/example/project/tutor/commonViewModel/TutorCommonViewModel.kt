@@ -211,6 +211,15 @@ class TutorCommonViewModel(
         val chatId = current.activeChatId
         val unitIndex = current.currentIndex
 
+        val exercises = current.currentUnit.exercises
+        val nextRound = exercises.minOfOrNull { it.nextRequiredRound } ?: 1
+        val hasCompletedRound = exercises.isNotEmpty() && nextRound > 1 &&
+                exercises.all {
+                    it.nextRequiredRound == nextRound
+                }
+
+        if (!hasCompletedRound || current.askTutor) return
+
         scope.launch {
             runCatching {
                 _state.update { it.copy(askTutor = true) }
@@ -230,8 +239,9 @@ class TutorCommonViewModel(
                     val updatedUnit = state.currentUnit.copy(
                         exercises = state.currentUnit.exercises + extra
                     )
-
+                    val firstNewExerciseIndex = state.currentUnit.exercises.size
                     state.copy(
+                        selectedExerciseIndex = firstNewExerciseIndex,
                         askTutor = false,
                         currentUnit = updatedUnit,
                         allUnits = state.allUnits.mapIndexed { i, unit ->
@@ -1654,6 +1664,34 @@ class TutorCommonViewModel(
         if (current.selectedTab == TutorTab.Exercises) {
             val nextExerciseIndex = current.selectedExerciseIndex + 1
 
+            if (exercises.isEmpty()) return
+
+            val currentRound =
+                exercises.minOfOrNull { it.nextRequiredRound } ?: 1
+
+            val hasCompletedRound =
+                currentRound > 1 &&
+                        exercises.all {
+                            it.nextRequiredRound == currentRound
+                        }
+
+            val selectedExercise =
+                exercises.getOrNull(current.selectedExerciseIndex)
+                    ?: return
+
+            val isLastExercise =
+                current.selectedExerciseIndex == exercises.lastIndex
+
+            val canAdvance =
+                selectedExercise.hasAnsweredInRound(currentRound) ||
+                        (
+                                isLastExercise &&
+                                        hasCompletedRound &&
+                                        selectedExercise.attemptsCount > 0
+                                )
+
+            if (!canAdvance) return
+
             if (nextExerciseIndex < exercises.size) {
                 _state.update {
                     it.copy(selectedExerciseIndex = nextExerciseIndex)
@@ -1776,7 +1814,7 @@ class TutorCommonViewModel(
 
 
     fun initializeData(
-        isExperimentUser: Boolean = false
+        isExperimentUser: Boolean = false,
     ) = scope.launch {
         val uid = userId()
 
@@ -1979,9 +2017,7 @@ class TutorCommonViewModel(
                     isError = true
                 )
             }
-        }
-
-        finally {
+        } finally {
             _state.update {
                 it.copy(isInitializing = false)
             }

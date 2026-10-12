@@ -67,7 +67,9 @@ data class ExerciseDto(
     @SerialName("solution") val solution: String? = null,
     @SerialName("maxPoints") val maxPoints: Double? = null,
     @SerialName("attempts") val attempts: List<ExerciseAttemptDto> = emptyList(),
-)
+    @SerialName("introducedInRound") val introducedInRound: Int = 1,
+
+    )
 
 @Serializable
 data class ExerciseAttemptDto(

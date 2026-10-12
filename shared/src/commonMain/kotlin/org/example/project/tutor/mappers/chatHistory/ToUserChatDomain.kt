@@ -257,6 +257,7 @@ fun ExerciseDto.toDomain(): ExerciseDomain {
         attempts = attempts.map {
             it.toDomain()
         },
+        introducedInRound = introducedInRound,
     )
 }
 

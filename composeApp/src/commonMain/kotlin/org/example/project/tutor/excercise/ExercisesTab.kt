@@ -69,6 +69,7 @@ import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomai
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
 import kotlin.time.TimeSource
 import org.example.project.strings.SmartTutorStrings
+
 @Composable
 fun ExercisesTab(
     modifier: Modifier = Modifier,
@@ -88,17 +89,21 @@ fun ExercisesTab(
     onMoreExercisesClick: () -> Unit,
     isLoadingMoreExercises: Boolean,
 ) {
-    val currentAttemptRound = (exercises.minOfOrNull { it.attemptsCount } ?: 0) + 1
     val safeIndex = selectedExerciseIndex.coerceIn(0, exercises.lastIndex)
     val exercise = exercises[safeIndex]
     val isLastExercise = safeIndex == exercises.lastIndex
     val scrollState = rememberScrollState()
 
-    val minAttempts = exercises.minOfOrNull { it.attemptsCount } ?: 0
-    val maxAttempts = exercises.maxOfOrNull { it.attemptsCount } ?: 0
+
+    val currentAttemptRound = exercises.minOfOrNull { it.nextRequiredRound } ?: 1
 
     val hasCompletedFullAttempt =
-        minAttempts > 0 && minAttempts == maxAttempts
+        exercises.isNotEmpty() &&
+                currentAttemptRound > 1 &&
+                exercises.all {
+                    it.nextRequiredRound == currentAttemptRound
+                }
+
 
     Column(
         modifier = modifier.padding(horizontal = spacing8).verticalScroll(
@@ -171,7 +176,7 @@ private fun ExerciseCard(
     currentUnitIndex: Int,
     currentAttemptRound: Int,
     isEvaluating: Boolean,
-    ) {
+) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
     var showSolution by remember { mutableStateOf(false) }
@@ -200,19 +205,16 @@ private fun ExerciseCard(
             openAnswer = latestAttempt.selectedAnswer
         }
     }
-    val exerciseAttemptsCount = exercise.attemptsCount
 
-    val canAnswerNow = exerciseAttemptsCount < currentAttemptRound
+    val canAnswerNow = exercise.nextRequiredRound == currentAttemptRound
     val isTemporarilyLocked = !canAnswerNow
+    val hasAnsweredCurrentAttempt = exercise.hasAnsweredInRound(currentAttemptRound)
 
-    val hasAnsweredCurrentAttempt =
-        latestAttempt?.attemptNumber == currentAttemptRound
-
-    val previousAttempts = exercise.attempts
-        .filter { it.attemptNumber < currentAttemptRound }
+    val previousAttempts = exercise.attempts.filter { attempt ->
+        val round = exercise.introducedInRound + attempt.attemptNumber - 1
+        round < currentAttemptRound
+    }
         .sortedBy { it.attemptNumber }
-
-    val answered = hasAnsweredCurrentAttempt
 
 
     val type = exercise.type
@@ -304,8 +306,10 @@ private fun ExerciseCard(
                     text = when {
                         isCorrect ->
                             SmartTutorStrings.exercise_correct_feedback
+
                         isPartial ->
                             SmartTutorStrings.exercise_partial_feedback
+
                         else ->
                             SmartTutorStrings.exercise_incorrect_feedback
                     },
@@ -355,7 +359,11 @@ private fun ExerciseCard(
 
                 previousAttempts.forEach { attempt ->
                     Text(
-                        text = "${SmartTutorStrings.exercise_attempt_label(attempt.attemptNumber)}: " +
+                        text = "${
+                            SmartTutorStrings.exercise_attempt_label(
+                                exercise.introducedInRound + attempt.attemptNumber - 1
+                            )
+                        }: " +
                                 "${attempt.awardedPoints}/${exercise.maxPoints} " +
                                 exersize_has_grades,
                         fontSize = 12.sp,
@@ -652,8 +660,8 @@ private fun ExerciseCard(
         }
         if (
             hasAnsweredCurrentAttempt &&
-                    showExplanation &&
-                    exercise.explanation.isNotBlank()
+            showExplanation &&
+            exercise.explanation.isNotBlank()
         ) {
             Spacer(Modifier.height(spacing8))
             ExpandSection(title = explanation_tab, text = exercise.explanation)

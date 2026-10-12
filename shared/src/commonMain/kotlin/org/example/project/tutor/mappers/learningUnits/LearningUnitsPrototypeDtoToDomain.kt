@@ -10,18 +10,12 @@ import org.example.project.tutor.models.domainModels.tutorChat.LearningUnitInsta
 import org.example.project.tutor.models.domainModels.tutorChat.MaterialDomain
 import kotlinx.datetime.Clock
 import org.example.project.tutor.mappers.chatHistory.toDomain
-import org.example.project.tutor.models.domainModels.learningUnits.ExerciseDomain
 import org.example.project.tutor.models.domainModels.learningUnits.ExerciseType
-import org.example.project.tutor.models.domainModels.learningUnits.QuotationDomain
-import org.example.project.tutor.models.domainModels.learningUnits.UnitImageDomain
 import org.example.project.tutor.models.domainModels.tutorChat.ChatMessageDomain
 import org.example.project.tutor.models.domainModels.tutorChat.SenderType
-import org.example.project.tutor.networkModel.uploadPdf.ExerciseDto
 import org.example.project.tutor.networkModel.uploadPdf.LanguageOfLearningUnitsEnum
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitDto
 import org.example.project.tutor.networkModel.uploadPdf.LearningUnitsPrototypeDto
-import org.example.project.tutor.networkModel.uploadPdf.QuotationDto
-import org.example.project.tutor.networkModel.uploadPdf.UnitImageDto
 import kotlin.uuid.ExperimentalUuidApi
 
 fun String?.toLanguageEnum(): LanguageOfLearningUnitsEnum =
@@ -55,34 +49,6 @@ fun LearningUnitDto.toDomain(defaultIndex: Int): LearningUnitContentDomain =
         totalPoints = totalPoints,
     )
 
-fun UnitImageDto.toDomain(): UnitImageDomain =
-    UnitImageDomain(
-        relativePath = relativePath.orEmpty(),
-        caption = caption.orEmpty(),
-        numbering = numbering ?: 0
-    )
-
-fun QuotationDto.toDomain(): QuotationDomain =
-    QuotationDomain(
-        text = text.orEmpty(),
-        numbering = numbering ?: 0
-    )
-
-fun ExerciseDto.toDomain(): ExerciseDomain {
-    return ExerciseDomain(
-        type = type.toExerciseType(),
-        difficulty = difficulty.orEmpty(),
-        estimatedMinutes = estimatedMinutes ?: 0,
-        question = question.orEmpty(),
-        options = options,
-        answerIndex = answerIndex,
-        hint = hint.orEmpty(),
-        explanation = explanation.orEmpty(),
-        solution = solution.orEmpty(),
-        maxPoints = maxPoints ?: 0.0,
-        attempts = attempts.map { it.toDomain() }
-    )
-}
 
 fun String?.toExerciseType(): ExerciseType = when (this?.trim()?.lowercase()) {
     "mcq" -> ExerciseType.MCQ

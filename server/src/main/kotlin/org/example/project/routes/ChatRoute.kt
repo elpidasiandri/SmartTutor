@@ -131,6 +131,34 @@ fun Route.chatRoutes(
                     it.unitIndex == unitIndex
                 }
 
+                val attemptsByExerciseIndex = currentUnitStats
+                    ?.questions
+                    .orEmpty()
+                    .associate { question ->
+                        question.exerciseIndex to question.attemptsCount
+                    }
+
+                val nextRounds = unit.exercises.mapIndexed { index, exercise ->
+                    exercise.introducedInRound +
+                            (attemptsByExerciseIndex[index] ?: exercise.attempts.size)
+                }
+
+                val completedRound = (nextRounds.minOrNull() ?: 1) - 1
+
+                val hasCompletedCurrentRound =
+                    completedRound >= 1 &&
+                            nextRounds.isNotEmpty() &&
+                            nextRounds.all { it == completedRound + 1 }
+
+                if (!hasCompletedCurrentRound) {
+                    return@post call.respond(
+                        HttpStatusCode.Conflict,
+                        mapOf(
+                            "error" to "Complete all exercises before requesting more."
+                        )
+                    )
+                }
+
                 val wrongQuestions = currentUnitStats
                     ?.questions
                     ?.filter { it.wrongCount > 0 }
@@ -147,13 +175,18 @@ fun Route.chatRoutes(
     """.trimIndent()
                 }
 
+
                 val extraExercises = llm.generateAdaptiveExercisesForUnit(
                     unit = unit,
                     language = responseLanguage,
                     fileName = chat.title,
                     adaptiveFocus = adaptiveFocus,
                     targetMinutes = 55
-                )
+                ).map { exercise ->
+                    exercise.copy(
+                        introducedInRound = completedRound
+                    )
+                }
 
                 application.log.info("GENERATED=${extraExercises.size}")
 

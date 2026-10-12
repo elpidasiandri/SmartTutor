@@ -33,6 +33,7 @@ data class ExerciseDomain(
     val solution: String,
     val maxPoints: Double,
     val attempts: List<LearningUnitExerciseStatsDomain>,
+    val introducedInRound: Int = 1,
 ){
     val latestAttempt: LearningUnitExerciseStatsDomain?
         get() = attempts.maxByOrNull { it.attemptNumber }
@@ -42,6 +43,13 @@ data class ExerciseDomain(
 
     val attemptsCount: Int
         get() = attempts.size
+
+    val nextRequiredRound: Int
+        get() = introducedInRound + attemptsCount
+
+    fun hasAnsweredInRound(round: Int): Boolean =
+        round >= introducedInRound &&
+                nextRequiredRound > round
 
     val latestAwardedPoints: Double
         get() = latestAttempt?.awardedPoints ?: 0.0

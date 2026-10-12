@@ -680,10 +680,23 @@ private fun TutorChatContent(
     exercisesLoading: Boolean,
     onUploadPdfPositioned: (Rect) -> Unit,
 ) {
-    val currentExerciseAnswered =
-        currentUnit.exercises
-            .getOrNull(selectedExerciseIndex)
-            ?.isAnswered == true
+
+    val exercises = currentUnit.exercises
+
+    val currentRound = exercises.minOfOrNull { it.nextRequiredRound } ?: 1
+
+    val hasCompletedRound = exercises.isNotEmpty() && currentRound > 1 &&
+            exercises.all {
+                it.nextRequiredRound == currentRound
+            }
+
+    val currentExercise = exercises.getOrNull(selectedExerciseIndex)
+
+    val isLastExercise = selectedExerciseIndex == exercises.lastIndex
+
+    val currentExerciseAnswered = currentExercise?.hasAnsweredInRound(currentRound) == true ||
+            (isLastExercise && hasCompletedRound && currentExercise?.attemptsCount?.let { it > 0 } == true)
+
 
     val nextEnabled = chatData.material.fileUploaded &&
             !isLoading &&
