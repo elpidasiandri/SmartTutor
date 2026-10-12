@@ -39,36 +39,21 @@ import org.example.project.tutor.pdfPicker.WebPdfPicker
 import org.example.project.tutor.viewModel.TutorController
 import org.example.project.utils.validation.PdfValidationResult
 import org.example.project.utils.validation.validatePdf
-import org.koin.compose.getKoin
-import org.koin.core.parameter.parametersOf
 import org.example.project.experiment.ExperimentConfig
 import org.example.project.strings.SmartTutorStrings.drop_pdf
 import org.example.project.strings.SmartTutorStrings.pdf_allowed
 import org.example.project.strings.SmartTutorStrings.release_upload_pdf
 import org.example.project.tutor.LocalIsExperimentUser
-
 @Composable
-fun WebTutorScreenFlow(navController: NavController) {
+fun WebTutorScreenFlow(
+    navController: NavController,
+    controller: TutorController,
+) {
     val user = AuthUserHolder.currentUser
 
     if (user == null) {
         navController.navigate(WebScreen.Registration)
         return
-    }
-
-    val koin = getKoin()
-
-    val controller = remember(user.uid) {
-        koin.get<TutorController> {
-            parametersOf(user.uid)
-        }
-    }
-
-    LaunchedEffect(user.uid, user.email, user.emailVerified) {
-        controller.start(
-            isExperimentUser = user.emailVerified &&
-                    ExperimentConfig.shouldUseExperimentDocument(user.email)
-        )
     }
 
     val state by controller.state.collectAsState()

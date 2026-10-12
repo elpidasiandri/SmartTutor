@@ -17,14 +17,18 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun MyProgressFlow(navController: NavController) {
 
-    val userId = AuthUserHolder.currentUser?.uid
 
-    if (userId.isNullOrBlank()) {
+    val user = AuthUserHolder.currentUser
+
+    if (user == null || !user.emailVerified) {
         LaunchedEffect(Unit) {
             navController.navigate(WebScreen.Registration)
         }
         return
     }
+
+    val userId = user.uid
+
 
     val koin = getKoin()
 

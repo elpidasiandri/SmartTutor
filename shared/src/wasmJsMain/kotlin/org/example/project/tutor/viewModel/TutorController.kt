@@ -24,7 +24,7 @@ import org.example.project.tutor.useCases.LoadTutorFromPdfUseCase
 import org.example.project.tutor.useCases.MarkUnitAsReadUseCase
 import org.example.project.tutor.useCases.SaveExerciseAnswerUseCase
 import org.example.project.tutor.useCases.getIdToken.GetIdTokenSuspendUseCase
-
+import kotlinx.coroutines.cancel
 class TutorController(
     private val logoutUseCase: LogoutUseCase,
     private val getLearningUnitUseCase: LearningUnitsUseCase,
@@ -76,7 +76,9 @@ class TutorController(
     fun startVoiceInput(onResult: (String) -> Unit) = common.startVoiceInput(onResult)
     fun stopVoiceInput() = common.stopVoiceInput()
 
-
+    fun close() {
+        scope.cancel()
+    }
     fun start(isExperimentUser: Boolean = false) {
         common.initializeData(isExperimentUser)
     }

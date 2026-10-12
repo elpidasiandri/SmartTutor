@@ -10,11 +10,13 @@ import org.example.project.navigations.settings.changePassword.ChangePasswordFlo
 import org.example.project.navigations.settings.SettingsScreenFlow
 import org.example.project.navigations.settings.deleteAccount.DeleteAccountFlow
 import org.example.project.navigations.tutor.WebTutorScreenFlow
-
+import androidx.compose.runtime.LaunchedEffect
+import org.example.project.tutor.viewModel.TutorController
 @Composable
 fun NavigateToScreen(
     screen: WebScreen,
     navController: NavController,
+    tutorController: TutorController?,
 ) {
     when (screen) {
         WebScreen.Registration -> {
@@ -22,7 +24,16 @@ fun NavigateToScreen(
         }
 
         WebScreen.Tutor -> {
-            WebTutorScreenFlow(navController)
+            if (tutorController != null) {
+                WebTutorScreenFlow(
+                    navController = navController,
+                    controller = tutorController
+                )
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.navigate(WebScreen.Registration)
+                }
+            }
         }
 
         WebScreen.Settings -> {
