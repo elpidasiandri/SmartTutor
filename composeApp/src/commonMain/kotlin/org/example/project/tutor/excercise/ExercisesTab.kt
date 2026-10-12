@@ -121,6 +121,7 @@ fun ExercisesTab(
             answeredExerciseKeys = answeredExerciseKeys,
             currentUnitIndex = currentUnitIndex,
             currentAttemptRound = currentAttemptRound,
+            isEvaluating = isLoadingMoreExercises,
         )
 
     }
@@ -169,6 +170,7 @@ private fun ExerciseCard(
     answeredExerciseKeys: Set<String>,
     currentUnitIndex: Int,
     currentAttemptRound: Int,
+    isEvaluating: Boolean,
     ) {
     var showHint by remember { mutableStateOf(false) }
     var showExplanation by remember { mutableStateOf(false) }
@@ -375,8 +377,6 @@ private fun ExerciseCard(
 
         ExerciseRichItem(text = exercise.question)
 
-        ExerciseRichItem(text = exercise.question)
-
         Spacer(Modifier.height(spacing8))
 
         HintExplainSolutionRow(
@@ -546,7 +546,8 @@ private fun ExerciseCard(
                     maxLines = 40,
                     textStyle = TextStyle(
                         fontFamily = FontFamily.Monospace
-                    )
+                    ),
+                    readOnly = !canAnswerNow || isEvaluating,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -563,7 +564,9 @@ private fun ExerciseCard(
                             )
                         } else retryError = true
                     },
-                    enabled = openAnswer.isNotBlank()
+                    enabled = openAnswer.isNotBlank() &&
+                            canAnswerNow &&
+                            !isEvaluating
                 ) {
                     Text(ask_tutor_about_my_answer)
                 }
