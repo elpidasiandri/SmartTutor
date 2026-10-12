@@ -234,8 +234,13 @@ class TutorCommonViewModel(
                 )
 
                 val extra = response.exercises.map { it.toDomain() }
-
+                if (extra.isEmpty()) {
+                    error("No additional exercises generated")
+                }
                 _state.update { state ->
+                    if (state.activeChatId != chatId || state.currentIndex != unitIndex) {
+                        return@update state.copy(askTutor = false)
+                    }
                     val updatedUnit = state.currentUnit.copy(
                         exercises = state.currentUnit.exercises + extra
                     )
