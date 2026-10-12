@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +21,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -178,9 +182,22 @@ private fun ExerciseCard(
         mutableStateOf<Boolean?>(null)
     }
 
-    var openAnswer by rememberSaveable(index) { mutableStateOf("") }
+    var openAnswer by rememberSaveable(
+        currentUnitIndex,
+        index,
+        exercise.question
+    ) {
+        mutableStateOf(
+            exercise.latestAttempt?.selectedAnswer.orEmpty()
+        )
+    }
 
     val latestAttempt = exercise.latestAttempt
+    LaunchedEffect(latestAttempt?.attemptNumber) {
+        if (openAnswer.isBlank() && latestAttempt != null) {
+            openAnswer = latestAttempt.selectedAnswer
+        }
+    }
     val exerciseAttemptsCount = exercise.attemptsCount
 
     val canAnswerNow = exerciseAttemptsCount < currentAttemptRound
@@ -231,26 +248,7 @@ private fun ExerciseCard(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
 
-            HintExplainSolutionRow(
-                showHint = showHint,
-                showExplanation = showExplanation,
-                showSolution = showSolution,
-                onToggleHint = { showHint = !showHint },
-                onToggleExplanation = {
-                    if (answered) {
-                        showExplanation = !showExplanation
-                    }
-                },
-                onToggleSolution = { showSolution = !showSolution },
-                type = type,
-            )
-
-        }
 
         Text(
             text = "$exersize_has: ${exercise.maxPoints} $exersize_has_grades",
@@ -377,6 +375,48 @@ private fun ExerciseCard(
 
         ExerciseRichItem(text = exercise.question)
 
+        ExerciseRichItem(text = exercise.question)
+
+        Spacer(Modifier.height(spacing8))
+
+        HintExplainSolutionRow(
+            showHint = showHint,
+            showExplanation = showExplanation,
+            showSolution = showSolution,
+            onToggleHint = { showHint = !showHint },
+            onToggleExplanation = {
+                if (hasAnsweredCurrentAttempt) {
+                    showExplanation = !showExplanation
+                }
+            },
+            onToggleSolution = {
+                showSolution = !showSolution
+            },
+            type = type,
+        )
+
+        if (showHint && exercise.hint.isNotBlank()) {
+            Spacer(Modifier.height(spacing8))
+            ExpandSection(
+                title = hint_tab,
+                text = exercise.hint
+            )
+        }
+
+        if (
+            hasAnsweredCurrentAttempt &&
+            showExplanation &&
+            exercise.explanation.isNotBlank()
+        ) {
+            Spacer(Modifier.height(spacing8))
+            ExpandSection(
+                title = explanation_tab,
+                text = exercise.explanation
+            )
+        }
+
+        Spacer(Modifier.height(spacing8))
+
         Spacer(Modifier.height(spacing8))
 
         when (type) {
@@ -495,8 +535,18 @@ private fun ExerciseCard(
                 OutlinedTextField(
                     value = openAnswer,
                     onValueChange = { openAnswer = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(excercise_write_your_answer) }
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 240.dp),
+                    placeholder = {
+                        Text(excercise_write_your_answer)
+                    },
+                    singleLine = false,
+                    minLines = 10,
+                    maxLines = 40,
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily.Monospace
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -511,7 +561,6 @@ private fun ExerciseCard(
                                 exercise.solution,
                                 exercise.maxPoints
                             )
-                            openAnswer = ""
                         } else retryError = true
                     },
                     enabled = openAnswer.isNotBlank()
