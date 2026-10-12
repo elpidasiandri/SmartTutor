@@ -184,9 +184,18 @@ private fun ExerciseCard(
     isEvaluating: Boolean,
     feedbackRound: Int
 ) {
-    var showHint by remember { mutableStateOf(false) }
-    var showExplanation by remember { mutableStateOf(false) }
-    var showSolution by remember { mutableStateOf(false) }
+
+    var showHint by remember(index, exercise.question) {
+        mutableStateOf(false)
+    }
+
+    var showExplanation by remember(index, exercise.question) {
+        mutableStateOf(false)
+    }
+
+    var showSolution by remember(index, exercise.question) {
+        mutableStateOf(false)
+    }
 
     var selectedIndex by rememberSaveable(index, currentAttemptRound) {
         mutableStateOf<Int?>(null)
@@ -436,20 +445,6 @@ private fun ExerciseCard(
                 text = exercise.hint
             )
         }
-
-        if (
-            hasAnsweredCurrentAttempt &&
-            showExplanation &&
-            exercise.explanation.isNotBlank()
-        ) {
-            Spacer(Modifier.height(spacing8))
-            ExpandSection(
-                title = explanation_tab,
-                text = exercise.explanation
-            )
-        }
-
-        Spacer(Modifier.height(spacing8))
 
         Spacer(Modifier.height(spacing8))
 
